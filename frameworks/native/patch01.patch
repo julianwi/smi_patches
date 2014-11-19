@@ -27,7 +27,7 @@ index c1e49bc..ef2beda 100644
          if (result == -1) {
              ALOGE("Binder ioctl to obtain version failed: %s", strerror(errno));
 diff --git a/libs/gui/BufferQueue.cpp b/libs/gui/BufferQueue.cpp
-index 5f2c370..f6397e5 100644
+index 146f534..decbfd3 100644
 --- a/libs/gui/BufferQueue.cpp
 +++ b/libs/gui/BufferQueue.cpp
 @@ -33,6 +33,8 @@
@@ -39,7 +39,7 @@ index 5f2c370..f6397e5 100644
  // Macros for including the BufferQueue name in log messages
  #define ST_LOGV(x, ...) ALOGV("[%s] "x, mConsumerName.string(), ##__VA_ARGS__)
  #define ST_LOGD(x, ...) ALOGD("[%s] "x, mConsumerName.string(), ##__VA_ARGS__)
-@@ -375,7 +377,10 @@ status_t BufferQueue::dequeueBuffer(int *outBuf, sp<Fence>* outFence, bool async
+@@ -377,7 +379,10 @@ status_t BufferQueue::dequeueBuffer(int *outBuf, sp<Fence>* outFence, bool async
                      ST_LOGE("dequeueBuffer: would block! returning an error instead.");
                      return WOULD_BLOCK;
                  }
@@ -253,7 +253,7 @@ index e69de29..85698ca 100644
 +
 +#endif // ANDROID_SECOND_ORDER_LOW_PASS_FILTER_H
 diff --git a/services/sensorservice/SensorService.cpp b/services/sensorservice/SensorService.cpp
-index b1ed763..9410d83 100644
+index 2b1db99..cb55dcf 100644
 --- a/services/sensorservice/SensorService.cpp
 +++ b/services/sensorservice/SensorService.cpp
 @@ -45,6 +45,7 @@
@@ -264,33 +264,11 @@ index b1ed763..9410d83 100644
  #include "RotationVectorSensor.h"
  #include "SensorFusion.h"
  #include "SensorService.h"
-@@ -80,6 +81,8 @@ void SensorService::onFirstRef()
-         if (count > 0) {
-             ssize_t orientationIndex = -1;
-             bool hasGyro = false;
-+            bool hasMag = false;
-+            bool hasAccel = false;
-             uint32_t virtualSensorsNeeds =
-                     (1<<SENSOR_TYPE_GRAVITY) |
-                     (1<<SENSOR_TYPE_LINEAR_ACCELERATION) |
-@@ -96,6 +99,12 @@ void SensorService::onFirstRef()
-                     case SENSOR_TYPE_GYROSCOPE_UNCALIBRATED:
-                         hasGyro = true;
-                         break;
-+                    case SENSOR_TYPE_ACCELEROMETER:
-+                        hasAccel = true;
-+                        break;
-+                    case SENSOR_TYPE_MAGNETIC_FIELD:
-+                        hasMag = true;
-+                        break;
-                     case SENSOR_TYPE_GRAVITY:
-                     case SENSOR_TYPE_LINEAR_ACCELERATION:
-                     case SENSOR_TYPE_ROTATION_VECTOR:
-@@ -104,6 +113,14 @@ void SensorService::onFirstRef()
+@@ -112,6 +113,14 @@ void SensorService::onFirstRef()
                  }
              }
  
-+            if (hasAccel && hasMag && !hasGyro) {
++            if (hasAccelerometer && hasMagnetometer && !hasGyro) {
 +                // CTS test defines device has to support orientation sensor
 +                // if accelerometer sensor and magnetic sensor are available.
 +                // However framework does not provide orientation sensor if
@@ -301,19 +279,6 @@ index b1ed763..9410d83 100644
              // it's safe to instantiate the SensorFusion object here
              // (it wants to be instantiated after h/w sensors have been
              // registered)
-@@ -137,7 +154,11 @@ void SensorService::onFirstRef()
-                 if (virtualSensorsNeeds & (1<<SENSOR_TYPE_ROTATION_VECTOR)) {
-                     // if we are doing our own rotation-vector, also add
-                     // the orientation sensor and remove the HAL provided one.
--                    mUserSensorList.replaceAt(aSensor, orientationIndex);
-+                    // add orientation sensor if there is not one
-+                    if (orientationIndex < 0)
-+                        mUserSensorList.add(aSensor);
-+                    else
-+                        mUserSensorList.replaceAt(aSensor, orientationIndex);
-                 }
- 
-                 // virtual debugging sensors are not added to mUserSensorList
 diff --git a/services/sensorservice/VirtualOrientationSensor.cpp b/services/sensorservice/VirtualOrientationSensor.cpp
 index e69de29..eccf3ff 100644
 --- a/services/sensorservice/VirtualOrientationSensor.cpp
@@ -623,7 +588,7 @@ index e69de29..8eec99d 100644
 +
 +#endif // ANDROID_VIRTUALORIENTATION_SENSOR_H
 diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
-index e7c4716..bf76388 100644
+index e7c4716..0819723 100644
 --- a/services/surfaceflinger/SurfaceFlinger.cpp
 +++ b/services/surfaceflinger/SurfaceFlinger.cpp
 @@ -466,12 +466,46 @@ status_t SurfaceFlinger::selectEGLConfig(EGLDisplay display, EGLint nativeVisual
@@ -686,7 +651,39 @@ index e7c4716..bf76388 100644
          err = selectEGLConfig(mEGLDisplay, mHwc->getVisualID(),
                  EGL_OPENGL_ES_BIT, &mEGLConfig);
      }
-@@ -3190,7 +3225,7 @@ class GraphicProducerWrapper : public BBinder, public MessageHandler {
+@@ -1162,6 +1197,7 @@ void SurfaceFlinger::setUpHWComposer() {
+             sp<const DisplayDevice> hw(mDisplays[dpy]);
+             const int32_t id = hw->getHwcDisplayId();
+             if (id >= 0) {
++#ifdef QCOM_HARDWARE
+                 // Get the layers in the current drawying state
+                 const LayerVector& layers(mDrawingState.layersSortedByZ);
+                 bool freezeSurfacePresent = false;
+@@ -1181,6 +1217,7 @@ void SurfaceFlinger::setUpHWComposer() {
+                         }
+                     }
+                 }
++#endif
+ 
+                 const Vector< sp<Layer> >& currentLayers(
+                     hw->getVisibleLayersSortedByZ());
+@@ -1194,6 +1231,7 @@ void SurfaceFlinger::setUpHWComposer() {
+                      */
+                     const sp<Layer>& layer(currentLayers[i]);
+                     layer->setPerFrameData(hw, *cur);
++#ifdef QCOM_HARDWARE
+                     if(freezeSurfacePresent) {
+                         // if freezeSurfacePresent, set ANIMATING flag
+                         cur->setAnimating(true);
+@@ -1218,6 +1256,7 @@ void SurfaceFlinger::setUpHWComposer() {
+                             lastSurfaceViewLayer = layer;
+                         }
+                     }
++#endif
+                 }
+             }
+         }
+@@ -3190,7 +3229,7 @@ class GraphicProducerWrapper : public BBinder, public MessageHandler {
              looper->sendMessage(this, Message(MSG_API_CALL));
              barrier.wait();
          }
@@ -695,7 +692,7 @@ index e7c4716..bf76388 100644
      }
  
      /*
-@@ -3200,7 +3235,8 @@ class GraphicProducerWrapper : public BBinder, public MessageHandler {
+@@ -3200,7 +3239,8 @@ class GraphicProducerWrapper : public BBinder, public MessageHandler {
      virtual void handleMessage(const Message& message) {
          android_atomic_release_load(&memoryBarrier);
          if (message.what == MSG_API_CALL) {

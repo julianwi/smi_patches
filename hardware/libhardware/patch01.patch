@@ -1,8 +1,8 @@
 diff --git a/include/hardware/vibrator.h b/include/hardware/vibrator.h
-index e69de29..ff12219 100644
+index e69de29..d18aa72 100644
 --- a/include/hardware/vibrator.h
 +++ b/include/hardware/vibrator.h
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,70 @@
 +/*
 + * Copyright (C) 2008 The Android Open Source Project
 + *
@@ -55,11 +55,11 @@ index e69de29..ff12219 100644
 +    /**
 +     * Turn on vibrator
 +     *
-+     * @param timeout_ms number of milliseconds to vibrate
++     * @param duration_ms number of milliseconds to vibrate
 +     *
 +     * @return 0 if successful, -1 if error
 +     */
-+    int (*vibrator_on)(int timeout_ms);
++    int (*vibrator_on)(int duration_ms);
 +
 +    /**
 +     * Turn off vibrator
@@ -67,13 +67,6 @@ index e69de29..ff12219 100644
 +     * @return 0 if successful, -1 if error
 +     */
 +    int (*vibrator_off)();
-+
-+    /**
-+     * Return minimum timeout for short vibrations
-+     *
-+     * @return timeout
-+     */
-+    long (*get_vibrator_min_timeout)();
 +} vibrator_module_t;
 +
 +

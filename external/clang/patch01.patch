@@ -10,15 +10,3 @@ index 064c54b..f5ad131 100644
      setFeatureEnabled(Features, "ssse3", true);
      break;
    case CK_Corei7:
-diff --git a/lib/Driver/Tools.cpp b/lib/Driver/Tools.cpp
-index 28ddaea..7ab6ffd 100644
---- a/lib/Driver/Tools.cpp
-+++ b/lib/Driver/Tools.cpp
-@@ -4370,6 +4370,7 @@ llvm::Triple::ArchType darwin::getArchTypeForDarwinArchName(StringRef Str) {
-     .Case("nvptx64", llvm::Triple::nvptx64)
-     .Case("amdil", llvm::Triple::amdil)
-     .Case("spir", llvm::Triple::spir)
-+    .Case("usc", llvm::Triple::usc)
-     .Default(llvm::Triple::UnknownArch);
- }
- 
