@@ -108,9 +108,6 @@ index 5386cdd..93f3cf3 100755
      return err;
  }
  /********************
-     ALOGV("encoder %s camera source meta-data mode",
-             *supportsCameraSourceMetaDataMode ? "supports" : "DOES NOT SUPPORT");
- 
 diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
 index 3ff1a63..e124bdb 100755
 --- a/media/libstagefright/ACodec.cpp
@@ -132,7 +129,7 @@ index 3ff1a63..e124bdb 100755
      CHECK_EQ((status_t)OK, mCodec->initNativeWindow());
  
 diff --git a/media/libstagefright/Android.mk b/media/libstagefright/Android.mk
-index 5e0ed1d..c91e43a 100644
+index 5e0ed1d..46d2305 100644
 --- a/media/libstagefright/Android.mk
 +++ b/media/libstagefright/Android.mk
 @@ -79,6 +79,7 @@ LOCAL_SRC_FILES:=                         \
@@ -158,10 +155,10 @@ index 14b04f9..8b6528d 100755
      }
  
 diff --git a/media/libstagefright/MPEG4Extractor.cpp b/media/libstagefright/MPEG4Extractor.cpp
-index d1b4381..22e9d3f 100644
+index d1b4381..fec245b 100644
 --- a/media/libstagefright/MPEG4Extractor.cpp
 +++ b/media/libstagefright/MPEG4Extractor.cpp
-@@ -2444,11 +2452,15 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
+@@ -2444,11 +2444,15 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
          sampleRate = br.getBits(24);
          numChannels = br.getBits(4);
      } else {
@@ -179,7 +176,7 @@ index d1b4381..22e9d3f 100644
  
          sampleRate = kSamplingRate[freqIndex];
      }
-@@ -3703,6 +3715,7 @@ status_t MPEG4Source::fragmentedRead(
+@@ -3703,6 +3707,7 @@ status_t MPEG4Source::fragmentedRead(
              mBuffer->set_range(0, dstOffset);
          }
  
@@ -187,7 +184,7 @@ index d1b4381..22e9d3f 100644
          mBuffer->meta_data()->setInt64(
                  kKeyTime, ((int64_t)cts * 1000000) / mTimescale);
  
-@@ -3755,7 +3768,8 @@ static bool LegacySniffMPEG4(
+@@ -3755,7 +3760,8 @@ static bool LegacySniffMPEG4(
          || !memcmp(header, "ftyp3ge6", 8) || !memcmp(header, "ftyp3gg6", 8)
          || !memcmp(header, "ftypisom", 8) || !memcmp(header, "ftypM4V ", 8)
          || !memcmp(header, "ftypM4A ", 8) || !memcmp(header, "ftypf4v ", 8)
@@ -227,10 +224,10 @@ index 569e8a7..50ed117 100644
  
      if (offset >= mCacheOffset
 diff --git a/media/libstagefright/OMXCodec.cpp b/media/libstagefright/OMXCodec.cpp
-index 269028a..2542b4d 100644
+index 269028a..02d2c3c 100644
 --- a/media/libstagefright/OMXCodec.cpp
 +++ b/media/libstagefright/OMXCodec.cpp
-@@ -391,7 +447,7 @@ uint32_t OMXCodec::getComponentQuirks(
+@@ -391,7 +391,7 @@ uint32_t OMXCodec::getComponentQuirks(
          quirks |= kOutputBuffersAreUnreadable;
      }
      if (list->codecHasQuirk(
@@ -239,7 +236,7 @@ index 269028a..2542b4d 100644
          quirks |= kRequiresLoadedToIdleAfterAllocation;
      }
      if (list->codecHasQuirk(
-@@ -577,6 +645,9 @@ sp<MediaSource> OMXCodec::Create(
+@@ -577,6 +577,9 @@ sp<MediaSource> OMXCodec::Create(
  
              err = codec->configureCodec(meta);
              if (err == OK) {
@@ -249,7 +246,7 @@ index 269028a..2542b4d 100644
                  return codec;
              }
  
-@@ -1205,7 +1276,7 @@ status_t OMXCodec::isColorFormatSupported(
+@@ -1205,7 +1208,7 @@ status_t OMXCodec::isColorFormatSupported(
          // the incremented index (bug 2897413).
          CHECK_EQ(index, portFormat.nIndex);
          if (portFormat.eColorFormat == colorFormat) {
@@ -258,7 +255,7 @@ index 269028a..2542b4d 100644
              return OK;  // colorFormat is supported!
          }
          ++index;
-@@ -1474,7 +1545,7 @@ status_t OMXCodec::getVideoProfileLevel(
+@@ -1474,7 +1477,7 @@ status_t OMXCodec::getVideoProfileLevel(
  
      CODEC_LOGE("Target profile (%d) and level (%d) is not supported",
              profile, level);
@@ -267,7 +264,7 @@ index 269028a..2542b4d 100644
  }
  
  status_t OMXCodec::setupH263EncoderParameters(const sp<MetaData>& meta) {
-@@ -2508,15 +2579,9 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
+@@ -2508,15 +2511,9 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
          cancelEnd = def.nBufferCountActual;
      }
  
@@ -286,7 +283,7 @@ index 269028a..2542b4d 100644
      }
  
      return err;
-@@ -3069,6 +3134,16 @@ void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
+@@ -3069,6 +3066,16 @@ void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
          {
              CODEC_LOGE("ERROR(0x%08lx, %ld)", data1, data2);
  
@@ -303,7 +300,7 @@ index 269028a..2542b4d 100644
              setState(ERROR);
              break;
          }
-@@ -3083,6 +3158,7 @@ void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
+@@ -3083,6 +3090,7 @@ void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
                  // when the OMX_EventPortSettingsChanged is not meant for reallocating
                  // the output buffers.
                  if (data1 == kPortIndexOutput) {
@@ -311,7 +308,7 @@ index 269028a..2542b4d 100644
                      CHECK(mFilledBuffers.empty());
                  }
                  onPortSettingsChanged(data1);
-@@ -3442,7 +3518,7 @@ status_t OMXCodec::freeBuffersOnPort(
+@@ -3442,7 +3450,7 @@ status_t OMXCodec::freeBuffersOnPort(
      for (size_t i = buffers->size(); i-- > 0;) {
          BufferInfo *info = &buffers->editItemAt(i);
  
@@ -320,7 +317,7 @@ index 269028a..2542b4d 100644
              continue;
          }
  
-@@ -3693,7 +3769,8 @@ bool OMXCodec::drainInputBuffer(BufferInfo *info) {
+@@ -3693,7 +3701,8 @@ bool OMXCodec::drainInputBuffer(BufferInfo *info) {
  
          size_t size = specific->mSize;
  
@@ -330,7 +327,7 @@ index 269028a..2542b4d 100644
                  && !(mQuirks & kWantsNALFragments)) {
              static const uint8_t kNALStartCode[4] =
                      { 0x00, 0x00, 0x00, 0x01 };
-@@ -5363,6 +5440,12 @@ void OMXCodec::signalBufferReturned(MediaBuffer *buffer) {
+@@ -5363,6 +5372,12 @@ void OMXCodec::signalBufferReturned(MediaBuffer *buffer) {
          BufferInfo *info = &buffers->editItemAt(i);
  
          if (info->mMediaBuffer == buffer) {
@@ -650,6 +647,46 @@ index e69de29..42d0d96 100644
 +}  // namespace android
 +
 +#endif  // THREADED_SOURCE_H_
+diff --git a/media/mediaserver/Android.mk b/media/mediaserver/Android.mk
+index 4f72759..25cdaee 100644
+--- a/media/mediaserver/Android.mk
++++ b/media/mediaserver/Android.mk
+@@ -25,6 +25,11 @@ LOCAL_SHARED_LIBRARIES := \
+ 	liblog \
+ 	libbinder
+ 
++ifeq ($(INTEL_VIDEO_XPROC_SHARING),true)
++LOCAL_SHARED_LIBRARIES += libintelmetadatabuffer
++LOCAL_C_INCLUDES += $(TARGET_OUT_HEADERS)/libmix_videoencoder
++endif
++
+ LOCAL_STATIC_LIBRARIES := \
+ 	libregistermsext
+ 
+diff --git a/media/mediaserver/main_mediaserver.cpp b/media/mediaserver/main_mediaserver.cpp
+index 4659996..4c145b5 100644
+--- a/media/mediaserver/main_mediaserver.cpp
++++ b/media/mediaserver/main_mediaserver.cpp
+@@ -37,6 +37,9 @@
+ #ifdef AUDIO_LISTEN_ENABLED
+ #include "ListenService.h"
+ #endif
++#ifdef INTEL_VIDEO_XPROC_SHARING
++#include "IntelMetadataBuffer.h"
++#endif
+ 
+ using namespace android;
+ 
+@@ -144,6 +147,9 @@ int main(int argc, char** argv)
+         ListenService::instantiate();
+ #endif
+         AudioPolicyService::instantiate();
++#ifdef INTEL_VIDEO_XPROC_SHARING
++        IntelBufferSharingService::instantiate();
++#endif
+         registerExtensions();
+         ProcessState::self()->startThreadPool();
+         IPCThreadState::self()->joinThreadPool();
 diff --git a/services/camera/libcameraservice/CameraService.cpp b/services/camera/libcameraservice/CameraService.cpp
 index 994ce26..beb6126 100644
 --- a/services/camera/libcameraservice/CameraService.cpp
