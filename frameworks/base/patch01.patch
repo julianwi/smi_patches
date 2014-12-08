@@ -113,7 +113,7 @@ index bc51a60..2d71870 100644
      public static final String MANUFACTURER = getString("ro.product.manufacturer");
  
 diff --git a/core/java/com/android/internal/content/NativeLibraryHelper.java b/core/java/com/android/internal/content/NativeLibraryHelper.java
-index 6d65782..9b9b25a 100644
+index 6d65782..20ddad8 100644
 --- a/core/java/com/android/internal/content/NativeLibraryHelper.java
 +++ b/core/java/com/android/internal/content/NativeLibraryHelper.java
 @@ -16,7 +16,9 @@
@@ -126,21 +126,13 @@ index 6d65782..9b9b25a 100644
  import android.util.Slog;
  
  import java.io.File;
-@@ -30,6 +32,7 @@ public class NativeLibraryHelper {
-     private static final String TAG = "NativeHelper";
- 
-     private static final boolean DEBUG_NATIVE = false;
-+    private static final boolean ENABLE_HOUDINI = true;
- 
-     private static native long nativeSumNativeBinaries(String file, String cpuAbi, String cpuAbi2);
- 
-@@ -42,9 +45,45 @@ public class NativeLibraryHelper {
+@@ -42,9 +44,46 @@ public class NativeLibraryHelper {
      public static long sumNativeBinariesLI(File apkFile) {
          final String cpuAbi = Build.CPU_ABI;
          final String cpuAbi2 = Build.CPU_ABI2;
 -        return nativeSumNativeBinaries(apkFile.getPath(), cpuAbi, cpuAbi2);
-+
-+        if (ENABLE_HOUDINI) {
++        String abi2 = SystemProperties.get("ro.product.cpu.abi2");
++        if (abi2.length() != 0) {
 +            long result = nativeSumNativeBinaries(apkFile.getPath(), cpuAbi, cpuAbi2);
 +            if (result == 0) {
 +                final String abiUpgrade = SystemProperties.get("ro.product.cpu.upgradeabi", "armeabi");
@@ -150,8 +142,8 @@ index 6d65782..9b9b25a 100644
 +        } else {
 +            return nativeSumNativeBinaries(apkFile.getPath(), cpuAbi, cpuAbi2);
 +        }
-     }
- 
++    }
++
 +    private static native int nativeListNativeBinaries(String file, String cpuAbi, String cpuAbi2);
 +
 +    /**
@@ -165,7 +157,8 @@ index 6d65782..9b9b25a 100644
 +        final String cpuAbi = Build.CPU_ABI;
 +        final String cpuAbi2 = Build.CPU_ABI2;
 +
-+        if (ENABLE_HOUDINI) {
++        String abi2 = SystemProperties.get("ro.product.cpu.abi2");
++        if (abi2.length() != 0) {
 +            int result = nativeListNativeBinaries(apkFile.getPath(), cpuAbi, cpuAbi2);
 +            if ((result != PackageManager.INSTALL_SUCCEEDED) && (result != PackageManager.INSTALL_ABI2_SUCCEEDED)) {
 +                final String abiUpgrade = SystemProperties.get("ro.product.cpu.upgradeabi", "armeabi");
@@ -175,13 +168,13 @@ index 6d65782..9b9b25a 100644
 +        } else {
 +            return PackageManager.INSTALL_SUCCEEDED;
 +        }
-+    }
-+
+     }
+ 
 +
      private native static int nativeCopyNativeBinaries(String filePath, String sharedLibraryPath,
              String cpuAbi, String cpuAbi2);
  
-@@ -53,14 +92,23 @@ public class NativeLibraryHelper {
+@@ -53,14 +92,24 @@ public class NativeLibraryHelper {
       *
       * @param apkFile APK file to scan for native libraries
       * @param sharedLibraryDir directory for libraries to be copied to
@@ -196,7 +189,8 @@ index 6d65782..9b9b25a 100644
 -        return nativeCopyNativeBinaries(apkFile.getPath(), sharedLibraryDir.getPath(), cpuAbi,
 -                cpuAbi2);
 +
-+        if (ENABLE_HOUDINI) {
++        String abi2 = SystemProperties.get("ro.product.cpu.abi2");
++        if (abi2.length() != 0) {
 +            int result = nativeCopyNativeBinaries(apkFile.getPath(), sharedLibraryDir.getPath(), cpuAbi, cpuAbi2);
 +            if ((result != PackageManager.INSTALL_SUCCEEDED) && (result != PackageManager.INSTALL_ABI2_SUCCEEDED)) {
 +                final String abiUpgrade = SystemProperties.get("ro.product.cpu.upgradeabi", "armeabi");
@@ -587,18 +581,10 @@ index e69de29..e540b16 100644
 +    boolean doCheck(String... params);
 +}
 diff --git a/services/java/com/android/server/pm/PackageManagerService.java b/services/java/com/android/server/pm/PackageManagerService.java
-index b7dd94d..68b71e2 100644
+index b7dd94d..31149de 100644
 --- a/services/java/com/android/server/pm/PackageManagerService.java
 +++ b/services/java/com/android/server/pm/PackageManagerService.java
-@@ -218,6 +218,7 @@ public class PackageManagerService extends IPackageManager.Stub {
-     private static final boolean DEBUG_PACKAGE_SCANNING = false;
-     private static final boolean DEBUG_APP_DIR_OBSERVER = false;
-     private static final boolean DEBUG_VERIFY = false;
-+    private static final boolean ENABLE_HOUDINI = true;
- 
-     private static final int RADIO_UID = Process.PHONE_UID;
-     private static final int LOG_UID = Process.LOG_UID;
-@@ -594,6 +595,11 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -594,6 +594,11 @@ public class PackageManagerService extends IPackageManager.Stub {
      // or internal storage.
      private IMediaContainerService mContainerService = null;
  
@@ -610,7 +596,7 @@ index b7dd94d..68b71e2 100644
      static final int SEND_PENDING_BROADCAST = 1;
      static final int MCS_BOUND = 3;
      static final int END_COPY = 4;
-@@ -4343,6 +4349,53 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -4343,6 +4348,53 @@ public class PackageManagerService extends IPackageManager.Stub {
          return new File(mUserAppDataDir.getAbsolutePath() + File.separator + userId);
      }
  
@@ -664,12 +650,12 @@ index b7dd94d..68b71e2 100644
      private File getDataPathForPackage(String packageName, int userId) {
          /*
           * Until we fully support multiple users, return the directory we
-@@ -4691,6 +4744,25 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -4691,6 +4743,25 @@ public class PackageManagerService extends IPackageManager.Stub {
                  Slog.w(TAG, "Package " + pkg.packageName
                          + " was transferred to another, but its .apk remains");
              }
-+
-+            if (ENABLE_HOUDINI) {
++            String abi2 = SystemProperties.get("ro.product.cpu.abi2");
++            if (abi2.length() != 0) {
 +                PackageSetting p = mSettings.mPackages.get(pkg.packageName);
 +                if ((p != null) && (!p.codePath.equals(destCodeFile))){
 +
@@ -690,7 +676,7 @@ index b7dd94d..68b71e2 100644
              
              // Just create the setting, don't add it yet. For already existing packages
              // the PkgSetting exists already and doesn't have to be created.
-@@ -5005,10 +5077,21 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -5005,10 +5076,22 @@ public class PackageManagerService extends IPackageManager.Stub {
                          }
  
                          try {
@@ -700,7 +686,8 @@ index b7dd94d..68b71e2 100644
 -                                return null;
 +                            int copyRet = copyNativeLibrariesForInternalApp(scanFile,
 +                                    nativeLibraryDir);
-+                            if (ENABLE_HOUDINI) {
++                            String abi2 = SystemProperties.get("ro.product.cpu.abi2");
++                            if (abi2.length() != 0) {
 +                                if (copyRet != PackageManager.INSTALL_SUCCEEDED
 +                                        && copyRet != PackageManager.INSTALL_ABI2_SUCCEEDED) {
 +                                    Slog.e(TAG, "Unable to copy native libraries");
@@ -716,15 +703,16 @@ index b7dd94d..68b71e2 100644
                              }
                          } catch (IOException e) {
                              Slog.e(TAG, "Unable to copy native libraries", e);
-@@ -5017,6 +5100,35 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -5017,6 +5100,36 @@ public class PackageManagerService extends IPackageManager.Stub {
                          }
                      }
  
 +                    // if the pkg doesn't go through copyNativeLibrariesForInternalApp path
 +                    // Need check the apk whether contains ABI2 library.
 +                    int result = NativeLibraryHelper.listNativeBinariesLI(scanFile);
++                    String abi2 = SystemProperties.get("ro.product.cpu.abi2");
 +                    if (result == PackageManager.INSTALL_SUCCEEDED) {
-+                        if (ENABLE_HOUDINI && mPackagesMatchABI2.containsKey(pkg.applicationInfo.uid)) {
++                        if (abi2.length() != 0 && mPackagesMatchABI2.containsKey(pkg.applicationInfo.uid)) {
 +                            Slog.i(TAG, "Replace package with primary ABI Library");
 +                            mPackagesMatchABI2.remove(pkg.applicationInfo.uid);
 +                            writeAppwithABI2();
@@ -733,7 +721,7 @@ index b7dd94d..68b71e2 100644
 +                                writeAppwithABI2Neon();
 +                            }
 +                        }
-+                    } else if (ENABLE_HOUDINI && result == PackageManager.INSTALL_ABI2_SUCCEEDED && !mPackagesMatchABI2.containsKey(pkg.applicationInfo.uid)) {
++                    } else if (abi2.length() != 0 && result == PackageManager.INSTALL_ABI2_SUCCEEDED && !mPackagesMatchABI2.containsKey(pkg.applicationInfo.uid)) {
 +                        ICheckExt check = new CheckExt();
 +                        if (check.doCheck(pkgName, new String("filter"))) {
 +                            Slog.i(TAG, "Package with second ABI is in black list: " + pkg.applicationInfo.uid + pkg.applicationInfo.processName);
@@ -752,13 +740,14 @@ index b7dd94d..68b71e2 100644
                      if (DEBUG_INSTALL) Slog.i(TAG, "Linking native library dir for " + path);
                      final int[] userIds = sUserManager.getUserIds();
                      synchronized (mInstallLock) {
-@@ -6150,6 +6262,18 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -6150,6 +6263,19 @@ public class PackageManagerService extends IPackageManager.Stub {
              final PackageParser.Package pkg = ps.pkg;
              if (pkg != null) {
                  cleanPackageDataStructuresLILPw(pkg, chatty);
 +
 +                Integer pkgUidInt = new Integer(pkg.applicationInfo.uid);
-+                if (ENABLE_HOUDINI && mPackagesMatchABI2.containsKey(pkgUidInt)) {
++                String abi2 = SystemProperties.get("ro.product.cpu.abi2");
++                if (abi2.length() != 0 && mPackagesMatchABI2.containsKey(pkgUidInt)) {
 +                    Slog.i(TAG, "Uninstall package with second ABI Library");
 +                    mPackagesMatchABI2.remove(pkgUidInt);
 +                    writeAppwithABI2();
@@ -771,12 +760,12 @@ index b7dd94d..68b71e2 100644
              }
          }
      }
-@@ -6167,6 +6291,17 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -6167,6 +6293,17 @@ public class PackageManagerService extends IPackageManager.Stub {
                  mAppDirs.remove(pkg.mPath);
              }
              cleanPackageDataStructuresLILPw(pkg, chatty);
-+
-+            if (ENABLE_HOUDINI && mPackagesMatchABI2.containsKey(new Integer(pkg.applicationInfo.uid))) {
++            String abi2 = SystemProperties.get("ro.product.cpu.abi2");
++            if (abi2.length() != 0 && mPackagesMatchABI2.containsKey(new Integer(pkg.applicationInfo.uid))) {
 +                Slog.i(TAG, "Uninstall package with second ABI Library");
 +                mPackagesMatchABI2.remove(new Integer(pkg.applicationInfo.uid));
 +                writeAppwithABI2();
@@ -789,13 +778,20 @@ index b7dd94d..68b71e2 100644
          }
      }
  
-@@ -9048,8 +9183,15 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -9042,14 +9179,22 @@ public class PackageManagerService extends IPackageManager.Stub {
+ 
+             final File nativeLibraryFile = new File(getNativeLibraryPath());
+             Slog.i(TAG, "Copying native libraries to " + nativeLibraryFile.getPath());
++            String abi2 = SystemProperties.get("ro.product.cpu.abi2");
+             if (nativeLibraryFile.exists()) {
+                 NativeLibraryHelper.removeNativeBinariesFromDirLI(nativeLibraryFile);
+                 nativeLibraryFile.delete();
              }
              try {
                  int copyRet = copyNativeLibrariesForInternalApp(codeFile, nativeLibraryFile);
 -                if (copyRet != PackageManager.INSTALL_SUCCEEDED) {
 -                    return copyRet;
-+                if (ENABLE_HOUDINI) {
++                if (abi2.length() != 0) {
 +                    if (copyRet != PackageManager.INSTALL_SUCCEEDED
 +                            && copyRet != PackageManager.INSTALL_ABI2_SUCCEEDED) {
 +                        return copyRet;
