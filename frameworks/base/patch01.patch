@@ -477,6 +477,18 @@ index 44452f0..9b271a4 100644
  int register_com_android_internal_os_ZygoteInit(JNIEnv* env)
  {
      return AndroidRuntime::registerNativeMethods(env,
+diff --git a/data/etc/platform.xml b/data/etc/platform.xml
+index b3153a9..ea33585 100644
+--- a/data/etc/platform.xml
++++ b/data/etc/platform.xml
+@@ -69,6 +69,7 @@
+     <permission name="android.permission.WRITE_EXTERNAL_STORAGE" >
+         <group gid="sdcard_r" />
+         <group gid="sdcard_rw" />
++        <group gid="media_rw" />
+     </permission>
+ 
+     <permission name="android.permission.ACCESS_ALL_EXTERNAL_STORAGE" >
 diff --git a/services/java/com/android/server/net/NetworkStatsService.java b/services/java/com/android/server/net/NetworkStatsService.java
 index a86f8ce..1d46c82 100644
 --- a/services/java/com/android/server/net/NetworkStatsService.java
