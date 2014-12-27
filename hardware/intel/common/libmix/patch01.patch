@@ -16,7 +16,7 @@ index e69de29..f21077d 120000
 --- a/videodecoder/securevideo/sc1
 +++ b/videodecoder/securevideo/sc1
 @@ -0,0 +1 @@
-+../clovertrail
++../videodecoder/clovertrail
 \ No newline at end of file
 diff --git a/videoencoder/Android.mk b/videoencoder/Android.mk
 index 8294b9d..6538745 100644
