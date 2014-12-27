@@ -1,0 +1,172 @@
+diff --git a/videocodec/Android.mk b/videocodec/Android.mk
+index 0676fcb..0220c72 100644
+--- a/videocodec/Android.mk
++++ b/videocodec/Android.mk
+@@ -40,9 +40,10 @@ LOCAL_SRC_FILES := \
+     OMXComponentCodecBase.cpp\
+     OMXVideoDecoderBase.cpp\
+     OMXVideoDecoderAVC.cpp
+-LOCAL_CFLAGS += -Werror
++#LOCAL_CFLAGS += -Werror
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := libOMXVideoDecoderAVC
++
+ ifeq ($(TARGET_BOARD_PLATFORM),clovertrail)
+ LOCAL_CFLAGS += -DVED_TILING
+ endif
+@@ -100,7 +101,7 @@ LOCAL_SRC_FILES := \
+     OMXComponentCodecBase.cpp\
+     OMXVideoDecoderBase.cpp\
+     OMXVideoDecoderVP8.cpp
+-LOCAL_CFLAGS += -Werror
++#LOCAL_CFLAGS += -Werror
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := libOMXVideoDecoderVP8
+ 
+@@ -172,7 +173,7 @@ LOCAL_SRC_FILES := \
+     OMXVideoDecoderBase.cpp\
+     OMXVideoDecoderVP9HWR.cpp
+ 
+-LOCAL_CFLAGS += -Werror
++#LOCAL_CFLAGS += -Werror
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := libOMXVideoDecoderVP9HWR
+ 
+@@ -219,7 +220,7 @@ LOCAL_SRC_FILES := \
+     OMXVideoDecoderBase.cpp\
+     OMXVideoDecoderVP9Hybrid.cpp
+ 
+-LOCAL_CFLAGS += -Werror
++#LOCAL_CFLAGS += -Werror
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := libOMXVideoDecoderVP9Hybrid
+ 
+@@ -272,9 +273,10 @@ LOCAL_SRC_FILES := \
+     OMXComponentCodecBase.cpp\
+     OMXVideoDecoderBase.cpp\
+     OMXVideoDecoderMPEG4.cpp
+-LOCAL_CFLAGS += -Werror
++#LOCAL_CFLAGS += -Werror
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := libOMXVideoDecoderMPEG4
++
+ ifeq ($(TARGET_BOARD_PLATFORM),clovertrail)
+ LOCAL_CFLAGS += -DVED_TILING
+ endif
+@@ -327,9 +329,10 @@ LOCAL_SRC_FILES := \
+     OMXComponentCodecBase.cpp\
+     OMXVideoDecoderBase.cpp\
+     OMXVideoDecoderH263.cpp
+-LOCAL_CFLAGS += -Werror
++#LOCAL_CFLAGS += -Werror
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := libOMXVideoDecoderH263
++
+ ifeq ($(TARGET_BOARD_PLATFORM),clovertrail)
+ LOCAL_CFLAGS += -DVED_TILING
+ endif
+@@ -382,9 +385,11 @@ LOCAL_SRC_FILES := \
+     OMXComponentCodecBase.cpp\
+     OMXVideoDecoderBase.cpp\
+     OMXVideoDecoderWMV.cpp
+-LOCAL_CFLAGS += -Werror
++#LOCAL_CFLAGS += -Werror
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := libOMXVideoDecoderWMV
++
++
+ ifeq ($(TARGET_BOARD_PLATFORM),clovertrail)
+ LOCAL_CFLAGS += -DVED_TILING
+ endif
+@@ -446,7 +451,7 @@ LOCAL_CFLAGS += -DVED_TILING
+ LOCAL_SHARED_LIBRARIES += libdl
+ endif
+ 
+-LOCAL_CFLAGS += -Werror
++#LOCAL_CFLAGS += -Werror
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := libOMXVideoDecoderAVCSecure
+ 
+@@ -487,7 +492,7 @@ LOCAL_SRC_FILES := \
+     OMXVideoEncoderAVC.cpp
+ 
+ LOCAL_CFLAGS += $(LOCAL_C_FLAGS)
+-LOCAL_CFLAGS += -Werror
++#LOCAL_CFLAGS += -Werror
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := libOMXVideoEncoderAVC
+ include $(BUILD_SHARED_LIBRARY)
+@@ -529,7 +534,7 @@ LOCAL_CFLAGS += $(LOCAL_C_FLAGS)
+ ifeq ($(SW_MPEG4_ENCODER),true)
+     LOCAL_CFLAGS += -DSYNC_MODE
+ endif
+-LOCAL_CFLAGS += -Werror
++#LOCAL_CFLAGS += -Werror
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := libOMXVideoEncoderH263
+ include $(BUILD_SHARED_LIBRARY)
+@@ -568,7 +573,7 @@ LOCAL_SRC_FILES := \
+ 
+ LOCAL_CFLAGS += $(LOCAL_C_FLAGS)
+ 
+-LOCAL_CFLAGS += -Werror
++#LOCAL_CFLAGS += -Werror
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := libOMXVideoEncoderMPEG4
+ include $(BUILD_SHARED_LIBRARY)
+@@ -600,9 +605,10 @@ LOCAL_SRC_FILES := \
+     OMXVideoDecoderBase.cpp\
+     OMXVideoDecoderPAVC.cpp
+ 
+-LOCAL_CFLAGS += -Werror
++#LOCAL_CFLAGS += -Werror
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := libOMXVideoDecoderPAVC
++
+ ifeq ($(TARGET_BOARD_PLATFORM),clovertrail)
+ LOCAL_CFLAGS += -DVED_TILING
+ endif
+@@ -650,7 +656,7 @@ LOCAL_SRC_FILES := \
+     OMXVideoEncoderVP8.cpp
+ 
+ LOCAL_CFLAGS += $(LOCAL_C_FLAGS)
+-LOCAL_CFLAGS += -Werror
++#LOCAL_CFLAGS += -Werror
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := libOMXVideoEncoderVP8
+ include $(BUILD_SHARED_LIBRARY)
+diff --git a/videocodec/OMXVideoDecoderBase.h b/videocodec/OMXVideoDecoderBase.h
+index 4f836a4..556bc23 100644
+--- a/videocodec/OMXVideoDecoderBase.h
++++ b/videocodec/OMXVideoDecoderBase.h
+@@ -27,7 +27,7 @@
+ #include "graphics.h"
+ #endif
+ 
+-static constexpr const char* VA_VED_RAW_MIME_TYPE = "video/x-raw-vaved";
++static const char* VA_VED_RAW_MIME_TYPE = "video/x-raw-vaved";
+ static const uint32_t VA_VED_COLOR_FORMAT = 0x20;
+ 
+ 
+diff --git a/videocodec/libvpx_internal/libvpx.mk b/videocodec/libvpx_internal/libvpx.mk
+index 5a95803..7df2470 100644
+--- a/videocodec/libvpx_internal/libvpx.mk
++++ b/videocodec/libvpx_internal/libvpx.mk
+@@ -50,7 +50,7 @@ LOCAL_CFLAGS += -Wno-unused-function
+ # in vp[89]_[cd]x_iface.c
+ LOCAL_CLANG_CFLAGS += -Wno-missing-field-initializers
+ 
+-LOCAL_CFLAGS += -Werror
++#LOCAL_CFLAGS += -Werror
+ LOCAL_MODULE := libvpx_internal
+ 
+ LOCAL_MODULE_CLASS := STATIC_LIBRARIES
+@@ -123,7 +123,7 @@ LOCAL_GENERATED_SOURCES += $(VPX_GEN)
+ 
+ ifeq ($(libvpx_target),x86)
+ libvpx_x86_asm_src_files := $(filter %.asm, $(libvpx_codec_srcs_unique))
+-libvpx_x86_yasm_dir := prebuilts/misc/$(HOST_OS)-$(HOST_PREBUILT_ARCH)/yasm
++libvpx_x86_yasm_dir := /usr/bin
+ 
+ X86_ASM_GEN := $(addprefix $(libvpx_intermediates)/, $(libvpx_x86_asm_src_files:%.asm=%.asm.o))
+ 
