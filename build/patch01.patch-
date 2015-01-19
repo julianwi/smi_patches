@@ -79,7 +79,7 @@ index 8ce874e..d2b74bc 100644
    ifeq ($(strip $(LOCAL_CLANG)),true)
      LOCAL_CC := $(CLANG)
 diff --git a/core/combo/TARGET_linux-x86.mk b/core/combo/TARGET_linux-x86.mk
-index d5772b1..40c1220 100644
+index d5772b1..18747bd 100644
 --- a/core/combo/TARGET_linux-x86.mk
 +++ b/core/combo/TARGET_linux-x86.mk
 @@ -16,6 +16,7 @@
@@ -136,14 +136,14 @@ index 256fe4e..a4b3f52 100644
  # Collect a list of the SDK versions that we could compile against
  # For use with the LOCAL_SDK_VERSION variable for include $(BUILD_PACKAGE)
 diff --git a/core/icc_config.mk b/core/icc_config.mk
-index e69de29..c98bf79 100644
+index e69de29..5c5c201 100644
 --- a/core/icc_config.mk
 +++ b/core/icc_config.mk
-@@ -0,0 +1,171 @@
+@@ -0,0 +1,172 @@
 +# Forces the following modules to be compiled with Intel* compiler independent of DEFAULT_COMPILER
 +ICC_MODULES     :=
 +# Forces the following modules to be compiled with GNU* compiler independent of DEFAULT_COMPILER
-+GCC_MODULES     := healthd static_busybox libbusybox busybox recovery_tune2fs recovery_mke2fs recovery_e2fsck # For CWM
++GCC_MODULES     := healthd busybox libbusybox static_busybox init # For Recovery
 +#GCC_MODULES     +=  libprotobuf-cpp-2.3.0-lite libjni_latinime_common_static aapt libart libldnhncr libstagefright_wfd # For full cyanogenmod, doesnt boot
 +# Modules that are compiled with -ipo if configured to be compiled with Intel compiler
 +ICC_IPO_MODULES := libc_common libc_nomalloc libcutils liblog
@@ -205,7 +205,7 @@ index e69de29..c98bf79 100644
 +  $(and $(strip $(call intel-target-use-icc,$1)),$(filter $(strip $1),$(ICC_FREESTANDING_MODULES)))
 +endef
 +
-+ifneq ($(call intel-target-need-intel-libraries),)
++ifneq ($(call intel-target-need-intel-libraries),) # libsvml
 +  ICC_COMPILER_LIBRARIES := libimf libintlc libsvml
 +  TARGET_DEFAULT_SYSTEM_SHARED_LIBRARIES := $(ICC_COMPILER_LIBRARIES) $(TARGET_DEFAULT_SYSTEM_SHARED_LIBRARIES)
 +  TARGET_AR            := $(TARGET_XIAR)
@@ -226,6 +226,7 @@ index e69de29..c98bf79 100644
 +TARGET_GLOBAL_ICC_CFLAGS += -fno-builtin-cos -fno-builtin-sin -fno-builtin-tan -finline-limit=300 -fomit-frame-pointer
 +TARGET_GLOBAL_ICC_CFLAGS += -restrict -Bsymbolic
 +TARGET_GLOBAL_ICC_CFLAGS += -diag-disable 144,556,279,803,2646,589,83,290,180,1875 #-diag-error 592,117,1101
++TARGET_GLOBAL_ICC_CFLAGS += -diag-disable 47 # CWM recovery
 +#TARGET_GLOBAL_ICC_CFLAGS += -diag-disable 2557,864,135,858,1292,13200,167,2102 # Cyanogenmod chromium_org 6, clatd 1, oatdump 1
 +TARGET_GLOBAL_ICC_CFLAGS += -g1
 +TARGET_GLOBAL_ICC_CFLAGS += -D__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4
@@ -278,7 +279,7 @@ index e69de29..c98bf79 100644
 +#Called from core/binary.mk
 +define do-icc-libs
 +  ifeq ($(LOCAL_FORCE_STATIC_EXECUTABLE),true)
-+    LOCAL_STATIC_LIBRARIES += libirc libimf libirng # For CWM recovery
++    LOCAL_STATIC_LIBRARIES += libirc libimf libirng # For recovery
 +  endif
 +  ifneq ($(filter libc,$(LOCAL_SYSTEM_SHARED_LIBRARIES)),)
 +    LOCAL_SYSTEM_SHARED_LIBRARIES += libirng
