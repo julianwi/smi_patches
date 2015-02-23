@@ -527,6 +527,18 @@ index b3153a9..ea33585 100644
      </permission>
  
      <permission name="android.permission.ACCESS_ALL_EXTERNAL_STORAGE" >
+diff --git a/packages/SystemUI/AndroidManifest.xml b/packages/SystemUI/AndroidManifest.xml
+index 3dff1e6..8895585 100644
+--- a/packages/SystemUI/AndroidManifest.xml
++++ b/packages/SystemUI/AndroidManifest.xml
+@@ -37,6 +37,7 @@
+     <uses-permission android:name="android.permission.MANAGE_NETWORK_POLICY" />
+     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+     <uses-permission android:name="com.android.phone.CHANGE_NETWORK_MODE" />
++    <uses-permission android:name="android.permission.CONNECTIVITY_INTERNAL" />
+ 
+     <!-- Physical hardware -->
+     <uses-permission android:name="android.permission.MANAGE_USB" />
 diff --git a/services/java/com/android/server/SystemServer.java b/services/java/com/android/server/SystemServer.java
 index 13db2c0..f118317 100644
 --- a/services/java/com/android/server/SystemServer.java
