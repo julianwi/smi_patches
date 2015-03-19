@@ -135,32 +135,10 @@ index 0676fcb..0220c72 100644
  LOCAL_MODULE_TAGS := optional
  LOCAL_MODULE := libOMXVideoEncoderVP8
  include $(BUILD_SHARED_LIBRARY)
-diff --git a/videocodec/OMXVideoDecoderBase.h b/videocodec/OMXVideoDecoderBase.h
-index 4f836a4..556bc23 100644
---- a/videocodec/OMXVideoDecoderBase.h
-+++ b/videocodec/OMXVideoDecoderBase.h
-@@ -27,7 +27,7 @@
- #include "graphics.h"
- #endif
- 
--static constexpr const char* VA_VED_RAW_MIME_TYPE = "video/x-raw-vaved";
-+static const char* VA_VED_RAW_MIME_TYPE = "video/x-raw-vaved";
- static const uint32_t VA_VED_COLOR_FORMAT = 0x20;
- 
- 
 diff --git a/videocodec/libvpx_internal/libvpx.mk b/videocodec/libvpx_internal/libvpx.mk
 index 5a95803..7df2470 100644
 --- a/videocodec/libvpx_internal/libvpx.mk
 +++ b/videocodec/libvpx_internal/libvpx.mk
-@@ -50,7 +50,7 @@ LOCAL_CFLAGS += -Wno-unused-function
- # in vp[89]_[cd]x_iface.c
- LOCAL_CLANG_CFLAGS += -Wno-missing-field-initializers
- 
--LOCAL_CFLAGS += -Werror
-+#LOCAL_CFLAGS += -Werror
- LOCAL_MODULE := libvpx_internal
- 
- LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 @@ -123,7 +123,7 @@ LOCAL_GENERATED_SOURCES += $(VPX_GEN)
  
  ifeq ($(libvpx_target),x86)
