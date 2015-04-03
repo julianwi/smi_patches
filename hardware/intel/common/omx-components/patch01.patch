@@ -1,30 +1,27 @@
 diff --git a/videocodec/Android.mk b/videocodec/Android.mk
-index 0676fcb..0220c72 100644
+index 6a79dd0..1655e2e 100644
 --- a/videocodec/Android.mk
 +++ b/videocodec/Android.mk
-@@ -40,9 +40,10 @@ LOCAL_SRC_FILES := \
-     OMXComponentCodecBase.cpp\
-     OMXVideoDecoderBase.cpp\
+@@ -42,7 +42,7 @@ LOCAL_SRC_FILES := \
+     OMXVideoDecoderBase.cpp \
      OMXVideoDecoderAVC.cpp
+ 
 -LOCAL_CFLAGS += -Werror
 +#LOCAL_CFLAGS += -Werror
  LOCAL_MODULE_TAGS := optional
  LOCAL_MODULE := libOMXVideoDecoderAVC
-+
  ifeq ($(TARGET_BOARD_PLATFORM),clovertrail)
- LOCAL_CFLAGS += -DVED_TILING
- endif
-@@ -100,7 +101,7 @@ LOCAL_SRC_FILES := \
-     OMXComponentCodecBase.cpp\
-     OMXVideoDecoderBase.cpp\
+@@ -104,7 +104,7 @@ LOCAL_SRC_FILES := \
+     OMXVideoDecoderBase.cpp \
      OMXVideoDecoderVP8.cpp
+ 
 -LOCAL_CFLAGS += -Werror
 +#LOCAL_CFLAGS += -Werror
  LOCAL_MODULE_TAGS := optional
  LOCAL_MODULE := libOMXVideoDecoderVP8
  
-@@ -172,7 +173,7 @@ LOCAL_SRC_FILES := \
-     OMXVideoDecoderBase.cpp\
+@@ -176,7 +176,7 @@ LOCAL_SRC_FILES := \
+     OMXVideoDecoderBase.cpp \
      OMXVideoDecoderVP9HWR.cpp
  
 -LOCAL_CFLAGS += -Werror
@@ -32,8 +29,8 @@ index 0676fcb..0220c72 100644
  LOCAL_MODULE_TAGS := optional
  LOCAL_MODULE := libOMXVideoDecoderVP9HWR
  
-@@ -219,7 +220,7 @@ LOCAL_SRC_FILES := \
-     OMXVideoDecoderBase.cpp\
+@@ -223,7 +223,7 @@ LOCAL_SRC_FILES := \
+     OMXVideoDecoderBase.cpp \
      OMXVideoDecoderVP9Hybrid.cpp
  
 -LOCAL_CFLAGS += -Werror
@@ -41,44 +38,34 @@ index 0676fcb..0220c72 100644
  LOCAL_MODULE_TAGS := optional
  LOCAL_MODULE := libOMXVideoDecoderVP9Hybrid
  
-@@ -272,9 +273,10 @@ LOCAL_SRC_FILES := \
-     OMXComponentCodecBase.cpp\
-     OMXVideoDecoderBase.cpp\
+@@ -278,7 +278,7 @@ LOCAL_SRC_FILES := \
+     OMXVideoDecoderBase.cpp \
      OMXVideoDecoderMPEG4.cpp
+ 
 -LOCAL_CFLAGS += -Werror
 +#LOCAL_CFLAGS += -Werror
  LOCAL_MODULE_TAGS := optional
  LOCAL_MODULE := libOMXVideoDecoderMPEG4
-+
  ifeq ($(TARGET_BOARD_PLATFORM),clovertrail)
- LOCAL_CFLAGS += -DVED_TILING
- endif
-@@ -327,9 +329,10 @@ LOCAL_SRC_FILES := \
-     OMXComponentCodecBase.cpp\
-     OMXVideoDecoderBase.cpp\
+@@ -335,7 +335,7 @@ LOCAL_SRC_FILES := \
+     OMXVideoDecoderBase.cpp \
      OMXVideoDecoderH263.cpp
+ 
 -LOCAL_CFLAGS += -Werror
 +#LOCAL_CFLAGS += -Werror
  LOCAL_MODULE_TAGS := optional
  LOCAL_MODULE := libOMXVideoDecoderH263
-+
  ifeq ($(TARGET_BOARD_PLATFORM),clovertrail)
- LOCAL_CFLAGS += -DVED_TILING
- endif
-@@ -382,9 +385,11 @@ LOCAL_SRC_FILES := \
-     OMXComponentCodecBase.cpp\
-     OMXVideoDecoderBase.cpp\
+@@ -392,7 +392,7 @@ LOCAL_SRC_FILES := \
+     OMXVideoDecoderBase.cpp \
      OMXVideoDecoderWMV.cpp
+ 
 -LOCAL_CFLAGS += -Werror
 +#LOCAL_CFLAGS += -Werror
  LOCAL_MODULE_TAGS := optional
  LOCAL_MODULE := libOMXVideoDecoderWMV
-+
-+
  ifeq ($(TARGET_BOARD_PLATFORM),clovertrail)
- LOCAL_CFLAGS += -DVED_TILING
- endif
-@@ -446,7 +451,7 @@ LOCAL_CFLAGS += -DVED_TILING
+@@ -457,7 +457,7 @@ LOCAL_CFLAGS += -DVED_TILING
  LOCAL_SHARED_LIBRARIES += libdl
  endif
  
@@ -87,7 +74,7 @@ index 0676fcb..0220c72 100644
  LOCAL_MODULE_TAGS := optional
  LOCAL_MODULE := libOMXVideoDecoderAVCSecure
  
-@@ -487,7 +492,7 @@ LOCAL_SRC_FILES := \
+@@ -498,7 +498,7 @@ LOCAL_SRC_FILES := \
      OMXVideoEncoderAVC.cpp
  
  LOCAL_CFLAGS += $(LOCAL_C_FLAGS)
@@ -96,7 +83,7 @@ index 0676fcb..0220c72 100644
  LOCAL_MODULE_TAGS := optional
  LOCAL_MODULE := libOMXVideoEncoderAVC
  include $(BUILD_SHARED_LIBRARY)
-@@ -529,7 +534,7 @@ LOCAL_CFLAGS += $(LOCAL_C_FLAGS)
+@@ -540,7 +540,7 @@ LOCAL_CFLAGS += $(LOCAL_C_FLAGS)
  ifeq ($(SW_MPEG4_ENCODER),true)
      LOCAL_CFLAGS += -DSYNC_MODE
  endif
@@ -105,7 +92,7 @@ index 0676fcb..0220c72 100644
  LOCAL_MODULE_TAGS := optional
  LOCAL_MODULE := libOMXVideoEncoderH263
  include $(BUILD_SHARED_LIBRARY)
-@@ -568,7 +573,7 @@ LOCAL_SRC_FILES := \
+@@ -579,7 +579,7 @@ LOCAL_SRC_FILES := \
  
  LOCAL_CFLAGS += $(LOCAL_C_FLAGS)
  
@@ -114,19 +101,16 @@ index 0676fcb..0220c72 100644
  LOCAL_MODULE_TAGS := optional
  LOCAL_MODULE := libOMXVideoEncoderMPEG4
  include $(BUILD_SHARED_LIBRARY)
-@@ -600,9 +605,10 @@ LOCAL_SRC_FILES := \
-     OMXVideoDecoderBase.cpp\
+@@ -612,7 +612,7 @@ LOCAL_SRC_FILES := \
+     OMXVideoDecoderBase.cpp \
      OMXVideoDecoderPAVC.cpp
  
 -LOCAL_CFLAGS += -Werror
 +#LOCAL_CFLAGS += -Werror
  LOCAL_MODULE_TAGS := optional
  LOCAL_MODULE := libOMXVideoDecoderPAVC
-+
  ifeq ($(TARGET_BOARD_PLATFORM),clovertrail)
- LOCAL_CFLAGS += -DVED_TILING
- endif
-@@ -650,7 +656,7 @@ LOCAL_SRC_FILES := \
+@@ -662,7 +662,7 @@ LOCAL_SRC_FILES := \
      OMXVideoEncoderVP8.cpp
  
  LOCAL_CFLAGS += $(LOCAL_C_FLAGS)
@@ -136,7 +120,7 @@ index 0676fcb..0220c72 100644
  LOCAL_MODULE := libOMXVideoEncoderVP8
  include $(BUILD_SHARED_LIBRARY)
 diff --git a/videocodec/OMXVideoDecoderBase.h b/videocodec/OMXVideoDecoderBase.h
-index 4f836a4..556bc23 100644
+index 48706b8..49610a7 100644
 --- a/videocodec/OMXVideoDecoderBase.h
 +++ b/videocodec/OMXVideoDecoderBase.h
 @@ -27,7 +27,7 @@

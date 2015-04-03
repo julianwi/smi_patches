@@ -22,7 +22,7 @@ diff --git a/videoencoder/Android.mk b/videoencoder/Android.mk
 index 8294b9d..6538745 100644
 --- a/videoencoder/Android.mk
 +++ b/videoencoder/Android.mk
-@@ -84,7 +84,7 @@ ifeq ($(ENABLE_IMG_GRAPHICS),true)
+@@ -82,7 +82,7 @@ ifeq ($(ENABLE_IMG_GRAPHICS),true)
      endif
  endif
  

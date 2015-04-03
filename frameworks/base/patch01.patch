@@ -521,7 +521,7 @@ index 91af50a..2ac61bd 100644
 +
  </resources>
 diff --git a/core/res/res/values/symbols.xml b/core/res/res/values/symbols.xml
-index d17e946..5f9df87 100644
+index 96d0b92..a424801 100644
 --- a/core/res/res/values/symbols.xml
 +++ b/core/res/res/values/symbols.xml
 @@ -1015,6 +1015,7 @@
@@ -670,7 +670,7 @@ index 4b0e720..d2eaf80 100644
  
      /**
 diff --git a/services/java/com/android/server/SystemServer.java b/services/java/com/android/server/SystemServer.java
-index 13db2c0..f118317 100644
+index 2cdf9fb..47a77b0 100644
 --- a/services/java/com/android/server/SystemServer.java
 +++ b/services/java/com/android/server/SystemServer.java
 @@ -23,6 +23,7 @@ import android.app.ActivityManagerNative;
@@ -697,7 +697,7 @@ index 13db2c0..f118317 100644
  import dalvik.system.VMRuntime;
  import dalvik.system.Zygote;
  
-@@ -863,6 +866,42 @@ class ServerThread {
+@@ -864,6 +867,42 @@ class ServerThread {
                  }
              }
  
@@ -844,10 +844,10 @@ index e69de29..e540b16 100644
 +    boolean doCheck(String... params);
 +}
 diff --git a/services/java/com/android/server/pm/PackageManagerService.java b/services/java/com/android/server/pm/PackageManagerService.java
-index b7dd94d..31149de 100644
+index e9fbd20..12e1307 100644
 --- a/services/java/com/android/server/pm/PackageManagerService.java
 +++ b/services/java/com/android/server/pm/PackageManagerService.java
-@@ -594,6 +594,11 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -596,6 +596,11 @@ public class PackageManagerService extends IPackageManager.Stub {
      // or internal storage.
      private IMediaContainerService mContainerService = null;
  
@@ -859,7 +859,7 @@ index b7dd94d..31149de 100644
      static final int SEND_PENDING_BROADCAST = 1;
      static final int MCS_BOUND = 3;
      static final int END_COPY = 4;
-@@ -4343,6 +4348,53 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -4362,6 +4367,53 @@ public class PackageManagerService extends IPackageManager.Stub {
          return new File(mUserAppDataDir.getAbsolutePath() + File.separator + userId);
      }
  
@@ -913,7 +913,7 @@ index b7dd94d..31149de 100644
      private File getDataPathForPackage(String packageName, int userId) {
          /*
           * Until we fully support multiple users, return the directory we
-@@ -4691,6 +4743,25 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -4710,6 +4762,25 @@ public class PackageManagerService extends IPackageManager.Stub {
                  Slog.w(TAG, "Package " + pkg.packageName
                          + " was transferred to another, but its .apk remains");
              }
@@ -939,7 +939,7 @@ index b7dd94d..31149de 100644
              
              // Just create the setting, don't add it yet. For already existing packages
              // the PkgSetting exists already and doesn't have to be created.
-@@ -5005,10 +5076,22 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -5024,10 +5095,22 @@ public class PackageManagerService extends IPackageManager.Stub {
                          }
  
                          try {
@@ -966,7 +966,7 @@ index b7dd94d..31149de 100644
                              }
                          } catch (IOException e) {
                              Slog.e(TAG, "Unable to copy native libraries", e);
-@@ -5017,6 +5100,36 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -5036,6 +5119,36 @@ public class PackageManagerService extends IPackageManager.Stub {
                          }
                      }
  
@@ -1003,7 +1003,7 @@ index b7dd94d..31149de 100644
                      if (DEBUG_INSTALL) Slog.i(TAG, "Linking native library dir for " + path);
                      final int[] userIds = sUserManager.getUserIds();
                      synchronized (mInstallLock) {
-@@ -6150,6 +6263,19 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -6169,6 +6282,19 @@ public class PackageManagerService extends IPackageManager.Stub {
              final PackageParser.Package pkg = ps.pkg;
              if (pkg != null) {
                  cleanPackageDataStructuresLILPw(pkg, chatty);
@@ -1023,7 +1023,7 @@ index b7dd94d..31149de 100644
              }
          }
      }
-@@ -6167,6 +6293,17 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -6186,6 +6312,17 @@ public class PackageManagerService extends IPackageManager.Stub {
                  mAppDirs.remove(pkg.mPath);
              }
              cleanPackageDataStructuresLILPw(pkg, chatty);
@@ -1041,7 +1041,7 @@ index b7dd94d..31149de 100644
          }
      }
  
-@@ -9042,14 +9179,22 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -9061,14 +9198,22 @@ public class PackageManagerService extends IPackageManager.Stub {
  
              final File nativeLibraryFile = new File(getNativeLibraryPath());
              Slog.i(TAG, "Copying native libraries to " + nativeLibraryFile.getPath());

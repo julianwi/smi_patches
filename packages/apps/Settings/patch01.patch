@@ -2,7 +2,7 @@ diff --git a/res/values/cm_strings.xml b/res/values/cm_strings.xml
 index 0376931..37fe5b9 100644
 --- a/res/values/cm_strings.xml
 +++ b/res/values/cm_strings.xml
-@@ -942,6 +942,8 @@ two in order to insert additional control points. \'Remove\' deletes the selecte
+@@ -943,6 +943,8 @@ two in order to insert additional control points. \'Remove\' deletes the selecte
      <string name="camera_wake_summary">Pressing the camera button will wake your device</string>
      <string name="camera_sleep_on_release_title">Screen peek</string>
      <string name="camera_sleep_on_release_summary">A half press will keep the screen on only while the button is held down</string>
