@@ -1,3 +1,15 @@
+diff --git a/include/media/stagefright/OMXCodec.h b/include/media/stagefright/OMXCodec.h
+index 9b7a656..1d76c6d 100644
+--- a/include/media/stagefright/OMXCodec.h
++++ b/include/media/stagefright/OMXCodec.h
+@@ -103,6 +103,7 @@ struct OMXCodec : public MediaSource,
+         kSupportsMultipleFramesPerInputBuffer = 1024,
+         kRequiresLargerEncoderOutputBuffer    = 2048,
+         kOutputBuffersAreUnreadable           = 4096,
++        kRequiresHoldExtraBuffers             = 65536,
+ #if defined(OMAP_ENHANCEMENT)
+         kAvoidMemcopyInputRecordingFrames     = 0x20000000,
+ #endif
 diff --git a/libvideoeditor/lvpp/NativeWindowRenderer.cpp b/libvideoeditor/lvpp/NativeWindowRenderer.cpp
 index 8b362ef..c36c6fd 100755
 --- a/libvideoeditor/lvpp/NativeWindowRenderer.cpp
@@ -270,7 +282,7 @@ index 569e8a7..50ed117 100644
  
      if (offset >= mCacheOffset
 diff --git a/media/libstagefright/OMXCodec.cpp b/media/libstagefright/OMXCodec.cpp
-index 269028a..02d2c3c 100644
+index 269028a..0f58d48 100644
 --- a/media/libstagefright/OMXCodec.cpp
 +++ b/media/libstagefright/OMXCodec.cpp
 @@ -391,7 +391,7 @@ uint32_t OMXCodec::getComponentQuirks(
@@ -282,7 +294,18 @@ index 269028a..02d2c3c 100644
          quirks |= kRequiresLoadedToIdleAfterAllocation;
      }
      if (list->codecHasQuirk(
-@@ -577,6 +577,9 @@ sp<MediaSource> OMXCodec::Create(
+@@ -402,6 +402,10 @@ uint32_t OMXCodec::getComponentQuirks(
+                 index, "defers-output-buffer-allocation")) {
+         quirks |= kDefersOutputBufferAllocation;
+     }
++    if (list->codecHasQuirk(
++                index, "requires-hold-extra-buffers")) {
++        quirks |= kRequiresHoldExtraBuffers;
++    }
+ #ifdef DOLBY_UDC
+     if (list->codecHasQuirk(
+                 index, "needs-flush-before-disable")) {
+@@ -577,6 +581,9 @@ sp<MediaSource> OMXCodec::Create(
  
              err = codec->configureCodec(meta);
              if (err == OK) {
@@ -292,7 +315,7 @@ index 269028a..02d2c3c 100644
                  return codec;
              }
  
-@@ -1205,7 +1208,7 @@ status_t OMXCodec::isColorFormatSupported(
+@@ -1205,7 +1212,7 @@ status_t OMXCodec::isColorFormatSupported(
          // the incremented index (bug 2897413).
          CHECK_EQ(index, portFormat.nIndex);
          if (portFormat.eColorFormat == colorFormat) {
@@ -301,7 +324,7 @@ index 269028a..02d2c3c 100644
              return OK;  // colorFormat is supported!
          }
          ++index;
-@@ -1474,7 +1477,7 @@ status_t OMXCodec::getVideoProfileLevel(
+@@ -1474,7 +1481,7 @@ status_t OMXCodec::getVideoProfileLevel(
  
      CODEC_LOGE("Target profile (%d) and level (%d) is not supported",
              profile, level);
@@ -310,7 +333,22 @@ index 269028a..02d2c3c 100644
  }
  
  status_t OMXCodec::setupH263EncoderParameters(const sp<MetaData>& meta) {
-@@ -2508,15 +2511,9 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
+@@ -2432,6 +2439,14 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
+     ALOGI("NOTE: Overriding minUndequeuedBufs to %d",minUndequeuedBufs);
+ #endif
+ 
++    // XXX: should hold extra two buffers in surface texture back end.
++    // Currently, intel hw overlay need always hold output buffer until
++    // flip to another buffer. So we should hold more buffers to avoid
++    // buffer overwrite by decoder.
++    if (mQuirks & kRequiresHoldExtraBuffers) {
++        minUndequeuedBufs += 2;
++    }
++
+     // XXX: Is this the right logic to use?  It's not clear to me what the OMX
+     // buffer counts refer to - how do they account for the renderer holding on
+     // to buffers?
+@@ -2508,15 +2523,9 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
          cancelEnd = def.nBufferCountActual;
      }
  
@@ -329,7 +367,7 @@ index 269028a..02d2c3c 100644
      }
  
      return err;
-@@ -3069,6 +3066,16 @@ void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
+@@ -3069,6 +3078,16 @@ void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
          {
              CODEC_LOGE("ERROR(0x%08lx, %ld)", data1, data2);
  
@@ -346,7 +384,7 @@ index 269028a..02d2c3c 100644
              setState(ERROR);
              break;
          }
-@@ -3083,6 +3090,7 @@ void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
+@@ -3083,6 +3102,7 @@ void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
                  // when the OMX_EventPortSettingsChanged is not meant for reallocating
                  // the output buffers.
                  if (data1 == kPortIndexOutput) {
@@ -354,7 +392,7 @@ index 269028a..02d2c3c 100644
                      CHECK(mFilledBuffers.empty());
                  }
                  onPortSettingsChanged(data1);
-@@ -3442,7 +3450,7 @@ status_t OMXCodec::freeBuffersOnPort(
+@@ -3442,7 +3462,7 @@ status_t OMXCodec::freeBuffersOnPort(
      for (size_t i = buffers->size(); i-- > 0;) {
          BufferInfo *info = &buffers->editItemAt(i);
  
@@ -363,7 +401,7 @@ index 269028a..02d2c3c 100644
              continue;
          }
  
-@@ -3693,7 +3701,8 @@ bool OMXCodec::drainInputBuffer(BufferInfo *info) {
+@@ -3693,7 +3713,8 @@ bool OMXCodec::drainInputBuffer(BufferInfo *info) {
  
          size_t size = specific->mSize;
  
@@ -373,7 +411,7 @@ index 269028a..02d2c3c 100644
                  && !(mQuirks & kWantsNALFragments)) {
              static const uint8_t kNALStartCode[4] =
                      { 0x00, 0x00, 0x00, 0x01 };
-@@ -5363,6 +5372,12 @@ void OMXCodec::signalBufferReturned(MediaBuffer *buffer) {
+@@ -5363,6 +5384,12 @@ void OMXCodec::signalBufferReturned(MediaBuffer *buffer) {
          BufferInfo *info = &buffers->editItemAt(i);
  
          if (info->mMediaBuffer == buffer) {
