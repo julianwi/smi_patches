@@ -1,16 +1,15 @@
 List off all patches needed for optimizing android on Motorola Razr I, XT890, SMI.
 
-Add* = Need to add patch
+clean_up_patches.sh = Clean repositorys of applied patch
 
-clean.sh = Clean repositorys of applied patch
-
-patch.sh = Patch repositorys with *.patch in the underlying folders
+apply_patch.sh = Patch repositorys with *.patch in the underlying folders
 
 sync_and_patch.sh = Clean repos, sync repos, patch repos.
 
-The codes used in those script are copied from:
-github.com/gpdroid
+Still want todo:
+- Don't patch with "patch", but cleaner with "git am" and seperate the patches
 
-Contribution from:
+Contribution or code barrowed from:
 GPDroid
 Hazou
+Intel
