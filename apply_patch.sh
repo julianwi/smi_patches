@@ -23,10 +23,6 @@ do
         fi
 
         patch=${PATCH_DIR}/${proj}/${patch_name}
-        change_id=`grep -w "^Change-Id:" ${patch} | awk '{print $2}'`
-        ret=`git log | grep -w "^    Change-Id: ${change_id}" 2>/dev/null`
-        if [ "${ret}" == "" ]
-        then
             echo "Applying ${patch_name}"
             patch -p1 < ${patch}
             if [ $? -ne 0 ]
@@ -36,10 +32,6 @@ do
                 git am --abort
                 exit
             fi
-        else
-            echo "Applying ${patch_name}"
-            echo "Applied, ignore and continue..."
-        fi
     done
     cd ${PATCH_DIR}
 done

@@ -18,10 +18,8 @@ PATCHED_PROJECTS=$(
     done
 )
 
-repo forall $PATCHED_PROJECTS -c git reset --hard
+repo forall $PATCHED_PROJECTS -c git checkout -f
 repo forall $PATCHED_PROJECTS -c git clean -d -f -x
-repo forall $PATCHED_PROJECTS -c git rebase --abort
-repo forall $PATCHED_PROJECTS -c git am --abort
 
 echo
 echo Repo status for $PATCHED_PROJECTS
