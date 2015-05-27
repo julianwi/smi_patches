@@ -200,7 +200,7 @@ index f689acd..2279ec0 100644
              if (getResources().getBoolean(
                  com.android.internal.R.bool.config_singleStageCameraKey)) {
                  cameraCategory.removePreference(mCameraSleepOnRelease);
-@@ -615,6 +619,7 @@ public class ButtonSettings extends SettingsPreferenceFragment implements
+@@ -605,6 +609,7 @@ public class ButtonSettings extends SettingsPreferenceFragment implements
              boolean isCameraWakeEnabled = mCameraWake.isChecked();
              mCameraMusicControls.setEnabled(!isCameraWakeEnabled);
              mCameraSleepOnRelease.setEnabled(isCameraWakeEnabled);

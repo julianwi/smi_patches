@@ -524,7 +524,7 @@ diff --git a/core/res/res/values/symbols.xml b/core/res/res/values/symbols.xml
 index 96d0b92..a424801 100644
 --- a/core/res/res/values/symbols.xml
 +++ b/core/res/res/values/symbols.xml
-@@ -1015,6 +1015,7 @@
+@@ -1016,6 +1016,7 @@
    <java-symbol type="array" name="config_operatorConsideredNonRoaming" />
    <java-symbol type="array" name="config_sameNamedOperatorConsideredRoaming" />
    <java-symbol type="array" name="config_callBarringMMI" />
@@ -1003,7 +1003,7 @@ index e9fbd20..12e1307 100644
                      if (DEBUG_INSTALL) Slog.i(TAG, "Linking native library dir for " + path);
                      final int[] userIds = sUserManager.getUserIds();
                      synchronized (mInstallLock) {
-@@ -6169,6 +6282,19 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -6181,6 +6294,19 @@ public class PackageManagerService extends IPackageManager.Stub {
              final PackageParser.Package pkg = ps.pkg;
              if (pkg != null) {
                  cleanPackageDataStructuresLILPw(pkg, chatty);
@@ -1023,7 +1023,7 @@ index e9fbd20..12e1307 100644
              }
          }
      }
-@@ -6186,6 +6312,17 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -6198,6 +6324,17 @@ public class PackageManagerService extends IPackageManager.Stub {
                  mAppDirs.remove(pkg.mPath);
              }
              cleanPackageDataStructuresLILPw(pkg, chatty);
@@ -1041,7 +1041,7 @@ index e9fbd20..12e1307 100644
          }
      }
  
-@@ -9061,14 +9198,22 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -9073,14 +9210,22 @@ public class PackageManagerService extends IPackageManager.Stub {
  
              final File nativeLibraryFile = new File(getNativeLibraryPath());
              Slog.i(TAG, "Copying native libraries to " + nativeLibraryFile.getPath());

@@ -13,7 +13,7 @@ do
         continue
     fi
     echo "Applying patches under ${proj}..."
-    for patch_name in `ls ${PATCH_DIR}/${proj}`
+    for patch_name in `ls ${PATCH_DIR}/${proj} --ignore-backups`
     do
         if [ -e ${TOP_DIR}/${proj} ]; then
             cd ${TOP_DIR}/${proj}

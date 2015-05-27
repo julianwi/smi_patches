@@ -2,13 +2,13 @@ diff --git a/include/media/openmax/OMX_IVCommon.h b/include/media/openmax/OMX_IV
 index 96a4396..d2da2ae 100644
 --- a/include/media/openmax/OMX_IVCommon.h
 +++ b/include/media/openmax/OMX_IVCommon.h
-@@ -162,6 +162,8 @@ typedef enum OMX_COLOR_FORMATTYPE {
+@@ -169,6 +169,8 @@ typedef enum OMX_COLOR_FORMATTYPE {
      OMX_QCOM_COLOR_FormatYUV420PackedSemiPlanar64x32Tile2m8ka = 0x7FA30C03,
      OMX_SEC_COLOR_FormatNV12Tiled = 0x7FC00002,
      OMX_QCOM_COLOR_FormatYUV420PackedSemiPlanar32m = 0x7FA30C04,
 +    OMX_INTEL_COLOR_FormatYUV420PackedSemiPlanar =  0x7FA00E00,
 +    OMX_INTEL_COLOR_FormatYUV420PackedSemiPlanar_Tiled =  0x7FA00F00,
-     OMX_COLOR_FormatMax = 0x7FFFFFFF
+     OMX_COLOR_FormatMax = 0x7FFFFFFF,
  } OMX_COLOR_FORMATTYPE;
  
 diff --git a/libs/binder/IPCThreadState.cpp b/libs/binder/IPCThreadState.cpp
@@ -696,7 +696,7 @@ index e7c4716..0819723 100644
                  }
              }
          }
-@@ -3190,7 +3229,7 @@ class GraphicProducerWrapper : public BBinder, public MessageHandler {
+@@ -3196,7 +3235,7 @@ class GraphicProducerWrapper : public BBinder, public MessageHandler {
              looper->sendMessage(this, Message(MSG_API_CALL));
              barrier.wait();
          }
@@ -705,7 +705,7 @@ index e7c4716..0819723 100644
      }
  
      /*
-@@ -3200,7 +3239,8 @@ class GraphicProducerWrapper : public BBinder, public MessageHandler {
+@@ -3206,7 +3245,8 @@ class GraphicProducerWrapper : public BBinder, public MessageHandler {
      virtual void handleMessage(const Message& message) {
          android_atomic_release_load(&memoryBarrier);
          if (message.what == MSG_API_CALL) {
