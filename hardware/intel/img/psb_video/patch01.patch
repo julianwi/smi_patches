@@ -1,5 +1,5 @@
 diff --git a/src/Android.mk b/src/Android.mk
-index 5cbe6b5..b0867f5 100644
+index 5cbe6b5..30b5c0c 100644
 --- a/src/Android.mk
 +++ b/src/Android.mk
 @@ -39,8 +39,7 @@ LOCAL_CLANG_CFLAGS += \
@@ -12,8 +12,14 @@ index 5cbe6b5..b0867f5 100644
  
  LOCAL_C_INCLUDES := \
      $(call include-path-for, libhardware)/hardware \
-@@ -83,6 +82,9 @@ LOCAL_SRC_FILES := \
-     tng_jpegdec.c
+@@ -78,11 +77,12 @@ LOCAL_SRC_FILES := \
+     pnw_VC1.c \
+     pnw_rotate.c \
+     tng_vld_dec.c \
+-    tng_yuv_processor.c \
+-    tng_VP8.c \
+-    tng_jpegdec.c
++    tng_yuv_processor.c
  
  ifneq ($(filter $(TARGET_BOARD_PLATFORM),merrifield moorefield morganfield),)
 +LOCAL_CFLAGS += -DPSBVIDEO_VXD392 \
@@ -22,13 +28,12 @@ index 5cbe6b5..b0867f5 100644
  LOCAL_SRC_FILES += \
      pnw_H263ES.c \
      pnw_H264ES.c \
-@@ -154,7 +156,24 @@ LOCAL_CFLAGS += -DPSBVIDEO_MRFL_VPP_ROTATE
+@@ -154,7 +154,22 @@ LOCAL_CFLAGS += -DPSBVIDEO_MRFL_VPP_ROTATE
  endif
  endif
  
 +else ifeq ($(TARGET_BOARD_PLATFORM),sc1) # Medfield mfld_pr2 (Razr I)
 +LOCAL_SRC_FILES += \
-+    psb_texture.c \
 +    pnw_H263ES.c \
 +    pnw_H264ES.c \
 +    pnw_MPEG4ES.c \
@@ -37,22 +42,37 @@ index 5cbe6b5..b0867f5 100644
 +    pnw_hostheader.c \
 +    pnw_hostjpeg.c \
 +    pnw_jpeg.c \
-+    tng_ved_scaling.c \
-+    psb_ws_driver.c
++    tng_ved_scaling.c
 +LOCAL_CFLAGS += -DPSBVIDEO_MFLD
-+LOCAL_SHARED_LIBRARIES += libpvr2d
++#LOCAL_SHARED_LIBRARIES += libpvr2d
 +
  else
 +
  LOCAL_CFLAGS += \
      -DPSBVIDEO_VXD392 -DBAYTRAIL \
      -DPSBVIDEO_MSVDX_DEC_TILING -DPSBVIDEO_MSVDX_EC
-@@ -165,7 +184,7 @@ LOCAL_SRC_FILES += android/psb_mds.cpp
- LOCAL_CFLAGS += -DTARGET_HAS_MULTIPLE_DISPLAY
- LOCAL_SHARED_LIBRARIES += libmultidisplay
- endif
--LOCAL_CFLAGS += -Werror
-+#LOCAL_CFLAGS += -Werror
+diff --git a/src/pnw_cmdbuf.c b/src/pnw_cmdbuf.c
+index e67023e..852056a 100644
+--- a/src/pnw_cmdbuf.c
++++ b/src/pnw_cmdbuf.c
+@@ -630,7 +630,7 @@ int pnw_context_flush_cmdbuf(object_context_p obj_context)
+ }
  
- LOCAL_MODULE_TAGS := optional
- LOCAL_MODULE := pvr_drv_video
+ 
+-int pnw_get_parallel_core_number(object_context_p obj_context)
++uint32_t pnw_get_parallel_core_number(object_context_p obj_context)
+ {
+ 
+     context_ENC_p ctx = (context_ENC_p)(obj_context->format_data);
+diff --git a/src/pnw_cmdbuf.h b/src/pnw_cmdbuf.h
+index 4c93ba7..f4dc25d 100644
+--- a/src/pnw_cmdbuf.h
++++ b/src/pnw_cmdbuf.h
+@@ -226,6 +226,6 @@ int pnw_context_flush_cmdbuf(object_context_p obj_context);
+  *
+  * Return the number of paralled cores used.
+  */
+-int pnw_get_parallel_core_number(object_context_p obj_context);
++uint32_t pnw_get_parallel_core_number(object_context_p obj_context);
+ #endif /* _PNW_CMDBUF_H_ */
+ 

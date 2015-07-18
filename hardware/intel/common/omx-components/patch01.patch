@@ -1,124 +1,68 @@
-diff --git a/videocodec/Android.mk b/videocodec/Android.mk
-index 6a79dd0..1655e2e 100644
---- a/videocodec/Android.mk
-+++ b/videocodec/Android.mk
-@@ -42,7 +42,7 @@ LOCAL_SRC_FILES := \
-     OMXVideoDecoderBase.cpp \
-     OMXVideoDecoderAVC.cpp
+diff --git a/videocodec/OMXComponentDefines.h b/videocodec/OMXComponentDefines.h
+index 02c45e4..e697d45 100644
+--- a/videocodec/OMXComponentDefines.h
++++ b/videocodec/OMXComponentDefines.h
+@@ -38,7 +38,7 @@
  
--LOCAL_CFLAGS += -Werror
-+#LOCAL_CFLAGS += -Werror
- LOCAL_MODULE_TAGS := optional
- LOCAL_MODULE := libOMXVideoDecoderAVC
- ifeq ($(TARGET_BOARD_PLATFORM),clovertrail)
-@@ -104,7 +104,7 @@ LOCAL_SRC_FILES := \
-     OMXVideoDecoderBase.cpp \
-     OMXVideoDecoderVP8.cpp
+ #define CHECK_PORT_INDEX(P, INDEX)\
+     if ((P)->nPortIndex != INDEX) {\
+-        LOGE("Bad port index %u, expected: %d", (P)->nPortIndex, INDEX);\
++        LOGE("Bad port index %lu, expected: %d", (P)->nPortIndex, INDEX);\
+         return OMX_ErrorBadPortIndex;\
+     }
  
--LOCAL_CFLAGS += -Werror
-+#LOCAL_CFLAGS += -Werror
- LOCAL_MODULE_TAGS := optional
- LOCAL_MODULE := libOMXVideoDecoderVP8
+@@ -50,7 +50,7 @@
  
-@@ -176,7 +176,7 @@ LOCAL_SRC_FILES := \
-     OMXVideoDecoderBase.cpp \
-     OMXVideoDecoderVP9HWR.cpp
+ #define CHECK_PORT_INDEX_RANGE(P)\
+     if ((P)->nPortIndex != 0 && (P)->nPortIndex != 1) {\
+-        LOGE("Port out of range %u", (P)->nPortIndex);\
++        LOGE("Port out of range %lu", (P)->nPortIndex);\
+         return OMX_ErrorBadPortIndex;\
+     }
  
--LOCAL_CFLAGS += -Werror
-+#LOCAL_CFLAGS += -Werror
- LOCAL_MODULE_TAGS := optional
- LOCAL_MODULE := libOMXVideoDecoderVP9HWR
+diff --git a/videocodec/OMXVideoDecoderAVC.cpp b/videocodec/OMXVideoDecoderAVC.cpp
+index 87b74a4..8c50f80 100644
+--- a/videocodec/OMXVideoDecoderAVC.cpp
++++ b/videocodec/OMXVideoDecoderAVC.cpp
+@@ -276,7 +276,7 @@ OMX_ERRORTYPE OMXVideoDecoderAVC::SetParamIntelAVCDecodeSettings(OMX_PTR pStruct
+         // TODO: check if we just return in this case.
+         p->nMaxNumberOfReferenceFrame = NUM_REFERENCE_FRAME;
+     }
+-    LOGI("Maximum width = %u, height = %u, dpb = %u", p->nMaxWidth, p->nMaxHeight, p->nMaxNumberOfReferenceFrame);
++    LOGI("Maximum width = %lu, height = %lu, dpb = %lu", p->nMaxWidth, p->nMaxHeight, p->nMaxNumberOfReferenceFrame);
+     mDecodeSettings = *p;
  
-@@ -223,7 +223,7 @@ LOCAL_SRC_FILES := \
-     OMXVideoDecoderBase.cpp \
-     OMXVideoDecoderVP9Hybrid.cpp
+     return OMX_ErrorNone;
+diff --git a/videocodec/OMXVideoDecoderBase.cpp b/videocodec/OMXVideoDecoderBase.cpp
+index 7d1d830..58d9e24 100644
+--- a/videocodec/OMXVideoDecoderBase.cpp
++++ b/videocodec/OMXVideoDecoderBase.cpp
+@@ -259,7 +259,7 @@ OMX_ERRORTYPE OMXVideoDecoderBase::ProcessorResume(void) {
+ }
  
--LOCAL_CFLAGS += -Werror
-+#LOCAL_CFLAGS += -Werror
- LOCAL_MODULE_TAGS := optional
- LOCAL_MODULE := libOMXVideoDecoderVP9Hybrid
- 
-@@ -278,7 +278,7 @@ LOCAL_SRC_FILES := \
-     OMXVideoDecoderBase.cpp \
-     OMXVideoDecoderMPEG4.cpp
- 
--LOCAL_CFLAGS += -Werror
-+#LOCAL_CFLAGS += -Werror
- LOCAL_MODULE_TAGS := optional
- LOCAL_MODULE := libOMXVideoDecoderMPEG4
- ifeq ($(TARGET_BOARD_PLATFORM),clovertrail)
-@@ -335,7 +335,7 @@ LOCAL_SRC_FILES := \
-     OMXVideoDecoderBase.cpp \
-     OMXVideoDecoderH263.cpp
- 
--LOCAL_CFLAGS += -Werror
-+#LOCAL_CFLAGS += -Werror
- LOCAL_MODULE_TAGS := optional
- LOCAL_MODULE := libOMXVideoDecoderH263
- ifeq ($(TARGET_BOARD_PLATFORM),clovertrail)
-@@ -392,7 +392,7 @@ LOCAL_SRC_FILES := \
-     OMXVideoDecoderBase.cpp \
-     OMXVideoDecoderWMV.cpp
- 
--LOCAL_CFLAGS += -Werror
-+#LOCAL_CFLAGS += -Werror
- LOCAL_MODULE_TAGS := optional
- LOCAL_MODULE := libOMXVideoDecoderWMV
- ifeq ($(TARGET_BOARD_PLATFORM),clovertrail)
-@@ -457,7 +457,7 @@ LOCAL_CFLAGS += -DVED_TILING
- LOCAL_SHARED_LIBRARIES += libdl
- endif
- 
--LOCAL_CFLAGS += -Werror
-+#LOCAL_CFLAGS += -Werror
- LOCAL_MODULE_TAGS := optional
- LOCAL_MODULE := libOMXVideoDecoderAVCSecure
- 
-@@ -498,7 +498,7 @@ LOCAL_SRC_FILES := \
-     OMXVideoEncoderAVC.cpp
- 
- LOCAL_CFLAGS += $(LOCAL_C_FLAGS)
--LOCAL_CFLAGS += -Werror
-+#LOCAL_CFLAGS += -Werror
- LOCAL_MODULE_TAGS := optional
- LOCAL_MODULE := libOMXVideoEncoderAVC
- include $(BUILD_SHARED_LIBRARY)
-@@ -540,7 +540,7 @@ LOCAL_CFLAGS += $(LOCAL_C_FLAGS)
- ifeq ($(SW_MPEG4_ENCODER),true)
-     LOCAL_CFLAGS += -DSYNC_MODE
- endif
--LOCAL_CFLAGS += -Werror
-+#LOCAL_CFLAGS += -Werror
- LOCAL_MODULE_TAGS := optional
- LOCAL_MODULE := libOMXVideoEncoderH263
- include $(BUILD_SHARED_LIBRARY)
-@@ -579,7 +579,7 @@ LOCAL_SRC_FILES := \
- 
- LOCAL_CFLAGS += $(LOCAL_C_FLAGS)
- 
--LOCAL_CFLAGS += -Werror
-+#LOCAL_CFLAGS += -Werror
- LOCAL_MODULE_TAGS := optional
- LOCAL_MODULE := libOMXVideoEncoderMPEG4
- include $(BUILD_SHARED_LIBRARY)
-@@ -612,7 +612,7 @@ LOCAL_SRC_FILES := \
-     OMXVideoDecoderBase.cpp \
-     OMXVideoDecoderPAVC.cpp
- 
--LOCAL_CFLAGS += -Werror
-+#LOCAL_CFLAGS += -Werror
- LOCAL_MODULE_TAGS := optional
- LOCAL_MODULE := libOMXVideoDecoderPAVC
- ifeq ($(TARGET_BOARD_PLATFORM),clovertrail)
-@@ -662,7 +662,7 @@ LOCAL_SRC_FILES := \
-     OMXVideoEncoderVP8.cpp
- 
- LOCAL_CFLAGS += $(LOCAL_C_FLAGS)
--LOCAL_CFLAGS += -Werror
-+#LOCAL_CFLAGS += -Werror
- LOCAL_MODULE_TAGS := optional
- LOCAL_MODULE := libOMXVideoEncoderVP8
- include $(BUILD_SHARED_LIBRARY)
+ OMX_ERRORTYPE OMXVideoDecoderBase::ProcessorFlush(OMX_U32 portIndex) {
+-    LOGI("Flushing port# %u.", portIndex);
++    LOGI("Flushing port# %lu.", portIndex);
+     if (mVideoDecoder == NULL) {
+         LOGE("ProcessorFlush: Video decoder is not created.");
+         return OMX_ErrorDynamicResourcesUnavailable;
+@@ -370,7 +370,7 @@ OMX_ERRORTYPE OMXVideoDecoderBase::ProcessorProcess(
+                 (*pBuffers[INPORT_INDEX])->nTimeStamp = nextFrame->timestamp;
+                 (*pBuffers[INPORT_INDEX])->nFilledLen -= nextFrame->offSet;
+                 retains[INPORT_INDEX] = BUFFER_RETAIN_GETAGAIN;
+-                LOGW("Find multiple frames in a buffer, next frame offset = %d, timestamp = %lld", (*pBuffers[INPORT_INDEX])->nOffset, (*pBuffers[INPORT_INDEX])->nTimeStamp);
++                LOGW("Find multiple frames in a buffer, next frame offset = %lu, timestamp = %lld", (*pBuffers[INPORT_INDEX])->nOffset, (*pBuffers[INPORT_INDEX])->nTimeStamp);
+             }
+         }
+         else if (status != DECODE_SUCCESS && status != DECODE_FRAME_DROPPED) {
+@@ -911,6 +911,7 @@ OMX_ERRORTYPE OMXVideoDecoderBase::SetNativeBufferModeSpecific(OMX_PTR pStructur
+     }
+     port_def.format.video.cMIMEType = (OMX_STRING)VA_VED_RAW_MIME_TYPE;
+     port_def.format.video.eColorFormat = OMX_INTEL_COLOR_FormatYUV420PackedSemiPlanar;
++    port_def.format.video.nFrameWidth = (port_def.format.video.nFrameWidth + 0x1f) & ~0x1f;
+     port_def.format.video.nFrameHeight = (port_def.format.video.nFrameHeight + 0x1f) & ~0x1f;
+     port_def.format.video.eColorFormat = GetOutputColorFormat(
+                         port_def.format.video.nFrameWidth);
 diff --git a/videocodec/OMXVideoDecoderBase.h b/videocodec/OMXVideoDecoderBase.h
 index 48706b8..49610a7 100644
 --- a/videocodec/OMXVideoDecoderBase.h
@@ -133,19 +77,18 @@ index 48706b8..49610a7 100644
  
  
 diff --git a/videocodec/libvpx_internal/libvpx.mk b/videocodec/libvpx_internal/libvpx.mk
-index 5a95803..7df2470 100644
+index 5a95803..315abd6 100644
 --- a/videocodec/libvpx_internal/libvpx.mk
 +++ b/videocodec/libvpx_internal/libvpx.mk
-@@ -50,7 +50,7 @@ LOCAL_CFLAGS += -Wno-unused-function
+@@ -50,7 +50,6 @@ LOCAL_CFLAGS += -Wno-unused-function
  # in vp[89]_[cd]x_iface.c
  LOCAL_CLANG_CFLAGS += -Wno-missing-field-initializers
  
 -LOCAL_CFLAGS += -Werror
-+#LOCAL_CFLAGS += -Werror
  LOCAL_MODULE := libvpx_internal
  
  LOCAL_MODULE_CLASS := STATIC_LIBRARIES
-@@ -123,7 +123,7 @@ LOCAL_GENERATED_SOURCES += $(VPX_GEN)
+@@ -123,7 +122,7 @@ LOCAL_GENERATED_SOURCES += $(VPX_GEN)
  
  ifeq ($(libvpx_target),x86)
  libvpx_x86_asm_src_files := $(filter %.asm, $(libvpx_codec_srcs_unique))

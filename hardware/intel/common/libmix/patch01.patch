@@ -1,16 +1,3 @@
-diff --git a/videodecoder/Android.mk b/videodecoder/Android.mk
-index b8ef199..f898f7d 100644
---- a/videodecoder/Android.mk
-+++ b/videodecoder/Android.mk
-@@ -71,7 +71,7 @@ ifneq ($(filter $(TARGET_BOARD_PLATFORM),$(PLATFORM_SUPPORT_SLICE_HEADER_PARSER)
-     LOCAL_COPY_HEADERS += securevideo/$(TARGET_BOARD_PLATFORM)/VideoFrameInfo.h
- endif
- 
--LOCAL_CFLAGS += -Werror
-+#LOCAL_CFLAGS += -Werror
- LOCAL_MODULE_TAGS := optional
- LOCAL_MODULE := libva_videodecoder
- LOCAL_REQUIRED_MODULES :=libmixvbp
 diff --git a/videodecoder/securevideo/sc1 b/videodecoder/securevideo/sc1
 index e69de29..f21077d 120000
 --- a/videodecoder/securevideo/sc1
@@ -18,36 +5,3 @@ index e69de29..f21077d 120000
 @@ -0,0 +1 @@
 +../securevideo/clovertrail
 \ No newline at end of file
-diff --git a/videoencoder/Android.mk b/videoencoder/Android.mk
-index 8294b9d..6538745 100644
---- a/videoencoder/Android.mk
-+++ b/videoencoder/Android.mk
-@@ -82,7 +82,7 @@ ifeq ($(ENABLE_IMG_GRAPHICS),true)
-     endif
- endif
- 
--LOCAL_CFLAGS += -Werror
-+#LOCAL_CFLAGS += -Werror
- LOCAL_MODULE_TAGS := optional
- LOCAL_MODULE := libva_videoencoder
- 
-diff --git a/videoencoder/VideoEncoderUtils.cpp b/videoencoder/VideoEncoderUtils.cpp
-index 5f78879..76f9adf 100644
---- a/videoencoder/VideoEncoderUtils.cpp
-+++ b/videoencoder/VideoEncoderUtils.cpp
-@@ -160,11 +160,11 @@ static int gfx_Blit(buffer_handle_t src, buffer_handle_t dest,
- 
-     IMG_gralloc_module_public_t* GrallocMod = (IMG_gralloc_module_public_t*)gModule;
- 
--#ifdef MRFLD_GFX
-+//#ifdef MRFLD_GFX
-     err = GrallocMod->Blit(GrallocMod, src, dest, w, h, 0, 0, 0, 0);
--#else
--    err = GrallocMod->Blit2(GrallocMod, src, dest, w, h, 0, 0);
--#endif
-+//#else
-+//    err = GrallocMod->Blit2(GrallocMod, src, dest, w, h, 0, 0);
-+//#endif
- 
-     if (err) {
-         LOG_E("Blit(...) failed %d (%s)", err, strerror(-err));
