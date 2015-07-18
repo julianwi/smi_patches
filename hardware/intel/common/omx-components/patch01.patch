@@ -77,7 +77,7 @@ index 48706b8..49610a7 100644
  
  
 diff --git a/videocodec/OMXVideoEncoderAVC.cpp b/videocodec/OMXVideoEncoderAVC.cpp
-index 36390e2..948dad1 100644
+index 36390e2..0ea8ea0 100644
 --- a/videocodec/OMXVideoEncoderAVC.cpp
 +++ b/videocodec/OMXVideoEncoderAVC.cpp
 @@ -329,7 +329,7 @@ OMX_ERRORTYPE OMXVideoEncoderAVC::ProcessorPreEmptyBuffer(OMX_BUFFERHEADERTYPE*
@@ -94,7 +94,7 @@ index 36390e2..948dad1 100644
      eInfo.FrameCount		 = GET_FC(encodeInfo);
  
 -    LOGV("ProcessCacheOperation Frame %d, type:%s, CacheOps:%s, NoSTOP=%d, EOS=%d\n",
-+    LOGV("ProcessCacheOperation Frame %lu, type:%s, CacheOps:%s, NoSTOP=%lu, EOS=%lu\n",
++    LOGV("ProcessCacheOperation Frame %u, type:%s, CacheOps:%s, NoSTOP=%d, EOS=%lu\n",
              eInfo.FrameCount, FrameTypeStr[eInfo.FrameType], CacheOperationStr[eInfo.CacheOperation],
              eInfo.NotStopFrame, buffers[INPORT_INDEX]->nFlags & OMX_BUFFERFLAG_EOS);
  
