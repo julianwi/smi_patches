@@ -76,6 +76,64 @@ index 48706b8..49610a7 100644
  static const uint32_t VA_VED_COLOR_FORMAT = 0x20;
  
  
+diff --git a/videocodec/OMXVideoEncoderAVC.cpp b/videocodec/OMXVideoEncoderAVC.cpp
+index 36390e2..948dad1 100644
+--- a/videocodec/OMXVideoEncoderAVC.cpp
++++ b/videocodec/OMXVideoEncoderAVC.cpp
+@@ -329,7 +329,7 @@ OMX_ERRORTYPE OMXVideoEncoderAVC::ProcessorPreEmptyBuffer(OMX_BUFFERHEADERTYPE*
+ 
+     buffer->pPlatformPrivate = (OMX_PTR) EncodeInfo;
+ 
+-    LOGV("ProcessorPreEmptyBuffer Frame %d, Type %s, EncodeInfo %x\n", mInputPictureCount, FrameTypeStr[EncodeFrameType], EncodeInfo);
++    LOGV("ProcessorPreEmptyBuffer Frame %lu, Type %s, EncodeInfo %lu\n", mInputPictureCount, FrameTypeStr[EncodeFrameType], EncodeInfo);
+ 
+     mInputPictureCount ++;
+     return OMX_ErrorNone;
+@@ -348,7 +348,7 @@ OMX_BOOL OMXVideoEncoderAVC::ProcessCacheOperation(OMX_BUFFERHEADERTYPE **buffer
+     eInfo.NotStopFrame		= encodeInfo & ENC_NSTOP;
+     eInfo.FrameCount		 = GET_FC(encodeInfo);
+ 
+-    LOGV("ProcessCacheOperation Frame %d, type:%s, CacheOps:%s, NoSTOP=%d, EOS=%d\n",
++    LOGV("ProcessCacheOperation Frame %lu, type:%s, CacheOps:%s, NoSTOP=%lu, EOS=%lu\n",
+             eInfo.FrameCount, FrameTypeStr[eInfo.FrameType], CacheOperationStr[eInfo.CacheOperation],
+             eInfo.NotStopFrame, buffers[INPORT_INDEX]->nFlags & OMX_BUFFERFLAG_EOS);
+ 
+@@ -549,7 +549,7 @@ OMX_ERRORTYPE OMXVideoEncoderAVC::ProcessDataRetrieve(
+             buffers[OUTPORT_INDEX]->nTimeStamp = 0;
+             buffers[OUTPORT_INDEX]->nFlags = outflags;
+             *outBufReturned = OMX_TRUE;
+-            LOGV("emit one empty EOS OMX output buf = %p:%d, flag = 0x%08x, ts=%lld", buffers[OUTPORT_INDEX]->pBuffer, outfilledlen, outflags, outtimestamp);
++            LOGV("emit one empty EOS OMX output buf = %p:%lu, flag = 0x%08lu, ts=%lld", buffers[OUTPORT_INDEX]->pBuffer, outfilledlen, outflags, outtimestamp);
+         } else
+             //not emit out buf since something wrong
+             *outBufReturned = OMX_FALSE;
+@@ -562,11 +562,11 @@ OMX_ERRORTYPE OMXVideoEncoderAVC::ProcessDataRetrieve(
+         if (outBuf.flag & ENCODE_BUFFERFLAG_NSTOPFRAME)
+             buffers[OUTPORT_INDEX]->pPlatformPrivate = (OMX_PTR) 0x00000001;  //indicate it is nstop frame
+         *outBufReturned = OMX_TRUE;
+-        LOGV("emit one OMX output buf = %p:%d, flag = 0x%08x, ts=%lld", buffers[OUTPORT_INDEX]->pBuffer, outfilledlen, outflags, outtimestamp);
++        LOGV("emit one OMX output buf = %p:%lu, flag = 0x%08lu, ts=%lld", buffers[OUTPORT_INDEX]->pBuffer, outfilledlen, outflags, outtimestamp);
+ 
+     }
+ 
+-    LOGV("ProcessDataRetrieve OK, mFrameEncodedCount=%d , mFrameOutputCount=%d\n", mFrameEncodedCount, mFrameOutputCount);
++    LOGV("ProcessDataRetrieve OK, mFrameEncodedCount=%lu , mFrameOutputCount=%lu\n", mFrameEncodedCount, mFrameOutputCount);
+     return OMX_ErrorNone;
+ }
+ 
+diff --git a/videocodec/OMXVideoEncoderBase.cpp b/videocodec/OMXVideoEncoderBase.cpp
+index 37f53d2..c30196b 100644
+--- a/videocodec/OMXVideoEncoderBase.cpp
++++ b/videocodec/OMXVideoEncoderBase.cpp
+@@ -888,7 +888,7 @@ OMX_ERRORTYPE OMXVideoEncoderBase::SetTemporalLayer(OMX_PTR pStructure) {
+     CHECK_TYPE_HEADER(p);
+     CHECK_PORT_INDEX(p, OUTPORT_INDEX);
+ 
+-    LOGE("SetTemporalLayer (enabled = %d)", p->nNumberOfTemporalLayer);
++    LOGE("SetTemporalLayer (enabled = %lu)", p->nNumberOfTemporalLayer);
+ 
+     TemporalLayer.numberOfLayer = p->nNumberOfTemporalLayer;
+     TemporalLayer.nPeriodicity = p->nPeriodicity;
 diff --git a/videocodec/libvpx_internal/libvpx.mk b/videocodec/libvpx_internal/libvpx.mk
 index 5a95803..315abd6 100644
 --- a/videocodec/libvpx_internal/libvpx.mk
