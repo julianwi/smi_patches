@@ -1,3 +1,18 @@
+diff --git a/videodecoder/VideoDecoderAVC.cpp b/videodecoder/VideoDecoderAVC.cpp
+index ad4ad33..75fb3c8 100644
+--- a/videodecoder/VideoDecoderAVC.cpp
++++ b/videodecoder/VideoDecoderAVC.cpp
+@@ -818,8 +818,8 @@ Decode_Status VideoDecoderAVC::handleNewSequence(vbp_data_h264 *data) {
+     bool rawDataMode = !(mConfigBuffer.flag & USE_NATIVE_GRAPHIC_BUFFER);
+ 
+     if (!rawDataMode) {
+-        needFlush = (mVideoFormatInfo.width > mVideoFormatInfo.surfaceWidth)
+-                || (mVideoFormatInfo.height > mVideoFormatInfo.surfaceHeight)
++        needFlush = (mVideoFormatInfo.width > VideoDecoderBase::alignMB(mVideoFormatInfo.surfaceWidth))
++                || (mVideoFormatInfo.height > VideoDecoderBase::alignMB(mVideoFormatInfo.surfaceHeight))
+                 || isWiDiStatusChanged()
+                 || (mVideoFormatInfo.actualBufferNeeded > mConfigBuffer.surfaceNumber);
+     }
 diff --git a/videodecoder/securevideo/sc1 b/videodecoder/securevideo/sc1
 index e69de29..f21077d 120000
 --- a/videodecoder/securevideo/sc1
@@ -5,3 +20,16 @@ index e69de29..f21077d 120000
 @@ -0,0 +1 @@
 +../securevideo/clovertrail
 \ No newline at end of file
+diff --git a/videoencoder/VideoEncoderBase.cpp b/videoencoder/VideoEncoderBase.cpp
+index 268e79e..ee9dbf8 100644
+--- a/videoencoder/VideoEncoderBase.cpp
++++ b/videoencoder/VideoEncoderBase.cpp
+@@ -203,7 +203,7 @@ Encode_Status VideoEncoderBase::start() {
+ 
+     vaStatus = vaCreateConfig(
+             mVADisplay, mComParams.profile, mVAEntrypoint,
+-            &vaAttrib[0], vaAttribNumber, &(mVAConfig));
++            &vaAttrib[0], 2, &(mVAConfig));
+ //            &vaAttrib[0], 3, &(mVAConfig));  //uncomment this after psb_video supports
+     CHECK_VA_STATUS_RETURN("vaCreateConfig");
+ 
