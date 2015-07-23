@@ -134,6 +134,19 @@ index 37f53d2..c30196b 100644
  
      TemporalLayer.numberOfLayer = p->nNumberOfTemporalLayer;
      TemporalLayer.nPeriodicity = p->nPeriodicity;
+diff --git a/videocodec/OMXVideoEncoderH263.cpp b/videocodec/OMXVideoEncoderH263.cpp
+index e87ae1a..85ec15c 100644
+--- a/videocodec/OMXVideoEncoderH263.cpp
++++ b/videocodec/OMXVideoEncoderH263.cpp
+@@ -219,7 +219,7 @@ out:
+         buffers[OUTPORT_INDEX]->nTimeStamp = outtimestamp;
+         buffers[OUTPORT_INDEX]->nFlags = outflags;
+ 
+-        LOGV("********** output buffer: len=%d, ts=%lld, flags=%x",
++        LOGV("********** output buffer: len=%lu, ts=%lld, flags=%lu",
+              outfilledlen,
+              outtimestamp,
+              outflags);
 diff --git a/videocodec/libvpx_internal/libvpx.mk b/videocodec/libvpx_internal/libvpx.mk
 index 5a95803..315abd6 100644
 --- a/videocodec/libvpx_internal/libvpx.mk
