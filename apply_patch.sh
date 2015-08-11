@@ -35,3 +35,6 @@ do
     done
     cd ${PATCH_DIR}
 done
+
+# Extra patch for timezone
+wget https://github.com/android/platform_bionic/raw/master/libc/zoneinfo/tzdata -P ../bionic/libc/zoneinfo/ -N
