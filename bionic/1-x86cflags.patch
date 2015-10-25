@@ -1,0 +1,21 @@
+From: Intel
+
+Add x86 specific cflags
+
+diff --git a/libc/Android.mk b/libc/Android.mk
+index da193fb..737cdcf 100644
+--- a/libc/Android.mk
++++ b/libc/Android.mk
+@@ -517,8 +518,10 @@ ifeq ($(TARGET_ARCH),arm)
+ endif # !arm
+ 
+ ifeq ($(TARGET_ARCH),x86)
+-  libc_common_cflags += -DSOFTFLOAT
+-  libc_crt_target_cflags :=
++  libc_common_cflags += -DSOFTFLOAT \
++                        -fno-pic \
++                        -fno-pie
++  libc_crt_target_cflags := -m32
+   ifeq ($(ARCH_X86_HAVE_SSE2),true)
+       libc_crt_target_cflags += -DUSE_SSE2=1
+   endif

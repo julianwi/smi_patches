@@ -1,0 +1,19 @@
+From: Intel
+
+Use memcpu as memmove
+
+diff --git a/libc/arch-x86/string/ssse3-memcpy-atom.S b/libc/arch-x86/string/ssse3-memcpy-atom.S
+index 1080a38..5013886 100644
+--- a/libc/arch-x86/string/ssse3-memcpy-atom.S
++++ b/libc/arch-x86/string/ssse3-memcpy-atom.S
+@@ -31,6 +31,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include "cache.h"
+ #undef __i686
+ 
++#ifndef USE_AS_MEMMOVE
++# define USE_AS_MEMMOVE 1
++#endif
++
+ #ifndef MEMCPY
+ # define MEMCPY	memcpy
+ #endif
