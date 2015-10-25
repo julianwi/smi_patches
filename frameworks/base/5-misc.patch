@@ -1,0 +1,28 @@
+From: hazou
+
+Add media_rw for camera etc
+
+diff --git a/data/etc/platform.xml b/data/etc/platform.xml
+index b3153a9..ea33585 100644
+--- a/data/etc/platform.xml
++++ b/data/etc/platform.xml
+@@ -69,6 +69,7 @@
+     <permission name="android.permission.WRITE_EXTERNAL_STORAGE" >
+         <group gid="sdcard_r" />
+         <group gid="sdcard_rw" />
++        <group gid="media_rw" />
+     </permission>
+ 
+     <permission name="android.permission.ACCESS_ALL_EXTERNAL_STORAGE" >
+diff --git a/packages/SystemUI/AndroidManifest.xml b/packages/SystemUI/AndroidManifest.xml
+index 3dff1e6..8895585 100644
+--- a/packages/SystemUI/AndroidManifest.xml
++++ b/packages/SystemUI/AndroidManifest.xml
+@@ -37,6 +37,7 @@
+     <uses-permission android:name="android.permission.MANAGE_NETWORK_POLICY" />
+     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+     <uses-permission android:name="com.android.phone.CHANGE_NETWORK_MODE" />
++    <uses-permission android:name="android.permission.CONNECTIVITY_INTERNAL" />
+ 
+     <!-- Physical hardware -->
+     <uses-permission android:name="android.permission.MANAGE_USB" />

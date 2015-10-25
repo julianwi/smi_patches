@@ -1,0 +1,134 @@
+From: Hazuo
+
+Add camera button support. Needs better implementation like CM12
+
+diff --git a/core/java/android/provider/Settings.java b/core/java/android/provider/Settings.java
+index 97d7460..76efab2 100755
+--- a/core/java/android/provider/Settings.java
++++ b/core/java/android/provider/Settings.java
+@@ -3270,6 +3270,12 @@ public final class Settings {
+         public static final String CAMERA_SLEEP_ON_RELEASE = "camera_sleep_on_release";
+ 
+         /**
++         * Whether to launch secure camera app when key is longpressed
++         * @hide
++         */
++        public static final String CAMERA_LAUNCH_ON_HOLD = "camera_launch_on_hold";
++
++        /**
+          * Whether or not camera button music controls should be enabled to play/pause media tracks
+          * @hide
+          */
+diff --git a/policy/src/com/android/internal/policy/impl/PhoneWindowManager.java b/policy/src/com/android/internal/policy/impl/PhoneWindowManager.java
+index 4b0e720..d2eaf80 100644
+--- a/policy/src/com/android/internal/policy/impl/PhoneWindowManager.java
++++ b/policy/src/com/android/internal/policy/impl/PhoneWindowManager.java
+@@ -17,6 +17,7 @@
+ 
+ package com.android.internal.policy.impl;
+ 
++import android.app.Activity;
+ import android.app.ActivityManager;
+ import android.app.ActivityManagerNative;
+ import android.app.IUiModeManager;
+@@ -69,6 +70,7 @@ import android.os.UEventObserver;
+ import android.os.UserHandle;
+ import android.os.Vibrator;
+ import android.provider.Settings;
++import android.provider.MediaStore;
+ 
+ import android.service.dreams.DreamService;
+ import android.service.dreams.IDreamManager;
+@@ -367,6 +369,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+     // Behavior of camera wake
+     boolean mCameraWakeScreen;
+     boolean mCameraSleepOnRelease;
++    boolean mCameraLaunchOnHold;
+     boolean mIsFocusPressed;
+ 
+     // Behavior of volbtn/camera music controls
+@@ -569,6 +572,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+     private static final int MSG_DISPATCH_MEDIA_KEY_WITH_WAKE_LOCK = 3;
+     private static final int MSG_DISPATCH_MEDIA_KEY_REPEAT_WITH_WAKE_LOCK = 4;
+     private static final int MSG_DISPATCH_VOLKEY_WITH_WAKE_LOCK = 5;
++    private static final int MSG_DISPATCH_CAMERA_WITH_WAKE_LOCK = 6;
+ 
+     boolean mWifiDisplayConnected;
+ 
+@@ -596,6 +600,11 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                             KeyEvent.changeAction(event, KeyEvent.ACTION_UP));
+                     break;
+                 }
++                case MSG_DISPATCH_CAMERA_WITH_WAKE_LOCK: {
++                    KeyEvent event = (KeyEvent) msg.obj;
++                    mIsLongPress = true;
++                    break;
++                }
+             }
+         }
+     }
+@@ -637,6 +646,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                     Settings.System.CAMERA_SLEEP_ON_RELEASE), false, this,
+                     UserHandle.USER_ALL);
+             resolver.registerContentObserver(Settings.System.getUriFor(
++                    Settings.System.CAMERA_LAUNCH_ON_HOLD), false, this,
++                    UserHandle.USER_ALL);
++            resolver.registerContentObserver(Settings.System.getUriFor(
+                     Settings.System.VOLBTN_MUSIC_CONTROLS), false, this,
+                     UserHandle.USER_ALL);
+             resolver.registerContentObserver(Settings.System.getUriFor(
+@@ -1626,6 +1638,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+             mCameraSleepOnRelease = ((Settings.System.getIntForUser(resolver,
+                     Settings.System.CAMERA_SLEEP_ON_RELEASE, 0, UserHandle.USER_CURRENT) == 1)
+                     && mCameraWakeScreen);
++            mCameraLaunchOnHold = ((Settings.System.getIntForUser(resolver,
++                    Settings.System.CAMERA_LAUNCH_ON_HOLD, 0, UserHandle.USER_CURRENT) == 1)
++                    && mCameraWakeScreen);
+             mVolBtnMusicControls = (Settings.System.getIntForUser(resolver,
+                     Settings.System.VOLBTN_MUSIC_CONTROLS, 1, UserHandle.USER_CURRENT) == 1);
+             mCameraMusicControls = ((Settings.System.getIntForUser(resolver,
+@@ -4754,9 +4769,25 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                 if (down && mIsFocusPressed) {
+                     mIsFocusPressed = false;
+                 }
+-                if (down && !isScreenOn && mCameraWakeScreen && mSingleStageCameraKey) {
+-                    result |= ACTION_WAKE_UP;
+-                }
++		if (!isScreenOn && mCameraWakeScreen && mSingleStageCameraKey) {
++                        if (down) {
++                            mIsLongPress = false;
++                            scheduleLongPressKeyEvent(event, KeyEvent.KEYCODE_CAMERA);
++                            // Consume key down events of all presses.
++                            break;
++                        } else {
++                            mHandler.removeMessages(MSG_DISPATCH_CAMERA_WITH_WAKE_LOCK);
++                            // Consume key up events of long presses only.
++                            if (mIsLongPress && mCameraLaunchOnHold) {
++				Intent startLockedCamera = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA_SECURE).addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS | Intent.FLAG_ACTIVITY_NEW_TASK);
++		    		mContext.startActivity(startLockedCamera);
++		    		result |= ACTION_WAKE_UP;
++                                break;
++                            }
++                            // Change volume only on key up events of short presses.
++                    		result |= ACTION_WAKE_UP;
++                        }
++		}
+                 if (mCameraMusicControls) {
+                     // if the camera key is not pressable, see if music is active
+                     if (!mCameraKeyPressable) {
+@@ -5009,9 +5040,15 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+     private void scheduleLongPressKeyEvent(KeyEvent origEvent, int keyCode) {
+         KeyEvent event = new KeyEvent(origEvent.getDownTime(), origEvent.getEventTime(),
+                 origEvent.getAction(), keyCode, 0);
++	if (keyCode == KeyEvent.KEYCODE_CAMERA) {
++        Message msg = mHandler.obtainMessage(MSG_DISPATCH_CAMERA_WITH_WAKE_LOCK, event);
++        msg.setAsynchronous(true);
++        mHandler.sendMessageDelayed(msg, ViewConfiguration.getLongPressTimeout());
++	} else {
+         Message msg = mHandler.obtainMessage(MSG_DISPATCH_VOLKEY_WITH_WAKE_LOCK, event);
+         msg.setAsynchronous(true);
+         mHandler.sendMessageDelayed(msg, ViewConfiguration.getLongPressTimeout());
++	}
+     }
+ 
+     /**
