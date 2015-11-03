@@ -1,9 +1,9 @@
 #!/bin/bash
 
-GOOGLE_DIFFS=../patches
+PATCH_DIR=`pwd`
 
 PATCHED_PROJECTS=$(
-  for i in ${GOOGLE_DIFFS}
+  for i in ${PATCH_DIR}
   do
     (
       cd $i
