@@ -170,7 +170,7 @@ diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
 index 3ff1a63..e124bdb 100755
 --- a/media/libstagefright/ACodec.cpp
 +++ b/media/libstagefright/ACodec.cpp
-@@ -4100,10 +4100,11 @@ bool ACodec::LoadedState::onConfigureComponent(
+@@ -4114,10 +4114,11 @@ bool ACodec::LoadedState::onConfigureComponent(
                  static_cast<NativeWindowWrapper *>(obj.get()));
          CHECK(nativeWindow != NULL);
          mCodec->mNativeWindow = nativeWindow->getNativeWindow();
@@ -216,7 +216,7 @@ diff --git a/media/libstagefright/MPEG4Extractor.cpp b/media/libstagefright/MPEG
 index d1b4381..fec245b 100644
 --- a/media/libstagefright/MPEG4Extractor.cpp
 +++ b/media/libstagefright/MPEG4Extractor.cpp
-@@ -2459,11 +2459,15 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
+@@ -2484,11 +2484,15 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
          sampleRate = br.getBits(24);
          numChannels = br.getBits(4);
      } else {
@@ -234,7 +234,7 @@ index d1b4381..fec245b 100644
  
          sampleRate = kSamplingRate[freqIndex];
      }
-@@ -3718,6 +3718,7 @@ status_t MPEG4Source::fragmentedRead(
+@@ -3814,6 +3814,7 @@ status_t MPEG4Source::fragmentedRead(
              mBuffer->set_range(0, dstOffset);
          }
  
@@ -242,7 +242,7 @@ index d1b4381..fec245b 100644
          mBuffer->meta_data()->setInt64(
                  kKeyTime, ((int64_t)cts * 1000000) / mTimescale);
  
-@@ -3770,7 +3775,8 @@ static bool LegacySniffMPEG4(
+@@ -3862,7 +3867,8 @@ static bool LegacySniffMPEG4(
          || !memcmp(header, "ftyp3ge6", 8) || !memcmp(header, "ftyp3gg6", 8)
          || !memcmp(header, "ftypisom", 8) || !memcmp(header, "ftypM4V ", 8)
          || !memcmp(header, "ftypM4A ", 8) || !memcmp(header, "ftypf4v ", 8)
@@ -333,7 +333,7 @@ index 269028a..0f58d48 100644
  }
  
  status_t OMXCodec::setupH263EncoderParameters(const sp<MetaData>& meta) {
-@@ -2529,6 +2536,14 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
+@@ -2532,6 +2539,14 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
      ALOGI("NOTE: Overriding minUndequeuedBufs to %d",minUndequeuedBufs);
  #endif
  
@@ -348,7 +348,7 @@ index 269028a..0f58d48 100644
      // XXX: Is this the right logic to use?  It's not clear to me what the OMX
      // buffer counts refer to - how do they account for the renderer holding on
      // to buffers?
-@@ -2605,15 +2620,9 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
+@@ -2608,15 +2623,9 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
          cancelEnd = def.nBufferCountActual;
      }
  
@@ -367,7 +367,7 @@ index 269028a..0f58d48 100644
      }
  
      return err;
-@@ -3166,6 +3175,16 @@ void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
+@@ -3169,6 +3178,16 @@ void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
          {
              CODEC_LOGE("ERROR(0x%08lx, %ld)", data1, data2);
  
@@ -384,7 +384,7 @@ index 269028a..0f58d48 100644
              setState(ERROR);
              break;
          }
-@@ -3180,6 +3199,7 @@ void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
+@@ -3183,6 +3202,7 @@ void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
                  // when the OMX_EventPortSettingsChanged is not meant for reallocating
                  // the output buffers.
                  if (data1 == kPortIndexOutput) {
@@ -392,7 +392,7 @@ index 269028a..0f58d48 100644
                      CHECK(mFilledBuffers.empty());
                  }
                  onPortSettingsChanged(data1);
-@@ -3539,7 +3559,7 @@ status_t OMXCodec::freeBuffersOnPort(
+@@ -3542,7 +3562,7 @@ status_t OMXCodec::freeBuffersOnPort(
      for (size_t i = buffers->size(); i-- > 0;) {
          BufferInfo *info = &buffers->editItemAt(i);
  
@@ -401,7 +401,7 @@ index 269028a..0f58d48 100644
          if (onlyThoseWeOwn && (info->mStatus == OWNED_BY_COMPONENT || info->mStatus == OWNED_BY_CLIENT)) {
  #else
          if (onlyThoseWeOwn && info->mStatus == OWNED_BY_COMPONENT) {
-@@ -3794,7 +3814,8 @@ bool OMXCodec::drainInputBuffer(BufferInfo *info) {
+@@ -3797,7 +3817,8 @@ bool OMXCodec::drainInputBuffer(BufferInfo *info) {
  
          size_t size = specific->mSize;
  
@@ -411,7 +411,7 @@ index 269028a..0f58d48 100644
                  && !(mQuirks & kWantsNALFragments)) {
              static const uint8_t kNALStartCode[4] =
                      { 0x00, 0x00, 0x00, 0x01 };
-@@ -5473,6 +5494,12 @@ void OMXCodec::signalBufferReturned(MediaBuffer *buffer) {
+@@ -5476,6 +5497,12 @@ void OMXCodec::signalBufferReturned(MediaBuffer *buffer) {
          BufferInfo *info = &buffers->editItemAt(i);
  
          if (info->mMediaBuffer == buffer) {

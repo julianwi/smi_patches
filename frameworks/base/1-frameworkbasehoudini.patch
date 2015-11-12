@@ -728,7 +728,7 @@ index 8518101..0d9cec2 100644
  extern int register_android_backup_BackupDataInput(JNIEnv *env);
  extern int register_android_backup_BackupDataOutput(JNIEnv *env);
  extern int register_android_backup_FileBackupHelperBase(JNIEnv *env);
-@@ -1180,6 +1183,9 @@ static const RegJNIRec gRegJNI[] = {
+@@ -1184,6 +1187,9 @@ static const RegJNIRec gRegJNI[] = {
      REG_JNI(register_android_net_wifi_WifiNative),
      REG_JNI(register_android_os_MemoryFile),
      REG_JNI(register_com_android_internal_os_ZygoteInit),

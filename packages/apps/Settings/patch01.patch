@@ -36,7 +36,7 @@ diff --git a/src/com/android/settings/DeviceInfoSettings.java b/src/com/android/
 index 9e82abf..7ed2ddf 100644
 --- a/src/com/android/settings/DeviceInfoSettings.java
 +++ b/src/com/android/settings/DeviceInfoSettings.java
-@@ -128,8 +128,21 @@ public class DeviceInfoSettings extends RestrictedSettingsFragment {
+@@ -149,8 +149,21 @@ public class DeviceInfoSettings extends RestrictedSettingsFragment {
          removePreferenceIfPropertyMissing(getPreferenceScreen(), KEY_SELINUX_STATUS,
                  PROPERTY_SELINUX_STATUS);
  
@@ -60,7 +60,7 @@ index 9e82abf..7ed2ddf 100644
  
          // Only the owner should see the Updater settings, if it exists
          if (UserHandle.myUserId() == UserHandle.USER_OWNER) {
-@@ -407,64 +420,44 @@ public class DeviceInfoSettings extends RestrictedSettingsFragment {
+@@ -428,64 +441,44 @@ public class DeviceInfoSettings extends RestrictedSettingsFragment {
          return "";
      }
  
