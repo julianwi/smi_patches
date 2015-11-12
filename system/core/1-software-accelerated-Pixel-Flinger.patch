@@ -14158,7 +14158,7 @@ index 0000000..e605579
 +    int err = 0;
 +    err = scanline_core(needs, c);
 +    if (err != 0)
-+        LOGE("scanline_core failed probably due to running out of the registers: %d\n", err);
++        ALOGE("scanline_core failed probably due to running out of the registers: %d\n", err);
 +
 +    // XXX: in theory, pcForLabel is not valid before generate()
 +    char* fragment_start_pc = pcForLabel("fragment_loop");
@@ -14172,7 +14172,7 @@ index 0000000..e605579
 +            needs.p, needs.n, needs.t[0], needs.t[1], per_fragment_ins_size);
 +
 +    if (err) {
-+        LOGE("Error while generating ""%s""\n", name);
++        ALOGE("Error while generating ""%s""\n", name);
 +        disassemble(name);
 +        return -1;
 +    }
@@ -15556,7 +15556,7 @@ index 0000000..e605579
 +    }
 +    // this is not an error anymore because, we'll try again with
 +    // a lower optimization level.
-+    LOGE_IF(i >= nbreg, "pixelflinger ran out of registers\n");
++    ALOGE_IF(i >= nbreg, "pixelflinger ran out of registers\n");
 +    if (i >= nbreg) {
 +        mStatus |= OUT_OF_REGISTERS;
 +        // we return SP so we can more easily debug things
@@ -17687,7 +17687,7 @@ index 0000000..20433b1
 +        }
 +    }
 +
-+    LOGE_IF(ms>=32, "mul_factor overflow vs=%d, fs=%d", vs, fs);
++    ALOGE_IF(ms>=32, "mul_factor overflow vs=%d, fs=%d", vs, fs);
 +
 +    int vreg = v.reg;
 +    int freg = f.reg;
@@ -17827,7 +17827,7 @@ index 0000000..20433b1
 +    int as = a.h;
 +    int ms = vs+fs;
 +
-+    LOGE_IF(ms>=32, "mul_factor_add overflow vs=%d, fs=%d, as=%d", vs, fs, as);
++    ALOGE_IF(ms>=32, "mul_factor_add overflow vs=%d, fs=%d, as=%d", vs, fs, as);
 +
 +    integer_t add(a.reg, a.h, a.flags, a.offset_ebp);
 +
@@ -18240,7 +18240,7 @@ index 0000000..6927134
 +    int dbits = dh - dl;
 +    int dithering = 0;
 +
-+    LOGE_IF(sbits<dbits, "sbits (%d) < dbits (%d) in downshift", sbits, dbits);
++    ALOGE_IF(sbits<dbits, "sbits (%d) < dbits (%d) in downshift", sbits, dbits);
 +
 +    if (sbits>dbits) {
 +        // see if we need to dither
@@ -19469,7 +19469,7 @@ index 0000000..c5166cf
 +        break;
 +    default:
 +        // unsupported format, do something sensical...
-+        LOGE("Unsupported 16-bits texture format (%d)", tmu.format_idx);
++        ALOGE("Unsupported 16-bits texture format (%d)", tmu.format_idx);
 +        MOVZX_MEM_TO_REG(OpndSize_16, txPtr.reg, 0, texel.reg);
 +        MOV_REG_TO_MEM(texel.reg, texel.offset_ebp, EBP);
 +        scratches.recycle(texel.reg);
@@ -20312,7 +20312,7 @@ index a5d28b2..bdb24dc 100644
 +            err = gCodeCache.cache(a->key(), a);
 +        }
 +        if (ggl_unlikely(err)) {
-+            LOGE("error generating or caching assembly. Reverting to NOP.  cache_err: %d \n", err);
++            ALOGE("error generating or caching assembly. Reverting to NOP.  cache_err: %d \n", err);
 +            c->scanline = scanline_noop;
 +            c->init_y = init_y_noop;
 +            c->step_y = step_y__nop;
