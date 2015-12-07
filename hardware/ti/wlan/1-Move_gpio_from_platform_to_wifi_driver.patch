@@ -25,7 +25,7 @@ index c7505d0..9bb934a 100644
  	struct wl12xx_sdio_glue *glue = sdio_get_drvdata(func);
 -
 +	struct wl12xx_platform_data *wlan_data;
-+ 
++
 +	wlan_data = wl12xx_get_platform_data();
 +	BUG_ON(!wlan_data);
  	/* Undo decrement done above in wl1271_probe */
