@@ -1,0 +1,70 @@
+From: Stefan Berger
+
+https://gerrit.omnirom.org/#/c/15695/1
+
+Fix xposed, because by fixing a CVE, 'StartVM' has gotten an extra argv. Xposed for KitKat doesn't know this and can't use it.
+
+diff --git a/core/jni/AndroidRuntime.cpp b/core/jni/AndroidRuntime.cpp
+index b8acead..7e95901 100644
+--- a/core/jni/AndroidRuntime.cpp
++++ b/core/jni/AndroidRuntime.cpp
+@@ -436,6 +439,19 @@ void AndroidRuntime::parseExtraOpts(char* extraOptsBuf)
+  *
+  * Returns 0 on success.
+  */
++int AndroidRuntime::startVm(JavaVM** pJavaVM, JNIEnv** pEnv)
++{
++    return startVm(pJavaVM, pEnv, false);
++}
++
++/*
++ * Start the Dalvik Virtual Machine.
++ *
++ * Various arguments, most determined by system properties, are passed in.
++ * The "mOptions" vector is updated.
++ *
++ * Returns 0 on success.
++ */
+ int AndroidRuntime::startVm(JavaVM** pJavaVM, JNIEnv** pEnv, bool zygote)
+ {
+     int result = -1;
+@@ -810,6 +826,19 @@ char* AndroidRuntime::toSlashClassName(const char* className)
+  * Passes the main function two arguments, the class name and the specified
+  * options string.
+  */
++void AndroidRuntime::start(const char* className, const char* options)
++{
++    start(className, options, false);
++}
++
++/*
++ * Start the Android runtime.  This involves starting the virtual machine
++ * and calling the "static void main(String[] args)" method in the class
++ * named by "className".
++ *
++ * Passes the main function two arguments, the class name and the specified
++ * options string.
++ */
+ void AndroidRuntime::start(const char* className, const char* options, bool zygote)
+ {
+     ALOGD("\n>>>>>> AndroidRuntime START %s <<<<<<\n",
+diff --git a/include/android_runtime/AndroidRuntime.h b/include/android_runtime/AndroidRuntime.h
+index e8e869d..fa09643 100644
+--- a/include/android_runtime/AndroidRuntime.h
++++ b/include/android_runtime/AndroidRuntime.h
+@@ -64,6 +64,7 @@ public:
+ 
+     int addVmArguments(int argc, const char* const argv[]);
+ 
++    void start(const char *classname, const char* options);
+     void start(const char *classname, const char* options, bool zygote);
+ 
+     void exit(int code);
+@@ -116,6 +117,7 @@ public:
+ private:
+     static int startReg(JNIEnv* env);
+     void parseExtraOpts(char* extraOptsBuf);
++    int startVm(JavaVM** pJavaVM, JNIEnv** pEnv);
+     int startVm(JavaVM** pJavaVM, JNIEnv** pEnv, bool zygote);
+ 
+     Vector<JavaVMOption> mOptions;
