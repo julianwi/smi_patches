@@ -216,7 +216,7 @@ diff --git a/media/libstagefright/MPEG4Extractor.cpp b/media/libstagefright/MPEG
 index d1b4381..fec245b 100644
 --- a/media/libstagefright/MPEG4Extractor.cpp
 +++ b/media/libstagefright/MPEG4Extractor.cpp
-@@ -2484,11 +2484,15 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
+@@ -2490,11 +2490,15 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
          sampleRate = br.getBits(24);
          numChannels = br.getBits(4);
      } else {
@@ -234,7 +234,7 @@ index d1b4381..fec245b 100644
  
          sampleRate = kSamplingRate[freqIndex];
      }
-@@ -3814,6 +3814,7 @@ status_t MPEG4Source::fragmentedRead(
+@@ -3831,6 +3831,7 @@ status_t MPEG4Source::fragmentedRead(
              mBuffer->set_range(0, dstOffset);
          }
  
@@ -242,7 +242,7 @@ index d1b4381..fec245b 100644
          mBuffer->meta_data()->setInt64(
                  kKeyTime, ((int64_t)cts * 1000000) / mTimescale);
  
-@@ -3862,7 +3867,8 @@ static bool LegacySniffMPEG4(
+@@ -3883,7 +3888,8 @@ static bool LegacySniffMPEG4(
          || !memcmp(header, "ftyp3ge6", 8) || !memcmp(header, "ftyp3gg6", 8)
          || !memcmp(header, "ftypisom", 8) || !memcmp(header, "ftypM4V ", 8)
          || !memcmp(header, "ftypM4A ", 8) || !memcmp(header, "ftypf4v ", 8)
@@ -270,7 +270,7 @@ diff --git a/media/libstagefright/NuCachedSource2.cpp b/media/libstagefright/NuC
 index 569e8a7..50ed117 100644
 --- a/media/libstagefright/NuCachedSource2.cpp
 +++ b/media/libstagefright/NuCachedSource2.cpp
-@@ -500,6 +500,10 @@ ssize_t NuCachedSource2::readAtInternal(off64_t offset, void *data, size_t size,
+@@ -509,6 +509,10 @@ ssize_t NuCachedSource2::readAtInternal(off64_t offset, void *data, size_t size,
  
      Mutex::Autolock autoLock(mLock);
  
