@@ -1,0 +1,21 @@
+From: Intel
+
+enhance error handle for NuCachedSource2
+
+diff --git a/media/libstagefright/NuCachedSource2.cpp b/media/libstagefright/NuCachedSource2.cpp
+index 569e8a7..50ed117 100644
+--- a/media/libstagefright/NuCachedSource2.cpp
++++ b/media/libstagefright/NuCachedSource2.cpp
+@@ -509,6 +509,10 @@ ssize_t NuCachedSource2::readAtInternal(off64_t offset, void *data, size_t size,
+ 
+     Mutex::Autolock autoLock(mLock);
+ 
++    if (offset < 0) {
++        return ERROR_OUT_OF_RANGE;
++    }
++
+     // If the request can be completely satisfied from the cache, do so.
+ 
+     if (offset >= mCacheOffset
+
+

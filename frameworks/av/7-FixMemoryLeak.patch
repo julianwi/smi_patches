@@ -1,0 +1,16 @@
+From: Intel
+
+Movie studio: fix a memory leak issue in the AOSP code
+
+diff --git a/libvideoeditor/vss/stagefrightshells/src/VideoEditorVideoDecoder.cpp b/libvideoeditor/vss/stagefrightshells/src/VideoEditorVideoDecoder.cpp
+index 5386cdd..93f3cf3 100755
+--- a/libvideoeditor/vss/stagefrightshells/src/VideoEditorVideoDecoder.cpp
++++ b/libvideoeditor/vss/stagefrightshells/src/VideoEditorVideoDecoder.cpp
+@@ -779,6 +779,7 @@ M4OSA_ERR queryVideoDecoderCapabilities
+     logSupportDecodersAndCapabilities(pDecoders);
+     *decoders = pDecoders;
+ cleanUp:
++    client.disconnect();
+     return err;
+ }
+ /********************

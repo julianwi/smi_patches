@@ -1,0 +1,45 @@
+From: Intel
+
+Update the rotation information before playing new clips
+
+--- a/libvideoeditor/lvpp/NativeWindowRenderer.cpp
++++ b/libvideoeditor/lvpp/NativeWindowRenderer.cpp
+@@ -317,6 +317,11 @@ NativeWindowRenderer::~NativeWindowRenderer() {
+ void NativeWindowRenderer::render(RenderInput* input) {
+     sp<GLConsumer> ST = input->mST;
+     sp<Surface> STC = input->mSTC;
++    int err;
++    err = native_window_set_buffers_transform(STC.get(), input->mTransform);
++    if (err != 0) {
++        ALOGE("native_window_set_buffers_transform failed!");
++    }
+ 
+     if (input->mIsExternalBuffer) {
+         queueExternalBuffer(STC.get(), input->mBuffer,
+@@ -603,6 +616,14 @@ void RenderInput::updateVideoSize(sp<MetaData> meta) {
+         mWidth = mHeight;
+         mHeight = tmp;
+     }
++
++    switch (rotationDegrees) {
++        case 0: mTransform= 0; break;
++        case 90: mTransform = HAL_TRANSFORM_ROT_90; break;
++        case 180: mTransform = HAL_TRANSFORM_ROT_180; break;
++        case 270: mTransform = HAL_TRANSFORM_ROT_270; break;
++        default: mTransform = 0; break;
++    }
+ }
+ 
+ void RenderInput::render(MediaBuffer* buffer, uint32_t videoEffect,
+diff --git a/libvideoeditor/lvpp/NativeWindowRenderer.h b/libvideoeditor/lvpp/NativeWindowRenderer.h
+index 26b4cba..79b096e 100755
+--- a/libvideoeditor/lvpp/NativeWindowRenderer.h
++++ b/libvideoeditor/lvpp/NativeWindowRenderer.h
+@@ -167,6 +167,7 @@ private:
+     sp<GLConsumer> mST;
+     sp<Surface> mSTC;
+     int mWidth, mHeight;
++    uint32_t mTransform;
+ 
+     // These are only valid during render() calls
+     uint32_t mVideoEffect;

@@ -1,0 +1,50 @@
+From: ZenfoneArea,Hazou
+
+Hack to use intel AVC Encoder for camera
+
+diff --git a/media/libmediaplayerservice/Android.mk b/media/libmediaplayerservice/Android.mk
+index 5e02313..cb3a7a1 100644
+--- a/media/libmediaplayerservice/Android.mk
++++ b/media/libmediaplayerservice/Android.mk
+@@ -65,8 +65,6 @@ ifeq ($(BOARD_USES_QCOM_HARDWARE),true)
+         libstagefright_bufferallocator
+ endif
+
+-LOCAL_MODULE:= libmediaplayerservice
+-
+ ifeq ($(TARGET_ENABLE_QC_AV_ENHANCEMENTS),true)
+     LOCAL_CFLAGS += -DENABLE_AV_ENHANCEMENTS
+     LOCAL_C_INCLUDES += $(TOP)/frameworks/av/include/media
+@@ -78,6 +76,13 @@ ifeq ($(TARGET_BOARD_PLATFORM),msm7x27a)
+     LOCAL_CFLAGS += -DUSE_SUBMIT_ONE_INPUT_BUFFER
+ endif
+ 
++# Hack to use intel AVC Encoder for camera.
++ifeq ($(TARGET_NO_METADATA_ON_AVC_ENC),true)
++    LOCAL_CFLAGS += -DNO_METADATA_ON_AVC_ENC
++endif
++
++LOCAL_MODULE:= libmediaplayerservice
++
+ include $(BUILD_SHARED_LIBRARY)
+ 
+ include $(call all-makefiles-under,$(LOCAL_PATH))
+diff --git a/media/libmediaplayerservice/StagefrightRecorder.cpp b/media/libmediaplayerservice/StagefrightRecorder.cpp
+index d3dbcbe..c1c201b 100644
+--- a/media/libmediaplayerservice/StagefrightRecorder.cpp
++++ b/media/libmediaplayerservice/StagefrightRecorder.cpp
+@@ -1317,7 +1317,13 @@ status_t StagefrightRecorder::checkVideoEncoderCapabilities(
+              mVideoEncoder == VIDEO_ENCODER_MPEG_4_SP ? MEDIA_MIMETYPE_VIDEO_MPEG4 :
+              mVideoEncoder == VIDEO_ENCODER_H264 ? MEDIA_MIMETYPE_VIDEO_AVC : ""),
+             false /* decoder */, true /* hwCodec */, &codecs);
+-    *supportsCameraSourceMetaDataMode = codecs.size() > 0;
++
++#ifdef NO_METADATA_ON_AVC_ENC
++	if(mVideoEncoder == VIDEO_ENCODER_H264)
++		*supportsCameraSourceMetaDataMode = false;
++	else
++#endif
++	*supportsCameraSourceMetaDataMode = codecs.size() > 0;
+     ALOGV("encoder %s camera source meta-data mode",
+             *supportsCameraSourceMetaDataMode ? "supports" : "DOES NOT SUPPORT");
+ 

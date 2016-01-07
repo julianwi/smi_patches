@@ -1,0 +1,50 @@
+From: Intel
+
+Enable video cross process buffer sharing
+
+diff --git a/media/mediaserver/Android.mk b/media/mediaserver/Android.mk
+index 4f72759..25cdaee 100644
+--- a/media/mediaserver/Android.mk
++++ b/media/mediaserver/Android.mk
+@@ -25,6 +25,11 @@ LOCAL_SHARED_LIBRARIES := \
+ 	liblog \
+ 	libbinder
+ 
++ifeq ($(INTEL_VIDEO_XPROC_SHARING),true)
++LOCAL_SHARED_LIBRARIES += libintelmetadatabuffer
++LOCAL_C_INCLUDES += $(TARGET_OUT_HEADERS)/libmix_videoencoder
++endif
++
+ LOCAL_STATIC_LIBRARIES := \
+ 	libregistermsext
+ 
+diff --git a/media/mediaserver/main_mediaserver.cpp b/media/mediaserver/main_mediaserver.cpp
+index 4659996..4c145b5 100644
+--- a/media/mediaserver/main_mediaserver.cpp
++++ b/media/mediaserver/main_mediaserver.cpp
+@@ -37,6 +37,9 @@
+ #ifdef AUDIO_LISTEN_ENABLED
+ #include "ListenService.h"
+ #endif
++#ifdef INTEL_VIDEO_XPROC_SHARING
++#include "IntelMetadataBuffer.h"
++#endif
+ 
+ using namespace android;
+ 
+@@ -144,6 +147,9 @@ int main(int argc, char** argv)
+         ListenService::instantiate();
+ #endif
+         AudioPolicyService::instantiate();
++#ifdef INTEL_VIDEO_XPROC_SHARING
++        IntelBufferSharingService::instantiate();
++#endif
+         registerExtensions();
+         ProcessState::self()->startThreadPool();
+         IPCThreadState::self()->joinThreadPool();
+diff --git a/services/camera/libcameraservice/CameraService.cpp b/services/camera/libcameraservice/CameraService.cpp
+index 994ce26..beb6126 100644
+--- a/services/camera/libcameraservice/CameraService.cpp
++++ b/services/camera/libcameraservice/CameraService.cpp
+
+

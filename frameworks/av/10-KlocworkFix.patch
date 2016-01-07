@@ -1,0 +1,45 @@
+From: Intel
+
+Klocwork Fix required in Stagefright engine.
+
+diff --git a/media/libstagefright/DataSource.cpp b/media/libstagefright/DataSource.cpp
+index 14b04f9..8b6528d 100755
+--- a/media/libstagefright/DataSource.cpp
++++ b/media/libstagefright/DataSource.cpp
+@@ -307,6 +307,9 @@ sp<DataSource> DataSource::CreateFromURI(
+     }
+ 
+     if (source == NULL || source->initCheck() != OK) {
++        if (source != NULL) {
++            source.clear();
++        }
+         return NULL;
+     }
+ 
+diff --git a/media/libstagefright/httplive/LiveSession.cpp b/media/libstagefright/httplive/LiveSession.cpp
+index 14b04f9..8b6528d 100755
+@@ -717,6 +717,9 @@ ssize_t LiveSession::fetchFile(
+                 maxBytesToRead);
+ 
+         if (n < 0) {
++            if ((!strncasecmp(url, "file://", 7)) && (source != NULL)) {
++                source->clear();
++            }
+             return n;
+         }
+ 
+@@ -736,6 +739,10 @@ ssize_t LiveSession::fetchFile(
+         }
+     }
+ 
++    if ((!strncasecmp(url, "file://", 7)) && (source != NULL)) {
++        source->clear();
++    }
++
+     return bytesRead;
+ }
+ 
+
+
+
+ 
