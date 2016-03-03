@@ -1,0 +1,150 @@
+diff --git a/android/build.mk b/android/build.mk
+index 8c9ade0..aef9252 100644
+--- a/android/build.mk
++++ b/android/build.mk
+@@ -86,7 +86,7 @@ LOCAL_SRC_FILES := $(C_FILES) $(if $(filter S,$(ASM_SUFFIX)),$(S_FILES))
+ intermediates := $(local-intermediates-dir)
+ ifeq ($(FFMPEG_ARCH),x86)
+ GEN := $(S_OBJS:%=$(intermediates)/%)
+-$(GEN): YASM := prebuilts/misc/$(BUILD_OS)-$(HOST_PREBUILT_ARCH)/yasm/yasm
++$(GEN): YASM := yasm
+ $(GEN): YASMFLAGS := -felf -DPIC $(LOCAL_C_INCLUDES:%=-I%)
+ $(GEN): PRIVATE_CUSTOM_TOOL = $(YASM) $(YASMFLAGS) -Pconfig.asm -o $@ $<
+ $(GEN): $(intermediates)/%.o: $(LOCAL_PATH)/%.asm $(SUBDIR)config.asm
+diff --git a/android/config-atom.mak b/android/config-atom.mak
+deleted file mode 120000
+index 2b4c40b..0000000
+--- a/android/config-atom.mak
++++ /dev/null
+@@ -1 +0,0 @@
+-config-x86.mak
+\ No newline at end of file
+diff --git a/android/config-x86-atom.mak b/android/config-x86-atom.mak
+index e69de29..2b4c40b 120000
+--- a/android/config-x86-atom.mak
++++ b/android/config-x86-atom.mak
+@@ -0,0 +1 @@
++config-x86.mak
+\ No newline at end of file
+diff --git a/android/include/config-atom.h b/android/include/config-atom.h
+deleted file mode 120000
+index c8cc4d4..0000000
+--- a/android/include/config-atom.h
++++ /dev/null
+@@ -1 +0,0 @@
+-config-x86.h
+\ No newline at end of file
+diff --git a/android/include/config-x86-atom.h b/android/include/config-x86-atom.h
+index e69de29..c8cc4d4 120000
+--- a/android/include/config-x86-atom.h
++++ b/android/include/config-x86-atom.h
+@@ -0,0 +1 @@
++config-x86.h
+\ No newline at end of file
+diff --git a/libavcodec/Android.mk b/libavcodec/Android.mk
+index 0d127eb..be6d55f 100644
+--- a/libavcodec/Android.mk
++++ b/libavcodec/Android.mk
+@@ -31,25 +31,3 @@ $(intermediates)/wmalosslessdec.o: PRIVATE_CFLAGS += $(if $(filter arm,$(TARGET_
+ 
+ LOCAL_MULTILIB := $(FFMPEG_MULTILIB)
+ include $(BUILD_SHARED_LIBRARY)
+-
+-include $(CLEAR_VARS)
+-FFMPEG_MULTILIB := 64
+-include $(LOCAL_PATH)/../android/build.mk
+-
+-LOCAL_C_INCLUDES +=		\
+-	external/zlib
+-
+-LOCAL_SHARED_LIBRARIES +=	\
+-	libz \
+-	libavutil \
+-	libswresample
+-
+-ifneq ($(ARCH_ARM_HAVE_NEON),)
+-  LOCAL_SRC_FILES += neon/mpegvideo.c
+-endif
+-
+-# It's strange wmalosslessdec.c can't be compiled by -O3 for armv7-a-neon. A gcc bug?
+-$(intermediates)/wmalosslessdec.o: PRIVATE_CFLAGS += $(if $(filter arm,$(TARGET_ARCH)),-Os)
+-
+-LOCAL_MULTILIB := $(FFMPEG_MULTILIB)
+-include $(BUILD_SHARED_LIBRARY)
+diff --git a/libavformat/Android.mk b/libavformat/Android.mk
+index c74bb5d..be44e43 100644
+--- a/libavformat/Android.mk
++++ b/libavformat/Android.mk
+@@ -27,21 +27,3 @@ LOCAL_SHARED_LIBRARIES +=		\
+ 
+ LOCAL_MULTILIB := $(FFMPEG_MULTILIB)
+ include $(BUILD_SHARED_LIBRARY)
+-
+-include $(CLEAR_VARS)
+-FFMPEG_MULTILIB := 64
+-include $(LOCAL_PATH)/../android/build.mk
+-
+-LOCAL_C_INCLUDES +=			\
+-	external/openssl/include	\
+-	external/zlib
+-
+-LOCAL_SHARED_LIBRARIES +=		\
+-	libcrypto			\
+-	libssl				\
+-	libz                \
+-	libavutil           \
+-	libavcodec
+-
+-LOCAL_MULTILIB := $(FFMPEG_MULTILIB)
+-include $(BUILD_SHARED_LIBRARY)
+diff --git a/libavutil/Android.mk b/libavutil/Android.mk
+index 1408b3e..7e954e3 100644
+--- a/libavutil/Android.mk
++++ b/libavutil/Android.mk
+@@ -17,12 +17,3 @@ include $(LOCAL_PATH)/../android/build.mk
+ LOCAL_MULTILIB := $(FFMPEG_MULTILIB)
+ 
+ include $(BUILD_SHARED_LIBRARY)
+-
+-
+-include $(CLEAR_VARS)
+-FFMPEG_MULTILIB := 64
+-include $(LOCAL_PATH)/../android/build.mk
+-
+-LOCAL_MULTILIB := $(FFMPEG_MULTILIB)
+-
+-include $(BUILD_SHARED_LIBRARY)
+diff --git a/libswresample/Android.mk b/libswresample/Android.mk
+index 2cf73dd..848e6cf 100644
+--- a/libswresample/Android.mk
++++ b/libswresample/Android.mk
+@@ -16,11 +16,3 @@ include $(LOCAL_PATH)/../android/build.mk
+ 
+ LOCAL_MULTILIB := $(FFMPEG_MULTILIB)
+ include $(BUILD_SHARED_LIBRARY)
+-
+-
+-include $(CLEAR_VARS)
+-FFMPEG_MULTILIB := 64
+-include $(LOCAL_PATH)/../android/build.mk
+-
+-LOCAL_MULTILIB := $(FFMPEG_MULTILIB)
+-include $(BUILD_SHARED_LIBRARY)
+diff --git a/libswscale/Android.mk b/libswscale/Android.mk
+index 9e5db67..fcad683 100644
+--- a/libswscale/Android.mk
++++ b/libswscale/Android.mk
+@@ -19,13 +19,3 @@ LOCAL_SHARED_LIBRARIES += \
+ 
+ LOCAL_MULTILIB := $(FFMPEG_MULTILIB)
+ include $(BUILD_SHARED_LIBRARY)
+-
+-include $(CLEAR_VARS)
+-FFMPEG_MULTILIB := 64
+-include $(LOCAL_PATH)/../android/build.mk
+-
+-LOCAL_SHARED_LIBRARIES += \
+-	libavutil
+-
+-LOCAL_MULTILIB := $(FFMPEG_MULTILIB)
+-include $(BUILD_SHARED_LIBRARY)
