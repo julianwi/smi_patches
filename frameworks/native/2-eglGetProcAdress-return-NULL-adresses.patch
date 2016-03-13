@@ -1,0 +1,25 @@
+From: Intel
+
+eglGetProcAdress return NULL adresses
+
+Fix is just a repeat from previous Android branches as
+it is missingon Android 4.4. It gives handling of function
+adresses in eglGetProcAdress for x86 without using
+gExtensionForwarders table which is implemented only
+for ARM and MIPS. After implementation of gExtensionForwarders
+for x86 patch should be reverted.
+
+diff --git a/opengl/libs/EGL/eglApi.cpp b/opengl/libs/EGL/eglApi.cpp
+index a9dc7b3..ab73060 100644
+--- a/opengl/libs/EGL/eglApi.cpp
++++ b/opengl/libs/EGL/eglApi.cpp
+@@ -974,7 +974,9 @@ __eglMustCastToProperFunctionPointerType eglGetProcAddress(const char *procname)
+             }
+ 
+             if (found) {
++#if defined (__arm__) || defined (__mips__)
+                 addr = gExtensionForwarders[slot];
++#endif
+                 sGLExtentionMap.add(name, addr);
+                 sGLExtentionSlot++;
+             }
