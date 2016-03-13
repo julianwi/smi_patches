@@ -1,0 +1,123 @@
+From: Intel
+
+Fix lookup of cpu and mem info
+
+diff --git a/src/com/android/settings/DeviceInfoSettings.java b/src/com/android/settings/DeviceInfoSettings.java
+index 9e82abf..7ed2ddf 100644
+--- a/src/com/android/settings/DeviceInfoSettings.java
++++ b/src/com/android/settings/DeviceInfoSettings.java
+@@ -149,8 +149,21 @@ public class DeviceInfoSettings extends RestrictedSettingsFragment {
+         removePreferenceIfPropertyMissing(getPreferenceScreen(), KEY_SELINUX_STATUS,
+                 PROPERTY_SELINUX_STATUS);
+ 
+-        final String cpuInfo = getCPUInfo();
+-        String memInfo = getMemInfo();
++        String cpuInfo = null;
++		try{
++			cpuInfo = getCPUInfo();
++		}catch (IOException ie){
++			//error getting cpuInfo
++			 Log.e(LOG_TAG, "Error getting cpuInfo IOException on method getCPUInfo()");
++		}
++        String memInfo = null;
++
++		try{
++			memInfo = getMemInfo();
++		}catch (IOException ie){
++			//error getting memInfo
++			Log.e(LOG_TAG, "Error getting memInfo IOException on method getMemInfo()");
++		}
+ 
+         // Only the owner should see the Updater settings, if it exists
+         if (UserHandle.myUserId() == UserHandle.USER_OWNER) {
+@@ -428,64 +441,44 @@ public class DeviceInfoSettings extends RestrictedSettingsFragment {
+         return "";
+     }
+ 
+-    private String getMemInfo() {
++    private String getMemInfo() throws IOException {
+         String result = null;
+         BufferedReader reader = null;
+ 
+-        try {
+-            /* /proc/meminfo entries follow this format:
+-             * MemTotal:         362096 kB
+-             * MemFree:           29144 kB
+-             * Buffers:            5236 kB
+-             * Cached:            81652 kB
+-             */
+-            String firstLine = readLine(FILENAME_PROC_MEMINFO);
+-            if (firstLine != null) {
+-                String parts[] = firstLine.split("\\s+");
+-                if (parts.length == 3) {
+-                    result = Long.parseLong(parts[1])/1024 + " MB";
+-                }
++        /* /proc/meminfo entries follow this format:
++         * MemTotal:         362096 kB
++         * MemFree:           29144 kB
++         * Buffers:            5236 kB
++         * Cached:            81652 kB
++         */
++        String firstLine = readLine(FILENAME_PROC_MEMINFO);
++        if (firstLine != null) {
++            String parts[] = firstLine.split("\\s+");
++            if (parts.length == 3) {
++                result = Long.parseLong(parts[1])/1024 + " MB";
+             }
+-        } catch (IOException e) {}
++	}
+ 
+         return result;
+     }
+ 
+-    private String getCPUInfo() {
++	private String getCPUInfo() throws IOException {
+         String result = null;
+         int coreCount = 0;
++	BufferedReader reader = new BufferedReader(new FileReader(FILENAME_PROC_CPUINFO), 256);
+ 
+         try {
+-            /* The expected /proc/cpuinfo output is as follows:
+-             * Processor	: ARMv7 Processor rev 2 (v7l)
+-             * BogoMIPS	: 272.62
+-             *
+-             * On kernel 3.10 this changed, it is now the last
+-             * line. So let's read the whole thing, search
+-             * specifically for "Processor", and retain the old
+-             * "first line" as fallback.
+-             * Also, use "processor : <id>" to count cores
+-             */
+-            BufferedReader ci = new BufferedReader(new FileReader(FILENAME_PROC_CPUINFO));
+-            String firstLine = ci.readLine();
+-            String latestLine = firstLine;
+-            while (latestLine != null) {
+-                if (latestLine.startsWith("Processor"))
+-                  result = latestLine.split(":")[1].trim();
+-                if (latestLine.startsWith("processor"))
+-                  coreCount++;
+-                latestLine = ci.readLine();
+-            }
+-            if (result == null && firstLine != null) {
+-                result = firstLine.split(":")[1].trim();
+-            }
+-            /* Don't do this. hotplug throws off the count
+-            if (coreCount > 1) {
+-                result = result + " (x" + coreCount + ")";
+-            }
+-            */
+-            ci.close();
+-        } catch (IOException e) {}
++            String cpuInfo = null;
++			boolean found = false;
++			while ((cpuInfo = reader.readLine()) != null && !found) {
++				if (cpuInfo.split(":")[0].trim().equals("model name")) {
++					result = cpuInfo.split(":")[1].trim();
++					found = true;
++				}
++			}
++        } finally {
++            reader.close();
++        }
+ 
+         return result;
+     }

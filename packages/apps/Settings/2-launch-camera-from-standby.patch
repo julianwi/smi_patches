@@ -1,0 +1,73 @@
+From: HazouPH
+
+Launch Camera from standby
+
+diff --git a/res/values/cm_strings.xml b/res/values/cm_strings.xml
+index 0376931..37fe5b9 100644
+--- a/res/values/cm_strings.xml
++++ b/res/values/cm_strings.xml
+@@ -943,6 +943,8 @@ two in order to insert additional control points. \'Remove\' deletes the selecte
+     <string name="camera_wake_summary">Pressing the camera button will wake your device</string>
+     <string name="camera_sleep_on_release_title">Screen peek</string>
+     <string name="camera_sleep_on_release_summary">A half press will keep the screen on only while the button is held down</string>
++    <string name="camera_launch_on_hold_title">Launch Camera</string>
++    <string name="camera_launch_on_hold_summary">A longpress and release will launch in secure camera</string>
+     <string name="camera_music_controls_title">Playback control</string>
+     <string name="camera_music_controls_summary">When the screen is off, long pressing the camera key will play/pause current music track</string>
+     <string name="volume_wake_summary">Pressing either volume button will wake your device</string>
+diff --git a/res/xml/button_settings.xml b/res/xml/button_settings.xml
+index 3a4c633..81168c9 100644
+--- a/res/xml/button_settings.xml
++++ b/res/xml/button_settings.xml
+@@ -204,7 +204,15 @@
+             android:summary="@string/camera_sleep_on_release_summary"
+             android:defaultValue="false" />
+ 
+-        <com.android.settings.cyanogenmod.SystemSettingCheckBoxPreference
++       
++<com.android.settings.cyanogenmod.SystemSettingCheckBoxPreference
++            android:key="camera_launch_on_hold"
++            android:title="@string/camera_launch_on_hold_title"
++            android:summary="@string/camera_launch_on_hold_summary"
++            android:defaultValue="false" />
++
++        
++<com.android.settings.cyanogenmod.SystemSettingCheckBoxPreference
+             android:key="camera_music_controls"
+             android:title="@string/camera_music_controls_title"
+             android:summary="@string/camera_music_controls_summary"
+diff --git a/src/com/android/settings/cyanogenmod/ButtonSettings.java b/src/com/android/settings/cyanogenmod/ButtonSettings.java
+index f689acd..2279ec0 100644
+--- a/src/com/android/settings/cyanogenmod/ButtonSettings.java
++++ b/src/com/android/settings/cyanogenmod/ButtonSettings.java
+@@ -114,6 +114,7 @@ public class ButtonSettings extends SettingsPreferenceFragment implements
+     private ListPreference mAppSwitchLongPressAction;
+     private CheckBoxPreference mCameraWake;
+     private CheckBoxPreference mCameraSleepOnRelease;
++    private CheckBoxPreference mCameraLaunchOnHold;
+     private CheckBoxPreference mCameraMusicControls;
+     private ListPreference mVolumeKeyCursorControl;
+     private CheckBoxPreference mSwapVolumeButtons;
+@@ -298,11 +299,14 @@ public class ButtonSettings extends SettingsPreferenceFragment implements
+                 prefScreen.findPreference(Settings.System.CAMERA_WAKE_SCREEN);
+             mCameraSleepOnRelease = (CheckBoxPreference)
+                 prefScreen.findPreference(Settings.System.CAMERA_SLEEP_ON_RELEASE);
++            mCameraLaunchOnHold = (CheckBoxPreference)
++                prefScreen.findPreference(Settings.System.CAMERA_LAUNCH_ON_HOLD);
+             mCameraMusicControls = (CheckBoxPreference)
+                 prefScreen.findPreference(Settings.System.CAMERA_MUSIC_CONTROLS);
+             boolean value = mCameraWake.isChecked();
+             mCameraMusicControls.setEnabled(!value);
+             mCameraSleepOnRelease.setEnabled(value);
++            mCameraLaunchOnHold.setEnabled(value);
+             if (getResources().getBoolean(
+                 com.android.internal.R.bool.config_singleStageCameraKey)) {
+                 cameraCategory.removePreference(mCameraSleepOnRelease);
+@@ -605,6 +609,7 @@ public class ButtonSettings extends SettingsPreferenceFragment implements
+             boolean isCameraWakeEnabled = mCameraWake.isChecked();
+             mCameraMusicControls.setEnabled(!isCameraWakeEnabled);
+             mCameraSleepOnRelease.setEnabled(isCameraWakeEnabled);
++            mCameraLaunchOnHold.setEnabled(isCameraWakeEnabled);
+             return true;
+         } else if (preference == mDisableNavigationKeys) {
+             mDisableNavigationKeys.setEnabled(false);
