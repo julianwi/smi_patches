@@ -1,0 +1,51 @@
+From a039cb0ece00c135f1fbf8f6778d9d8d35da8734 Mon Sep 17 00:00:00 2001
+From: Steve Kondik <steve@cyngn.com>
+Date: Sun, 20 Sep 2015 17:34:30 -0700
+Subject: [PATCH] input: Set explicit ioprio
+
+ * We're not going to do this automagically anymore
+   as the potential for badness is too high.
+
+Change-Id: I4df869287fdf1bbb90e87deecdecf4364f7779db
+---
+
+diff --git a/services/input/InputManager.cpp b/services/input/InputManager.cpp
+index 6a6547b..4f28840 100644
+--- a/services/input/InputManager.cpp
++++ b/services/input/InputManager.cpp
+@@ -21,6 +21,7 @@
+ #include "InputManager.h"
+ 
+ #include <cutils/log.h>
++#include <cutils/iosched_policy.h>
+ 
+ namespace android {
+ 
+@@ -51,13 +52,15 @@
+ }
+ 
+ status_t InputManager::start() {
+-    status_t result = mDispatcherThread->run("InputDispatcher", PRIORITY_URGENT_DISPLAY);
++    status_t result = mDispatcherThread->run("InputDispatcher",
++            PRIORITY_URGENT_DISPLAY + PRIORITY_MORE_FAVORABLE);
+     if (result) {
+         ALOGE("Could not start InputDispatcher thread due to error %d.", result);
+         return result;
+     }
+ 
+-    result = mReaderThread->run("InputReader", PRIORITY_URGENT_DISPLAY);
++    result = mReaderThread->run("InputReader",
++            PRIORITY_URGENT_DISPLAY + PRIORITY_MORE_FAVORABLE);
+     if (result) {
+         ALOGE("Could not start InputReader thread due to error %d.", result);
+ 
+@@ -65,6 +68,9 @@
+         return result;
+     }
+ 
++    android_set_rt_ioprio(mDispatcherThread->getTid(), 1);
++    android_set_rt_ioprio(mReaderThread->getTid(), 1);
++
+     return OK;
+ }
+ 

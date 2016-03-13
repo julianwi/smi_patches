@@ -1,0 +1,71 @@
+From cad471efd1e5957e6d50913fb6ca5b4b2061f783 Mon Sep 17 00:00:00 2001
+From: Steve Kondik <steve@cyngn.com>
+Date: Sun, 20 Sep 2015 17:34:30 -0700
+Subject: [PATCH] surfaceflinger: Set explicit ioprio where required
+
+ * This is just in a couple of places. We're not going to do this
+   automagically anymore as the potential for badness is too high.
+
+Change-Id: I4df869287fdf1bbb90e87deecdecf4364f7779db
+---
+
+diff --git a/services/surfaceflinger/DispSync.cpp b/services/surfaceflinger/DispSync.cpp
+index ce07ab5..031306b 100644
+--- a/services/surfaceflinger/DispSync.cpp
++++ b/services/surfaceflinger/DispSync.cpp
+@@ -21,6 +21,7 @@
+ 
+ #include <math.h>
+ 
++#include <cutils/iosched_policy.h>
+ #include <cutils/log.h>
+ 
+ #include <ui/Fence.h>
+@@ -299,6 +300,7 @@
+ DispSync::DispSync() {
+     mThread = new DispSyncThread();
+     mThread->run("DispSync", PRIORITY_URGENT_DISPLAY + PRIORITY_MORE_FAVORABLE);
++    android_set_rt_ioprio(mThread->getTid(), 1);
+ 
+     reset();
+     beginResync();
+diff --git a/services/surfaceflinger/EventThread.cpp b/services/surfaceflinger/EventThread.cpp
+index 3528b62..fc6c50a 100644
+--- a/services/surfaceflinger/EventThread.cpp
++++ b/services/surfaceflinger/EventThread.cpp
+@@ -20,6 +20,7 @@
+ #include <sys/types.h>
+ 
+ #include <cutils/compiler.h>
++#include <cutils/iosched_policy.h>
+ 
+ #include <gui/BitTube.h>
+ #include <gui/IDisplayEventConnection.h>
+@@ -52,6 +53,7 @@
+ 
+ void EventThread::onFirstRef() {
+     run("EventThread", PRIORITY_URGENT_DISPLAY + PRIORITY_MORE_FAVORABLE);
++    android_set_rt_ioprio(getTid(), 1);
+ }
+ 
+ sp<EventThread::Connection> EventThread::createEventConnection() const {
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 4d6fb82..b6efd82 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -28,6 +28,7 @@
+ #endif
+ 
+ #include <cutils/log.h>
++#include <cutils/iosched_policy.h>
+ #include <cutils/properties.h>
+ 
+ #include <binder/IPCThreadState.h>
+@@ -686,6 +687,7 @@
+ 
+     mEventControlThread = new EventControlThread(this);
+     mEventControlThread->run("EventControl", PRIORITY_URGENT_DISPLAY);
++    android_set_rt_ioprio(mEventControlThread->getTid(), 1);
+ 
+     // set a fake vsync period if there is no HWComposer
+     if (mHwc->initCheck() != NO_ERROR) {
