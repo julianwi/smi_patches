@@ -25,7 +25,7 @@ index d1b4381..fec245b 100644
  
          sampleRate = kSamplingRate[freqIndex];
      }
-@@ -3831,6 +3831,7 @@ status_t MPEG4Source::fragmentedRead(
+@@ -3839,6 +3839,7 @@ status_t MPEG4Source::fragmentedRead(
              mBuffer->set_range(0, dstOffset);
          }
  
@@ -123,7 +123,7 @@ index 994ce26..beb6126 100644
          return NULL;
      }
      return mp;
-@@ -1185,6 +1186,7 @@ status_t CameraService::dump(int fd, const Vector<String16>& args) {
+@@ -1193,6 +1194,7 @@ status_t CameraService::dump(int fd, const Vector<String16>& args) {
          if (!mModule) {
              result = String8::format("No camera module available!\n");
              write(fd, result.string(), result.size());
@@ -135,7 +135,7 @@ diff --git a/services/camera/libcameraservice/api1/Camera2Client.cpp b/services/
 index b093946..9d95eb4 100644
 --- a/services/camera/libcameraservice/api1/Camera2Client.cpp
 +++ b/services/camera/libcameraservice/api1/Camera2Client.cpp
-@@ -406,6 +406,12 @@ void Camera2Client::disconnect() {
+@@ -410,6 +410,12 @@ void Camera2Client::disconnect() {
          l.mParameters.state = Parameters::DISCONNECTED;
      }
  
@@ -148,7 +148,7 @@ index b093946..9d95eb4 100644
      mStreamingProcessor->requestExit();
      mFrameProcessor->requestExit();
      mCaptureSequencer->requestExit();
-@@ -832,6 +838,18 @@ status_t Camera2Client::startPreviewL(Parameters &params, bool restart) {
+@@ -836,6 +842,18 @@ status_t Camera2Client::startPreviewL(Parameters &params, bool restart) {
          res = mStreamingProcessor->startStream(StreamingProcessor::PREVIEW,
                  outputStreams);
      } else {
@@ -171,7 +171,7 @@ diff --git a/services/camera/libcameraservice/api1/CameraClient.cpp b/services/c
 index 1629e05..0204fbd 100644
 --- a/services/camera/libcameraservice/api1/CameraClient.cpp
 +++ b/services/camera/libcameraservice/api1/CameraClient.cpp
-@@ -368,6 +368,7 @@ status_t CameraClient::startPreview() {
+@@ -372,6 +372,7 @@ status_t CameraClient::startPreview() {
  status_t CameraClient::startRecording() {
      Mutex::Autolock lock(mLock);
      LOG1("startRecording (pid %d)", getCallingPid());
