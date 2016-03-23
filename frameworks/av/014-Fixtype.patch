@@ -15,7 +15,7 @@ index 269028a..0f58d48 100644
          quirks |= kRequiresLoadedToIdleAfterAllocation;
      }
      if (list->codecHasQuirk(
-@@ -1245,7 +1252,7 @@ status_t OMXCodec::isColorFormatSupported(
+@@ -1249,7 +1256,7 @@ status_t OMXCodec::isColorFormatSupported(
          // the incremented index (bug 2897413).
          CHECK_EQ(index, portFormat.nIndex);
          if (portFormat.eColorFormat == colorFormat) {
@@ -24,7 +24,7 @@ index 269028a..0f58d48 100644
              return OK;  // colorFormat is supported!
          }
          ++index;
-@@ -1514,7 +1521,7 @@ status_t OMXCodec::getVideoProfileLevel(
+@@ -1518,7 +1525,7 @@ status_t OMXCodec::getVideoProfileLevel(
  
      CODEC_LOGE("Target profile (%d) and level (%d) is not supported",
              profile, level);
@@ -33,7 +33,7 @@ index 269028a..0f58d48 100644
  }
  
  status_t OMXCodec::setupH263EncoderParameters(const sp<MetaData>& meta) {
-@@ -3552,7 +3572,7 @@ status_t OMXCodec::freeBuffersOnPort(
+@@ -3564,7 +3584,7 @@ status_t OMXCodec::freeBuffersOnPort(
      for (size_t i = buffers->size(); i-- > 0;) {
          BufferInfo *info = &buffers->editItemAt(i);
  

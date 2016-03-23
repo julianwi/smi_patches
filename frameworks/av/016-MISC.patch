@@ -7,7 +7,7 @@ diff --git a/media/libstagefright/MPEG4Extractor.cpp b/media/libstagefright/MPEG
 index d1b4381..fec245b 100644
 --- a/media/libstagefright/MPEG4Extractor.cpp
 +++ b/media/libstagefright/MPEG4Extractor.cpp
-@@ -2490,11 +2490,15 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
+@@ -2492,11 +2492,15 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
          sampleRate = br.getBits(24);
          numChannels = br.getBits(4);
      } else {
@@ -25,7 +25,7 @@ index d1b4381..fec245b 100644
  
          sampleRate = kSamplingRate[freqIndex];
      }
-@@ -3839,6 +3839,7 @@ status_t MPEG4Source::fragmentedRead(
+@@ -3841,6 +3841,7 @@ status_t MPEG4Source::fragmentedRead(
              mBuffer->set_range(0, dstOffset);
          }
  
@@ -51,7 +51,7 @@ diff --git a/media/libstagefright/OMXCodec.cpp b/media/libstagefright/OMXCodec.c
 index 269028a..0f58d48 100644
 --- a/media/libstagefright/OMXCodec.cpp
 +++ b/media/libstagefright/OMXCodec.cpp
-@@ -601,6 +605,9 @@ sp<MediaSource> OMXCodec::Create(
+@@ -605,6 +609,9 @@ sp<MediaSource> OMXCodec::Create(
  
              err = codec->configureCodec(meta);
              if (err == OK) {
@@ -61,7 +61,7 @@ index 269028a..0f58d48 100644
                  return codec;
              }
  
-@@ -2608,15 +2620,9 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
+@@ -2620,15 +2632,9 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
          cancelEnd = def.nBufferCountActual;
      }
  
@@ -80,7 +80,7 @@ index 269028a..0f58d48 100644
      }
  
      return err;
-@@ -3193,6 +3212,7 @@ void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
+@@ -3205,6 +3224,7 @@ void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
                  // when the OMX_EventPortSettingsChanged is not meant for reallocating
                  // the output buffers.
                  if (data1 == kPortIndexOutput) {
@@ -88,7 +88,7 @@ index 269028a..0f58d48 100644
                      CHECK(mFilledBuffers.empty());
                  }
                  onPortSettingsChanged(data1);
-@@ -3807,7 +3827,8 @@ bool OMXCodec::drainInputBuffer(BufferInfo *info) {
+@@ -3819,7 +3839,8 @@ bool OMXCodec::drainInputBuffer(BufferInfo *info) {
  
          size_t size = specific->mSize;
  
@@ -98,7 +98,7 @@ index 269028a..0f58d48 100644
                  && !(mQuirks & kWantsNALFragments)) {
              static const uint8_t kNALStartCode[4] =
                      { 0x00, 0x00, 0x00, 0x01 };
-@@ -5486,6 +5507,12 @@ void OMXCodec::signalBufferReturned(MediaBuffer *buffer) {
+@@ -5498,6 +5519,12 @@ void OMXCodec::signalBufferReturned(MediaBuffer *buffer) {
          BufferInfo *info = &buffers->editItemAt(i);
  
          if (info->mMediaBuffer == buffer) {

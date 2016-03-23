@@ -29,7 +29,7 @@ index 269028a..0f58d48 100644
  #ifdef DOLBY_UDC
      if (list->codecHasQuirk(
                  index, "needs-flush-before-disable")) {
-@@ -2535,6 +2542,14 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
+@@ -2532,6 +2539,14 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
      ALOGI("NOTE: Overriding minUndequeuedBufs to %d",minUndequeuedBufs);
  #endif
  
