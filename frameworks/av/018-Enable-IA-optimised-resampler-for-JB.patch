@@ -39,8 +39,8 @@ index 54377f1..e967405 100644
      LOCAL_SHARED_LIBRARIES += libblisrc
  endif
  
-+ifeq ($(USE_INTEL_SRC),true)
-+  LOCAL_CFLAGS += -DUSE_INTEL_SRC
++ifeq ($(USE_INTEL_RSP),true)
++  LOCAL_CFLAGS += -DUSE_INTEL_RSP
 +  LOCAL_C_INCLUDES += $(TARGET_OUT_HEADERS)/libaudioresample
 +  LOCAL_SRC_FILES += AudioResamplerIA.cpp
 +  LOCAL_SHARED_LIBRARIES += libaudioresample
@@ -57,7 +57,7 @@ index 3132e54..a77f86f 100644
  #include "AudioFlinger.h"
  #include "ServiceUtilities.h"
  
-+#ifdef USE_INTEL_SRC
++#ifdef USE_INTEL_RSP
 +#include "AudioResamplerIA.h"
 +#endif
 +
@@ -70,7 +70,7 @@ index 3132e54..a77f86f 100644
      if (status == BAD_VALUE &&
 -        reqFormat == config.format && config.format == AUDIO_FORMAT_PCM_16_BIT &&
 +        reqFormat == config.format && config.format == AUDIO_FORMAT_PCM_16_BIT && (
-+#ifdef USE_INTEL_SRC
++#ifdef USE_INTEL_RSP
 +        AudioResamplerIA::sampleRateSupported(config.sample_rate, reqSamplingRate) ||
 +#endif
  #ifndef MTK_HARDWARE
@@ -87,7 +87,7 @@ index df4e029..8a4e387 100644
  
  #include "AudioMixer.h"
  
-+#ifdef USE_INTEL_SRC
++#ifdef USE_INTEL_RSP
 +#include "AudioResamplerIA.h"
 +#endif
 +
@@ -98,7 +98,7 @@ index df4e029..8a4e387 100644
          if (sampleRate != value) {
              sampleRate = value;
              if (resampler == NULL) {
-+#ifdef USE_INTEL_SRC
++#ifdef USE_INTEL_RSP
 +                if (AudioResamplerIA::sampleRateSupported(sampleRate, devSampleRate)) {
 +                    resampler = AudioResampler::create(format, channelCount,
 +                                devSampleRate, AudioResampler::INTEL_HIGH_QUALITY);
@@ -115,7 +115,7 @@ index df4e029..8a4e387 100644
                  resampler->setLocalTimeFreq(sLocalTimeFreq);
 +#endif
              }
-+#ifdef USE_INTEL_SRC
++#ifdef USE_INTEL_RSP
 +            else {
 +                if (resampler->mResType == AudioResampler::INTEL_SRC &&
 +                    !AudioResamplerIA::sampleRateSupported(sampleRate, devSampleRate)) {
@@ -136,7 +136,7 @@ index 2c3c719..c8fb3b9 100644
  #include <machine/cpu-features.h>
  #endif
  
-+#ifdef USE_INTEL_SRC
++#ifdef USE_INTEL_RSP
 +#include "AudioResamplerIA.h"
 +#endif
 +
@@ -147,7 +147,7 @@ index 2c3c719..c8fb3b9 100644
          resampler = new AudioResamplerMtkWrapper(bitDepth, inChannelCount, (int32_t)sampleRate);
          break;
  #endif
-+#ifdef USE_INTEL_SRC
++#ifdef USE_INTEL_RSP
 +    case INTEL_LOW_QUALITY:
 +    case INTEL_MED_QUALITY:
 +    case INTEL_HIGH_QUALITY:
@@ -158,7 +158,7 @@ index 2c3c719..c8fb3b9 100644
 +#endif
 +
 +    }
-+#ifdef USE_INTEL_SRC
++#ifdef USE_INTEL_RSP
 +    if (quality == LOW_QUALITY || quality == MED_QUALITY ||
 +                            quality == HIGH_QUALITY) {
 +        resampler->mResType = AF_DEFAULT_SRC;
@@ -177,14 +177,14 @@ index 33e64ce..77ef591 100644
  #ifdef MTK_HARDWARE
          MTK_QUALITY=5,
  #endif
-+#ifdef USE_INTEL_SRC
++#ifdef USE_INTEL_RSP
 +        INTEL_LOW_QUALITY=400,
 +        INTEL_MED_QUALITY=401,
 +        INTEL_HIGH_QUALITY=402,
 +        INTEL_VERY_HIGH_QUALITY=403,
 +#endif
      };
-+#ifdef USE_INTEL_SRC
++#ifdef USE_INTEL_RSP
 +    enum resampler_type_tag {
 +        AF_DEFAULT_SRC=0,
 +        INTEL_SRC=1
@@ -502,7 +502,7 @@ index 63e156b..d099064 100644
  #include "ServiceUtilities.h"
  #include "SchedulingPolicyService.h"
  
-+#ifdef USE_INTEL_SRC
++#ifdef USE_INTEL_RSP
 +#include "AudioResamplerIA.h"
 +#endif
 +
@@ -513,7 +513,7 @@ index 63e156b..d099064 100644
                  goto Exit;
          }
          // Resampler implementation limits input sampling rate to 2/4 x output sampling rate.
-+#ifdef USE_INTEL_SRC
++#ifdef USE_INTEL_RSP
 +        //check if Intel SRC support this conversion
 +        if (!AudioResamplerIA::sampleRateSupported(sampleRate, mSampleRate)) {
 +#else
@@ -530,7 +530,7 @@ index 63e156b..d099064 100644
              uint32_t maxSampleRate = mSampleRate * 2;
  #endif
              uint32_t reqSampleRate = track->mAudioTrackServerProxy->getSampleRate();
-+#ifdef USE_INTEL_SRC
++#ifdef USE_INTEL_RSP
 +            if (!AudioResamplerIA::sampleRateSupported(mSampleRate, reqSampleRate)) {
 +                //TODO
 +                ALOGW("[INTEL RESAMPLER] unsupported SR");
@@ -543,7 +543,7 @@ index 63e156b..d099064 100644
                  if (status == BAD_VALUE &&
                      reqFormat == mInput->stream->common.get_format(&mInput->stream->common) &&
                      reqFormat == AUDIO_FORMAT_PCM_16_BIT &&
-+#ifdef USE_INTEL_SRC
++#ifdef USE_INTEL_RSP
 +                    (AudioResamplerIA::sampleRateSupported(mSampleRate, mReqSampleRate)) &&
 +                    (popcount(mInput->stream->common.get_channels(&mInput->stream->common)) < 3) &&
 +                    (reqChannelCount < 3)) {
@@ -563,7 +563,7 @@ index 63e156b..d099064 100644
          } else {
              channelCount = 2;
          }
-+#ifdef USE_INTEL_SRC
++#ifdef USE_INTEL_RSP
 +        if (AudioResamplerIA::sampleRateSupported(mSampleRate, mReqSampleRate)) {
 +            mResampler = AudioResampler::create(16, channelCount,
 +                             mReqSampleRate, AudioResampler::INTEL_HIGH_QUALITY);
