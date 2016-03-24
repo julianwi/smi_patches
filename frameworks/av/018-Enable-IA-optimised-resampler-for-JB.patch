@@ -152,7 +152,7 @@ index 2c3c719..c8fb3b9 100644
 +    case INTEL_MED_QUALITY:
 +    case INTEL_HIGH_QUALITY:
 +    case INTEL_VERY_HIGH_QUALITY:
-+        LOGV("Create intel  Resampler");
++        ALOGV("Create intel  Resampler");
 +        resampler = new AudioResamplerIA(bitDepth, inChannelCount, sampleRate);
 +        break;
 +#endif
@@ -284,7 +284,7 @@ index 0000000..cc19fc8
 +        delete [] mFloatOut;
 +        mFloatOut = new float[(mMaxInputBufferSize+64)*mSampleRate/mInSampleRate];
 +        mReinitNeeded = 0;
-+        LOGD("Create AudioResamplerIA Resampler: Input rate %i, output rate %i",
++        ALOGD("Create AudioResamplerIA Resampler: Input rate %i, output rate %i",
 +             mInSampleRate, mSampleRate);
 +    }
 +}
