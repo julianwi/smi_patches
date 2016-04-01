@@ -1,0 +1,25 @@
+From 9fb9790fe5f560e6e96a43658388d2c367ecdc66 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Fri, 1 Apr 2016 00:45:51 +0200
+Subject: [PATCH] Add MP42 support
+
+Change-Id: I2f2ec52652eee0d6b1e1ce253a4d81d1fa33c7ab
+---
+ media/libstagefright/AVIExtractor.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/media/libstagefright/AVIExtractor.cpp b/media/libstagefright/AVIExtractor.cpp
+index cd858b2..22ba7a8 100644
+--- a/media/libstagefright/AVIExtractor.cpp
++++ b/media/libstagefright/AVIExtractor.cpp
+@@ -561,6 +561,7 @@ static const char *GetMIMETypeForHandler(uint32_t handler) {
+         case FOURCC('m', 'p', '4', 's'):
+         case FOURCC('M', 'P', '4', 'V'):
+         case FOURCC('m', 'p', '4', 'v'):
++        case FOURCC('M', 'P', '4', '2'):
+         case FOURCC('M', 'V', 'X', 'M'):
+         case FOURCC('R', 'M', 'P', '4'):
+         case FOURCC('S', 'E', 'D', 'G'):
+-- 
+2.5.0
+

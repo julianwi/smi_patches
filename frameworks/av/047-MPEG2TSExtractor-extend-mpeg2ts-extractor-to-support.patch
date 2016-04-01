@@ -1,0 +1,120 @@
+From efcd2c387f5fa8859ea2fb8f7c930e74b38b0b72 Mon Sep 17 00:00:00 2001
+From: ywan171 <yi.a.wang@intel.com>
+Date: Tue, 27 May 2014 22:31:16 +0800
+Subject: [PATCH] MPEG2TSExtractor: extend mpeg2ts extractor to support BDAV
+ MPEG2TS format
+
+BZ: 198299
+
+in BDAV MPEG2TS, One source packet consists of one
+TP_extra_header(4 byte) and one MPEG2 transport packet structure, extend the
+MPEG2TS extractor to support such packet.
+
+Change-Id: Idbe1bf304c6cf67cac5fe287701d1d87ad1cbdc3
+Category: aosp improvement
+Domain: Video.Media-container
+Origin: internal
+Upstream-Candidate: no, proprietary
+Signed-off-by: ywan171 <yi.a.wang@intel.com>
+---
+ media/libstagefright/include/MPEG2TSExtractor.h   |  2 ++
+ media/libstagefright/mpeg2ts/MPEG2TSExtractor.cpp | 31 ++++++++++++++++++-----
+ 2 files changed, 27 insertions(+), 6 deletions(-)
+
+diff --git a/media/libstagefright/include/MPEG2TSExtractor.h b/media/libstagefright/include/MPEG2TSExtractor.h
+index c5e86a6..7d9d6d9 100644
+--- a/media/libstagefright/include/MPEG2TSExtractor.h
++++ b/media/libstagefright/include/MPEG2TSExtractor.h
+@@ -56,6 +56,8 @@ private:
+ 
+     off64_t mOffset;
+ 
++    bool mBDAVFormat;
++
+     void init();
+     status_t feedMore();
+ 
+diff --git a/media/libstagefright/mpeg2ts/MPEG2TSExtractor.cpp b/media/libstagefright/mpeg2ts/MPEG2TSExtractor.cpp
+index 1c1a4b0..f9c6b44 100644
+--- a/media/libstagefright/mpeg2ts/MPEG2TSExtractor.cpp
++++ b/media/libstagefright/mpeg2ts/MPEG2TSExtractor.cpp
+@@ -35,6 +35,7 @@
+ namespace android {
+ 
+ static const size_t kTSPacketSize = 188;
++static const size_t kBDAVTSPacketSize = 192;
+ 
+ struct MPEG2TSSource : public MediaSource {
+     MPEG2TSSource(
+@@ -112,6 +113,7 @@ status_t MPEG2TSSource::read(
+ MPEG2TSExtractor::MPEG2TSExtractor(const sp<DataSource> &source)
+     : mDataSource(source),
+       mParser(new ATSParser),
++      mBDAVFormat(false),
+       mOffset(0) {
+     init();
+ }
+@@ -158,6 +160,10 @@ void MPEG2TSExtractor::init() {
+     bool haveAudio = false;
+     bool haveVideo = false;
+     int numPacketsParsed = 0;
++    char header;
++    if (mDataSource->readAt(0, &header, 1) == 1 && header != 0x47) {
++        mBDAVFormat = true;
++    }
+ 
+     while (feedMore() == OK) {
+         ATSParser::SourceType type;
+@@ -197,15 +203,17 @@ void MPEG2TSExtractor::init() {
+ status_t MPEG2TSExtractor::feedMore() {
+     Mutex::Autolock autoLock(mLock);
+ 
+-    uint8_t packet[kTSPacketSize];
+-    ssize_t n = mDataSource->readAt(mOffset, packet, kTSPacketSize);
++    uint8_t packet[kBDAVTSPacketSize];
++    ssize_t readLen = mBDAVFormat ? kBDAVTSPacketSize : kTSPacketSize;
++
++    ssize_t n = mDataSource->readAt(mOffset, packet, readLen);
+ 
+-    if (n < (ssize_t)kTSPacketSize) {
++    if (n < readLen) {
+         return (n < 0) ? (status_t)n : ERROR_END_OF_STREAM;
+     }
+ 
+     mOffset += n;
+-    return mParser->feedTSPacket(packet, kTSPacketSize);
++    return mParser->feedTSPacket(packet + readLen - kTSPacketSize, kTSPacketSize);
+ }
+ 
+ uint32_t MPEG2TSExtractor::flags() const {
+@@ -217,14 +225,25 @@ uint32_t MPEG2TSExtractor::flags() const {
+ bool SniffMPEG2TS(
+         const sp<DataSource> &source, String8 *mimeType, float *confidence,
+         sp<AMessage> *) {
++    bool normalTSFormat = true;
+     for (int i = 0; i < 5; ++i) {
+         char header;
+         if (source->readAt(kTSPacketSize * i, &header, 1) != 1
+                 || header != 0x47) {
+-            return false;
++            normalTSFormat = false;
++            break;
++        }
++    }
++    if (!normalTSFormat) {
++        // check if it is BDAV MPEG2 TS format if it's not normal TS Stream
++        for (int i = 0; i < 5; ++i) {
++            char header;
++            if (source->readAt(kBDAVTSPacketSize * i + 4, &header, 1) != 1
++                    || header != 0x47) {
++                return false;
++            }
+         }
+     }
+-
+     *confidence = 0.1f;
+     mimeType->setTo(MEDIA_MIMETYPE_CONTAINER_MPEG2TS);
+ 
+-- 
+2.5.0
+

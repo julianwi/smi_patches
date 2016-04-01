@@ -1,0 +1,45 @@
+From 765e0290f1f482a8403cc706f81e0fbe9126099e Mon Sep 17 00:00:00 2001
+From: "Gu, Wangyi" <wangyi.gu@intel.com>
+Date: Mon, 16 Jun 2014 14:14:49 +0800
+Subject: [PATCH] let secure AVC use clear AVC component name to get quirk
+
+BZ: 203590
+
+we can't use secure AVC component name in media_codecs.xml
+for it will be treated as clear AVC component by cts test
+AdaptivePlaybackTest in android-cts-4.4_r3. And secure AVC
+component can't accept clear es as input currently.
+
+Change-Id: I3a6479ab471b9ccc96c247eda6ac37a822950326
+Category: aosp improvement
+Domain: Video.Media-framework
+Origin: internal
+Upstream-Candidate: no, proprietary
+Signed-off-by: Gu, Wangyi <wangyi.gu@intel.com>
+---
+ media/libstagefright/ACodec.cpp | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index fad2310..b300728 100644
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -4191,8 +4191,14 @@ bool ACodec::UninitializedState::onAllocateComponent(const sp<AMessage> &msg) {
+         OMXCodec::CodecNameAndQuirks *entry = &matchingCodecs.editItemAt(index);
+         entry->mName = String8(componentName.c_str());
+ 
++        AString tmp = componentName;
++        if (tmp.endsWith(".secure")) {
++            size_t rm = strlen(".secure");
++            tmp.erase(tmp.size() - rm, rm);
++        }
++
+         if (!OMXCodec::findCodecQuirks(
+-                    componentName.c_str(), &entry->mQuirks)) {
++                    tmp.c_str(), &entry->mQuirks)) {
+             entry->mQuirks = 0;
+         }
+     } else {
+-- 
+2.5.0
+
