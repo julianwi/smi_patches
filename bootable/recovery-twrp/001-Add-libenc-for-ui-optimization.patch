@@ -1,3 +1,18 @@
+From f243bcc6276a78f55ef254f2487ab656cae525ee Mon Sep 17 00:00:00 2001
+From: lwan89x <liangx.wang@intel.com>
+Date: Fri, 20 Jul 2012 09:55:43 +0800
+Subject: [PATCH] [PORT FROM MAIN] Add libenc for UI optimizing in x86
+ platform.
+
+Add libenc for UI optimizing in x86 platform.
+
+Change-Id: I56c592b9584066606745baaebd30d65d461c5972
+Category: aosp improvement
+Domain: PUPDR-Recovery
+Origin: internal
+Orig-Change-Id: Ib11faa5cf81f86e451b3ad4408f9ea13fdf7dc63
+Signed-off-by: lwan89x <liangx.wang@intel.com>
+
 diff --git a/minui/Android.mk b/minui/Android.mk
 index 5e42d2f..f6f4978 100644
 --- a/minui/Android.mk

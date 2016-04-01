@@ -1,3 +1,20 @@
+From 141017f4ff591c34d260f5a9d47edaef736d4ef4 Mon Sep 17 00:00:00 2001
+From: dvshkurk <Dmitry.V.Shkurko@intel.com>
+Date: Tue, 14 Aug 2012 17:06:14 +0700
+Subject: [PATCH] [PORT FROM MAIN] Intel C/C++ compiler support
+
+Change-Id: I98386b485e6884df6032ddff11d54180ed663b80
+Category: device enablement
+Domain: AOSP
+Origin: internal
+Signed-off-by: dvshkurk <Dmitry.V.Shkurko@intel.com>
+Reviewed-on: http://android.intel.com:8080/85691
+Reviewed-by: Shkurko, Dmitry V <dmitry.v.shkurko@intel.com>
+Tested-by: Li, XiaojingX <xiaojingx.li@intel.com>
+Reviewed-by: Yao, Yong <yong.yao@intel.com>
+Reviewed-by: cactus <cactus@intel.com>
+Tested-by: cactus <cactus@intel.com>
+
 diff --git a/core/binary.mk b/core/binary.mk
 index 8ce874e..d2b74bc 100644
 --- a/core/binary.mk

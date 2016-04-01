@@ -1,6 +1,12 @@
-# From: trevd
+From 7851c717dce1d8aa1b1b0f95c89fcf22811d060d Mon Sep 17 00:00:00 2001
+From: Trevor Drake <trevd1234@gmail.com>
+Date: Sat, 28 Sep 2013 12:00:15 +0100
+Subject: [PATCH] Enable x86 building in the kernel task and also patch the
+ main.mk to list included makefiles
 
-# Patch kernel makefile to support x86 kernel building
+[HazpuPH] Edited the patch slightly
+
+Change-Id: I204ba2adccf0e1d8ae619a0485c58e4d08bf1e88
 
 diff --git a/core/combo/TARGET_linux-x86.mk b/core/combo/TARGET_linux-x86.mk
 index d5772b1..5a06f98 100644
