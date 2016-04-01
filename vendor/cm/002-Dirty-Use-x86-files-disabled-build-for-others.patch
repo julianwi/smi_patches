@@ -1,0 +1,28 @@
+From 599f42bfb49b1c6b432a2fa8ae4093f14fa4c5fa Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Mon, 28 Mar 2016 21:47:56 +0200
+Subject: [PATCH 3/4] [Dirty] Use x86 files, disabled build for others
+
+Change-Id: If06abf8a2b6bbb7e31f5aa12720d880b0c8c7462
+---
+ config/common.mk | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/config/common.mk b/config/common.mk
+index d6f67db..3fcbfb4 100644
+--- a/config/common.mk
++++ b/config/common.mk
+@@ -219,8 +219,8 @@ PRODUCT_PACKAGES += \
+ # Terminal Emulator
+ PRODUCT_COPY_FILES +=  \
+     vendor/cm/proprietary/Term.apk:system/app/Term.apk \
+-    vendor/cm/proprietary/lib/armeabi/libjackpal-androidterm5.so:system/lib/libjackpal-androidterm5.so \
+-    vendor/cm/proprietary/lib/armeabi/libjackpal-termexec2.so:system/lib/libjackpal-termexec2.so
++    vendor/cm/proprietary/lib/x86/libjackpal-androidterm5.so:system/lib/libjackpal-androidterm5.so \
++    vendor/cm/proprietary/lib/x86/libjackpal-termexec2.so:system/lib/libjackpal-termexec2.so
+ 
+ PRODUCT_PROPERTY_OVERRIDES += \
+     persist.sys.root_access=1
+-- 
+2.5.0
+
