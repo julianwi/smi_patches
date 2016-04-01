@@ -25,3 +25,4 @@ echo
 echo Repo status for $PATCHED_PROJECTS
 repo status $PATCHED_PROJECTS
 cd ${PATCH_DIR}
+exit
