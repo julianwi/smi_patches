@@ -1,6 +1,13 @@
-From: Hazuo
+From 770eb8ac81678f8210c6ecdf36ed177ffadd6fdc Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Tue, 29 Mar 2016 01:24:00 +0200
+Subject: [PATCH 4/7] Add launch camera from standby support
 
-Add camera button support. Needs better implementation like CM12
+Change-Id: I733a53ef231d12327b0b308f57d17f239a361af9
+---
+ core/java/android/provider/Settings.java           |  6 +++
+ .../internal/policy/impl/PhoneWindowManager.java   | 43 ++++++++++++++++++++--
+ 2 files changed, 46 insertions(+), 3 deletions(-)
 
 diff --git a/core/java/android/provider/Settings.java b/core/java/android/provider/Settings.java
 index 97d7460..76efab2 100755
@@ -132,3 +139,6 @@ index 4b0e720..d2eaf80 100644
      }
  
      /**
+-- 
+2.5.0
+

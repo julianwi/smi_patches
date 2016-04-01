@@ -1,6 +1,23 @@
-From: Intel
+From e532fd6f9de48efb7a617c0d24a5d132d2475a85 Mon Sep 17 00:00:00 2001
+From: Vincent Becker <vincentx.becker@intel.com>
+Date: Fri, 10 Aug 2012 14:17:33 +0200
+Subject: [PATCH 3/7] Add loading of the vibrator hardware module.
 
-Adds vibrator hal support
+Vibrator HAL is now formed of two hardware modules : one is the
+default AOSP and the other is the Intel vendor implementation.
+The vendor implementation will be loaded prior to the default one.
+For that, the vibrator service has to load the module before
+registering itself to the JNI.
+
+Orig-Change-Id: I135b317d91af916eb0a8f5d5f4507f24d67ae7b3
+Category: aosp improvement
+Domain: AudioComms-HwModules-Vibrator
+Origin: internal
+Change-Id: I85661ee4c934e739425eb117cbbcd8e63ba81d42
+Signed-off-by: Vincent Becker <vincentx.becker@intel.com>
+---
+ .../jni/com_android_server_VibratorService.cpp     | 39 ++++++++++++++++------
+ 1 file changed, 29 insertions(+), 10 deletions(-)
 
 diff --git a/services/jni/com_android_server_VibratorService.cpp b/services/jni/com_android_server_VibratorService.cpp
 index 2b3f74a..c1a190b 100644
@@ -76,3 +93,6 @@ index 2b3f74a..c1a190b 100644
  
 -};
 +}; // namespace android
+-- 
+2.5.0
+

@@ -1,6 +1,14 @@
-From: Hazou
+From 3b7a5249dcc323f1d0104e7d6191227eb0113eff Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Tue, 29 Mar 2016 01:23:03 +0200
+Subject: [PATCH 2/7] Add ability to start 3rd party services by servicemanager
 
-Starts vendor specific framework files
+Change-Id: I311adf1acc265b8f03e8672cd47cf48c9124adc3
+---
+ core/res/res/values/arrays.xml                     |  5 +++
+ core/res/res/values/symbols.xml                    |  1 +
+ services/java/com/android/server/SystemServer.java | 39 ++++++++++++++++++++++
+ 3 files changed, 45 insertions(+)
 
 diff --git a/core/res/res/values/arrays.xml b/core/res/res/values/arrays.xml
 index 91af50a..2ac61bd 100644
@@ -17,7 +25,7 @@ index 91af50a..2ac61bd 100644
 +
  </resources>
 diff --git a/core/res/res/values/symbols.xml b/core/res/res/values/symbols.xml
-index 96d0b92..a424801 100644
+index e294559..5d996d4 100644
 --- a/core/res/res/values/symbols.xml
 +++ b/core/res/res/values/symbols.xml
 @@ -1016,6 +1016,7 @@
@@ -99,3 +107,6 @@ index 2cdf9fb..47a77b0 100644
              if (!disableNetwork) {
                  try {
                      Slog.i(TAG, "CertBlacklister");
+-- 
+2.5.0
+

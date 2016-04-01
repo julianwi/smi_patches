@@ -1,49 +1,33 @@
-From: Intel
+From 7d1b32ce388bd8fb4017ae2f4039e002c004d614 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Tue, 29 Mar 2016 01:22:14 +0200
+Subject: [PATCH 1/7] [Squashed] Add houdini support from Intel commits
 
-All intel patches for framework/base to get houdini working as intended.
-
-Date: Thu, 14 Nov 2013 17:28:49 +0800
-Subject: [PATCH 198/504] [PORT FROM MAIN] framework: houdini hook and native
-
-Date: Fri, 27 Dec 2013 14:30:11 +0800
-Subject: [PATCH 357/504] [PORT FROM R42B-STABLE] framework: workaround for
-
-Date: Wed, 8 Jan 2014 14:28:59 +0800
-Subject: [PATCH 370/504] framework: Preload libhoudini for ABI2 applications
-
-Date: Tue, 21 Jan 2014 09:05:23 +0800
-Subject: [PATCH 401/504] Enable memory layout patch back
-
-Date: Wed, 9 Apr 2014 13:17:46 +0800
-Subject: [PATCH 457/504] [REVERTME] framework: Workaround for Native library
-
-Date: Wed, 16 Apr 2014 10:16:13 +0800
-Subject: [PATCH 460/504] [REVERTME] framework: fix Klocwork issue for
- workaround patch
-
-Date: Thu, 17 Apr 2014 09:19:58 +0800
-Subject: [PATCH 459/504] [REVERTME] framework: fix cpu info bug in x86 lib
-
-Date: Wed, 7 May 2014 19:21:20 -0400
-Subject: [PATCH 477/504] framework: Revert the change from
-
-Date: Thu, 15 May 2014 10:20:38 -0400
-Subject: [PATCH 478/504] framework: fix AndEBench performance hurt issue
-
-Date: Wed, 4 Jun 2014 21:50:16 -0400
-Subject: [PATCH 481/504] framework: Correct the os.arch value for app-s
-
-Date: Mon, 9 Jun 2014 04:48:45 -0400
-Subject: [PATCH 482/504] [REVERTME] framework: fix Klocwork issue for
-
-Date: Thu, 19 Jun 2014 17:09:19 -0400
-Subject: [PATCH 487/504] framework: fix Klocwork issue for workaround patch
-
-Date: Wed, 13 Aug 2014 23:28:45 -0400
-Subject: [PATCH 498/504] framework: Fix multi-user issue on tablet
-
-Date: Thu, 4 Sep 2014 03:54:03 -0400
-Subject: [PATCH 500/504] framework: Revert the change to install non-standard
+Change-Id: I8bdf247a075912d63b054b088a44fa1e252cb7d5
+---
+ cmds/app_process/app_main.cpp                      |  40 +++
+ core/java/android/content/pm/PackageManager.java   |  17 +
+ core/java/android/os/Build.java                    |  14 +
+ .../internal/content/NativeLibraryHelper.java      | 176 ++++++++++-
+ core/java/com/android/internal/os/CheckExt.java    |  46 +++
+ core/java/com/android/internal/os/ICheckExt.java   |  30 ++
+ .../com/android/internal/os/ZygoteConnection.java  |  27 ++
+ core/java/com/android/internal/os/ZygoteInit.java  |   7 +
+ core/java/com/android/internal/os/xmlCheckExt.java | 123 ++++++++
+ core/jni/Android.mk                                |   7 +
+ core/jni/AndroidRuntime.cpp                        |   6 +
+ core/jni/android_app_NativeActivity.cpp            |  45 ++-
+ ...ndroid_internal_content_NativeLibraryHelper.cpp | 341 ++++++++++++++++++++-
+ .../com_android_internal_os_ZygoteConnection.cpp   | 113 +++++++
+ core/jni/com_android_internal_os_ZygoteInit.cpp    |  17 +-
+ .../defcontainer/DefaultContainerService.java      |  20 +-
+ .../android/server/pm/PackageManagerService.java   | 188 +++++++++++-
+ 17 files changed, 1199 insertions(+), 18 deletions(-)
+ create mode 100644 core/java/com/android/internal/os/CheckExt.java
+ create mode 100644 core/java/com/android/internal/os/ICheckExt.java
+ create mode 100644 core/java/com/android/internal/os/xmlCheckExt.java
+ create mode 100644 core/jni/com_android_internal_os_ZygoteConnection.cpp
+ mode change 100644 => 100755 services/java/com/android/server/pm/PackageManagerService.java
 
 diff --git a/cmds/app_process/app_main.cpp b/cmds/app_process/app_main.cpp
 index cb27c5b..d45f476 100644
@@ -374,8 +358,9 @@ index 6d65782..e59c833 100644
 +    }
  }
 diff --git a/core/java/com/android/internal/os/CheckExt.java b/core/java/com/android/internal/os/CheckExt.java
-index e69de29..bb1f07d 100644
---- a/core/java/com/android/internal/os/CheckExt.java
+new file mode 100644
+index 0000000..bb1f07d
+--- /dev/null
 +++ b/core/java/com/android/internal/os/CheckExt.java
 @@ -0,0 +1,46 @@
 +package com.android.internal.os;
@@ -425,8 +410,9 @@ index e69de29..bb1f07d 100644
 +    }
 +}
 diff --git a/core/java/com/android/internal/os/ICheckExt.java b/core/java/com/android/internal/os/ICheckExt.java
-index e69de29..ab24059 100644
---- a/core/java/com/android/internal/os/ICheckExt.java
+new file mode 100644
+index 0000000..ab24059
+--- /dev/null
 +++ b/core/java/com/android/internal/os/ICheckExt.java
 @@ -0,0 +1,30 @@
 +package com.android.internal.os;
@@ -548,8 +534,9 @@ index 671846e..a0e3c2a 100644
  
              closeServerSocket();
 diff --git a/core/java/com/android/internal/os/xmlCheckExt.java b/core/java/com/android/internal/os/xmlCheckExt.java
-index e69de29..debabc8 100644
---- a/core/java/com/android/internal/os/xmlCheckExt.java
+new file mode 100644
+index 0000000..b3d5f4d
+--- /dev/null
 +++ b/core/java/com/android/internal/os/xmlCheckExt.java
 @@ -0,0 +1,123 @@
 +package com.android.internal.os;
@@ -1231,8 +1218,9 @@ index 3507a9f..20a8b23 100644
  
  
 diff --git a/core/jni/com_android_internal_os_ZygoteConnection.cpp b/core/jni/com_android_internal_os_ZygoteConnection.cpp
-index e69de29..e3400bc 100644
---- a/core/jni/com_android_internal_os_ZygoteConnection.cpp
+new file mode 100644
+index 0000000..e3400bc
+--- /dev/null
 +++ b/core/jni/com_android_internal_os_ZygoteConnection.cpp
 @@ -0,0 +1,113 @@
 +#define LOG_TAG "Zygote"
@@ -1707,3 +1695,6 @@ index 07b8d99..4ff4a05
                  }
              } catch (IOException e) {
                  Slog.e(TAG, "Copying native libraries failed", e);
+-- 
+2.5.0
+

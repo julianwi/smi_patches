@@ -1,6 +1,13 @@
-From: hazou
+From ecb3cd0b2a72990bd0279c85a35798e8abb10a4c Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Tue, 29 Mar 2016 01:24:37 +0200
+Subject: [PATCH 5/7] Add Media_rw for apps
 
-Add media_rw for camera etc
+Change-Id: Iae683bbd07c16433ebd0d0118b2a842464dd6041
+---
+ data/etc/platform.xml                 | 1 +
+ packages/SystemUI/AndroidManifest.xml | 1 +
+ 2 files changed, 2 insertions(+)
 
 diff --git a/data/etc/platform.xml b/data/etc/platform.xml
 index b3153a9..ea33585 100644
@@ -26,3 +33,6 @@ index 3dff1e6..8895585 100644
  
      <!-- Physical hardware -->
      <uses-permission android:name="android.permission.MANAGE_USB" />
+-- 
+2.5.0
+
