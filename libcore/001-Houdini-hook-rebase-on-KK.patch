@@ -1,3 +1,16 @@
+From 1cd4a7f2c7e3bfc7bd9c244b031c472738b1d232 Mon Sep 17 00:00:00 2001
+From: llin4 <ling.lin@intel.com>
+Date: Wed, 13 Nov 2013 09:22:15 +0800
+Subject: [PATCH] [PORT FROM MAIN] libcore: houdini hook rebase on KK
+
+libcore houdini hook rebase on KK
+
+Change-Id: I755ab7ae482a2964894ec4ef94bc1e01065c12dc
+Category: feature differentiation
+Domain: AOSP.Houdini-Integration
+Origin: internal
+Signed-off-by: llin4 <ling.lin@intel.com>
+
 diff --git a/NativeCode.mk b/NativeCode.mk
 index 1a47ee4..2075b65 100644
 --- a/NativeCode.mk
