@@ -1,12 +1,18 @@
-From: Pawit Pornkitprasan
+From 57501841b80cb46b0c0494dc7f580892dd71e9e0 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Tue, 29 Mar 2016 01:32:29 +0200
+Subject: [PATCH] Disable HWC event unkown
 
-Some HWC implementation spam the log on unknown event
+Change-Id: I46a298abbd60bb1f2fb5c1bac455c0ec32d5f155
+---
+ services/surfaceflinger/SurfaceFlinger.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
 
 diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
-index e7c4716..0819723 100644
+index 4d6fb82..58fdf54 100644
 --- a/services/surfaceflinger/SurfaceFlinger.cpp
 +++ b/services/surfaceflinger/SurfaceFlinger.cpp
-@@ -1162,6 +1197,7 @@ void SurfaceFlinger::setUpHWComposer() {
+@@ -1162,6 +1162,7 @@ void SurfaceFlinger::setUpHWComposer() {
              sp<const DisplayDevice> hw(mDisplays[dpy]);
              const int32_t id = hw->getHwcDisplayId();
              if (id >= 0) {
@@ -14,7 +20,7 @@ index e7c4716..0819723 100644
                  // Get the layers in the current drawying state
                  const LayerVector& layers(mDrawingState.layersSortedByZ);
                  bool freezeSurfacePresent = false;
-@@ -1181,6 +1217,7 @@ void SurfaceFlinger::setUpHWComposer() {
+@@ -1181,6 +1182,7 @@ void SurfaceFlinger::setUpHWComposer() {
                          }
                      }
                  }
@@ -22,7 +28,7 @@ index e7c4716..0819723 100644
  
                  const Vector< sp<Layer> >& currentLayers(
                      hw->getVisibleLayersSortedByZ());
-@@ -1194,6 +1231,7 @@ void SurfaceFlinger::setUpHWComposer() {
+@@ -1194,6 +1196,7 @@ void SurfaceFlinger::setUpHWComposer() {
                       */
                      const sp<Layer>& layer(currentLayers[i]);
                      layer->setPerFrameData(hw, *cur);
@@ -30,7 +36,7 @@ index e7c4716..0819723 100644
                      if(freezeSurfacePresent) {
                          // if freezeSurfacePresent, set ANIMATING flag
                          cur->setAnimating(true);
-@@ -1218,6 +1256,7 @@ void SurfaceFlinger::setUpHWComposer() {
+@@ -1218,6 +1221,7 @@ void SurfaceFlinger::setUpHWComposer() {
                              lastSurfaceViewLayer = layer;
                          }
                      }
@@ -38,4 +44,6 @@ index e7c4716..0819723 100644
                  }
              }
          }
+-- 
+2.5.0
 

@@ -1,6 +1,18 @@
-From: Intel
+From 917f2f3395bc80a62f787fa3b50426c92326d753 Mon Sep 17 00:00:00 2001
+From: Li Zeng <li.zeng@intel.com>
+Date: Sat, 27 Oct 2012 10:00:16 +0800
+Subject: [PATCH] Add a flag OMX_INTEL_COLOR_FormatYUV420PackedSemiPlanar_Tiled
 
-Add I420 colorconvert
+Change-Id: Iafea058d32013db2f68adeec6fadb5002c4809e5
+Category: device enablement
+Domain: Video
+Origin: internal
+Signed-off-by: Li Zeng <li.zeng@intel.com>
+Reviewed-on: http://android.intel.com:8080/83203
+Tested-by: Tong, BoX <box.tong@intel.com>
+Reviewed-by: Tong, BoX <box.tong@intel.com>
+Reviewed-by: cactus <cactus@intel.com>
+Tested-by: cactus <cactus@intel.com>
 
 diff --git a/include/media/openmax/OMX_IVCommon.h b/include/media/openmax/OMX_IVCommon.h
 index 96a4396..d2da2ae 100644

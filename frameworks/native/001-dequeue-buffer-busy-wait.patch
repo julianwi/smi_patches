@@ -1,12 +1,21 @@
-From: Intel
-
-Let the dequeue buffer not busy wait
+From bc80795a261f82279e47278de2441fadaf34eec6 Mon Sep 17 00:00:00 2001
+From: Chen Bin <bin.chen@intel.com>
+Date: Mon, 15 Apr 2013 10:51:18 +0800
+Subject: [PATCH] [PORT FROM MAIN]Let the dequeue buffer not busy wait
 
 UI thread and Surfaceflinger Thread are in the same process. They have race to map the
 same buffer. and may cause Dequeue buffer failed.
 Then UI thread will busy wait for dequeue buffer condition for ever, system will always
 black screen.
 This Patch don't let UI thread busy wait, and free all buffer to let system can recover.
+
+Change-Id: Ia8e8be40ca229b52e7003d49970986f18e89fded
+Category: aosp improvement
+Domain: Graphics.UI
+Origin: internal
+Signed-off-by: Shi Yang <yang.a.shi@intel.com>
+Signed-off-by: yifeix.xue <yifeix.xue@intel.com>
+Signed-off-by: binchen1 <bin.chen@intel.com>
 
 diff --git a/libs/gui/BufferQueue.cpp b/libs/gui/BufferQueue.cpp
 index 146f534..decbfd3 100644

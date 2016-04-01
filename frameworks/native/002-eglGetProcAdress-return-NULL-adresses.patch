@@ -1,13 +1,16 @@
-From: Intel
+From 3e4f6b9023df55208fe675fbc18cde7706bfe475 Mon Sep 17 00:00:00 2001
+From: pschulfe <pawel.schulfer@intel.com>
+Date: Mon, 16 Dec 2013 09:16:48 -0500
+Subject: [PATCH] [EGL wrapper] eglGetProcAdress return NULL  adresses
 
-eglGetProcAdress return NULL adresses
+Fix is missing on Android 4.4. It gives proper hanlding of function
+adresses in eglGetProcAdress
 
-Fix is just a repeat from previous Android branches as
-it is missingon Android 4.4. It gives handling of function
-adresses in eglGetProcAdress for x86 without using
-gExtensionForwarders table which is implemented only
-for ARM and MIPS. After implementation of gExtensionForwarders
-for x86 patch should be reverted.
+Change-Id: If17f7a89f255b9061a10237b296d1bda2ece04bb
+Category: aosp improvement
+Domain: Graphics-3D
+Origin: internal
+Signed-off-by: pschulfe <pawel.schulfer@intel.com>
 
 diff --git a/opengl/libs/EGL/eglApi.cpp b/opengl/libs/EGL/eglApi.cpp
 index a9dc7b3..ab73060 100644
