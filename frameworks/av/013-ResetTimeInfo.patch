@@ -1,6 +1,25 @@
-From: Intel
+From 3cee5c10108e90305de2515defd76954762d239a Mon Sep 17 00:00:00 2001
+From: hongfuru <hongfu.ruan@intel.com>
+Date: Fri, 15 Nov 2013 15:57:29 +0800
+Subject: [PATCH] [PORT FROM MAIN JB-MR2][movie editor] reset time info before
+ changing audio source for quicker sync
 
-reset time info before changing audio source for quicker sync
+root cause:
+sometimes mPositionTimeMediaUs is updated in VideoEditorAudioPlayer::fillBuffer()
+too late then bring big gap between audio and video's time stamp.
+It's OK for long clip transition because A/V will sync sooner or later. But for short
+period(~0.5s) transition, transition video frames would be dropped up before sync is
+achieved, then transition effect couldn't be observed.
+
+solution:
+call seekto(0) to clear mPositionTimeMediaUs before changing audio source.
+
+Change-Id: Id9a1a457f363bfcf3dab297393e5b09861066224
+Category: aosp improvement
+Domain: Video.Media-video editor
+Origin: internal
+Signed-off-by: hongfuru <hongfu.ruan@intel.com>
+Signed-off-by: Dan Liang <dan.liang@intel.com>
 
 diff --git a/libvideoeditor/lvpp/PreviewPlayer.cpp b/libvideoeditor/lvpp/PreviewPlayer.cpp
 index 2bd9f84..945b422 100755

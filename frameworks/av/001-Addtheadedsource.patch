@@ -1,6 +1,19 @@
-From: Intel
+From feb2f89197b922afe574d270af943f7375ec3050 Mon Sep 17 00:00:00 2001
+From: Tianmi Chen <tianmi.chen@intel.com>
+Date: Wed, 21 Nov 2012 19:49:06 +0800
+Subject: [PATCH] [PORT FROM MAIN] Add ThreadedSource to Stagefright framework
 
-Add ThreadedSource to Stagefright framework
+This patch adds ThreadedSource to Stagefright framework. It
+allows to start Media Source in separate threads and can
+significantly improve software codec (such as VP8 decoder)
+performance.
+
+Change-Id: I7652b6f365ece40ee1d12ef6e8033de85fe97a66
+Category: aosp improvement
+Domain: Video.Media-local playback
+Origin: internal
+Signed-off-by: wfeng6 <wei.feng@intel.com>
+Signed-off-by: Yuanjun Huang <yuanjun.huang@intel.com>
 
 diff --git a/media/libstagefright/Android.mk b/media/libstagefright/Android.mk
 index 5e0ed1d..46d2305 100644
@@ -15,8 +28,9 @@ index 5e0ed1d..46d2305 100644
  LOCAL_C_INCLUDES:= \
          $(TOP)/frameworks/av/include/media/stagefright/timedtext \
 diff --git a/media/libstagefright/ThreadedSource.cpp b/media/libstagefright/ThreadedSource.cpp
+new file mode 100644
 index e69de29..c3f3ea0 100644
---- a/media/libstagefright/ThreadedSource.cpp
+--- /dev/null
 +++ b/media/libstagefright/ThreadedSource.cpp
 @@ -0,0 +1,218 @@
 +/*
@@ -238,8 +252,9 @@ index e69de29..c3f3ea0 100644
 +
 +}  // namespace android
 diff --git a/media/libstagefright/include/ThreadedSource.h b/media/libstagefright/include/ThreadedSource.h
+new file mode 100644
 index e69de29..42d0d96 100644
---- a/media/libstagefright/include/ThreadedSource.h
+--- /dev/null
 +++ b/media/libstagefright/include/ThreadedSource.h
 @@ -0,0 +1,79 @@
 +/*

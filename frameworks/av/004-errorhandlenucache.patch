@@ -1,6 +1,18 @@
-From: Intel
+From 2c24d747c8216485593b2c7fa4f04dfc5b394ec5 Mon Sep 17 00:00:00 2001
+From: ywan171 <yi.a.wang@intel.com>
+Date: Sat, 15 Dec 2012 21:55:50 +0800
+Subject: [PATCH] [PORT FROM MAIN]libstagefright: enhance error handle for
+ NuCachedSource2
 
-enhance error handle for NuCachedSource2
+enhance error handle for NuCachedSource2.When invalid offset(<0) resulted from a asf clip without
+simple index object is passed to readAt,return error.
+
+Change-Id: I38a13a62bc35683c099d14e0c27dbe66f2684ab5
+Category: aosp improvement
+Domain: Video.Media-streaming
+Origin: internal
+Signed-off-by: ywan171 <yi.a.wang@intel.com>
+Signed-off-by: chuzhoux <chux.zhou@intel.com>
 
 diff --git a/media/libstagefright/NuCachedSource2.cpp b/media/libstagefright/NuCachedSource2.cpp
 index 569e8a7..50ed117 100644

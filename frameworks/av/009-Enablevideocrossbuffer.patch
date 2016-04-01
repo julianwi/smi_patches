@@ -1,6 +1,20 @@
-From: Intel
+From 3b30508480af77b589ba906b4592e7423ff07178 Mon Sep 17 00:00:00 2001
+From: Zhao Liang <leo.zhao@intel.com>
+Date: Mon, 23 Sep 2013 10:29:03 +0800
+Subject: [PATCH] [PORT FROM MAIN] Enable video cross process buffer sharing
 
-Enable video cross process buffer sharing
+Setup service "media.IntelBufferSharing" for sharing peers
+
+Change-Id: I217dc10cd7a37e0aacf93a887eb0397c3a1abbe3
+Category: feature differentiation
+Domain: Video.Media-Framework
+Origin: internal
+Signed-off-by: Zhao Liang <leo.zhao@intel.com>
+Reviewed-on: http://android.intel.com:8080/133545
+Reviewed-by: Yuan, Shengquan <shengquan.yuan@intel.com>
+Tested-by: Post, DavidX J <davidx.j.post@intel.com>
+Reviewed-by: cactus <cactus@intel.com>
+Tested-by: cactus <cactus@intel.com>
 
 diff --git a/media/mediaserver/Android.mk b/media/mediaserver/Android.mk
 index 4f72759..25cdaee 100644
@@ -42,9 +56,3 @@ index 4659996..4c145b5 100644
          registerExtensions();
          ProcessState::self()->startThreadPool();
          IPCThreadState::self()->joinThreadPool();
-diff --git a/services/camera/libcameraservice/CameraService.cpp b/services/camera/libcameraservice/CameraService.cpp
-index 994ce26..beb6126 100644
---- a/services/camera/libcameraservice/CameraService.cpp
-+++ b/services/camera/libcameraservice/CameraService.cpp
-
-

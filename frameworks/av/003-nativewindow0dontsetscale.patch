@@ -1,6 +1,18 @@
-From: Intel
+From 18d63134e364d237ced8d792f992e8959a2a6c50 Mon Sep 17 00:00:00 2001
+From: ywan171 <yi.a.wang@intel.com>
+Date: Tue, 22 Jan 2013 22:13:22 +0800
+Subject: [PATCH] [PORT FROM MAIN]libstagefright: If nativewindow equals null,
+ do not set scale mode
 
-If nativewindow equals null, do not set scale mode
+if nativewindow == NULL,native_window_set_scaling_mode will cause
+TOMBSTONE error, add protection before native_window_set_scaling_mode
+
+Change-Id: Icd94eaa129ff65f77a1bac9a17af18aa494b269e
+Category: aosp improvement
+Domain: Video.Media-streaming
+Origin: internal
+Signed-off-by: ywan171 <yi.a.wang@intel.com>
+Signed-off-by: chuzhoux <chux.zhou@intel.com>
 
 diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
 index 3ff1a63..e124bdb 100755

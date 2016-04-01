@@ -1,6 +1,21 @@
-From: Intel
+From 22dd13fcb18e114fc2e43f551277eeebf06468f1 Mon Sep 17 00:00:00 2001
+From: hongfuru <hongfu.ruan@intel.com>
+Date: Mon, 5 Aug 2013 15:40:09 +0800
+Subject: [PATCH] [PORT FROM MAIN][video editor] set NALLength for MP4 file,
+ rather than copy original one
 
-set NALLength for MP4 file, rather than copy original one
+the mentioned MP4 clip has NAL length size 2, rather than 4 as usual.
+Since video encoder's output buffer always has nal length equals 4, we
+need to update avcC information to 4 bytes, or chunk parsing for intermediary
+clip(vid0.3gp) will have trouble with incorrect size information.
+
+Change-Id: I86dbf8db086b41885ee47ea7eeb988a1e172b58c
+Category: aosp improvement
+Domain: Video.Media-video editor
+Origin: internal
+Signed-off-by: hongfuru <hongfu.ruan@intel.com>
+Signed-off-by: Dan Liang <dan.liang@intel.com>
+Signed-off-by: chuzhoux <chux.zhou@intel.com>
 
 diff --git a/libvideoeditor/vss/3gpwriter/src/M4MP4W_Writer.c b/libvideoeditor/vss/3gpwriter/src/M4MP4W_Writer.c
 index cdfc441..7faedea 100755

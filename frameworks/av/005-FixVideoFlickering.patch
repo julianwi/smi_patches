@@ -1,6 +1,19 @@
-From: Intel
+From 24dc4ff807752e82b8e8d57b04a8b86359674cff Mon Sep 17 00:00:00 2001
+From: Jason Hu <jason.hu@intel.com>
+Date: Thu, 26 Jul 2012 17:25:57 -0400
+Subject: [PATCH] [PORT FROM MAIN] To fix video flicking issue when rendering
+ through overlay.
 
-Fix video flickering.
+Currently, hw overlay need always hold an output buffer until flip
+to another buffer. So we should hold two more buffers in surface
+texture back end to avoid blocking on dequeue buffer by decoder.
+
+Change-Id: I07a6b40b7664a37e9549e43146969946ca3006e0
+Category: feature differentiation
+Domain: Video.Rendering-HDMI
+Origin: internal
+Signed-off-by: Jason Hu <jason.hu@intel.com>
+Signed-off-by: Dan Liang <dan.liang@intel.com>.
 
 diff --git a/include/media/stagefright/OMXCodec.h b/include/media/stagefright/OMXCodec.h
 index 9b7a656..1d76c6d 100644
