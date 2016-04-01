@@ -1,6 +1,17 @@
-From: Intel
+From f90fdd236cdcf86360546426c58bd5cb360eca1f Mon Sep 17 00:00:00 2001
+From: Sebastien MICHEL <sebastien.michel@intel.com>
+Date: Fri, 14 Jun 2013 09:53:32 +0200
+Subject: [PATCH] [PORT FROM MAIN JB-MR2] Optimization via CFLAG options
 
-Add x86 specific cflags
+
+Add -fno-pic and -fno-pie to get faster execution needed to get RLBench
+target
+
+Change-Id: Id9f7898463221febbb26f593bdecff9e6e4855d8
+Category: device enablement
+Domain: AOSP.Optimization-Bionic
+Origin: internal
+Signed-off-by: Sebastien MICHEL <sebastien.michel@intel.com>
 
 diff --git a/libc/Android.mk b/libc/Android.mk
 index da193fb..737cdcf 100644

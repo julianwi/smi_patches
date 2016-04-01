@@ -1,7 +1,26 @@
-From: Google/Intel
+From 1f2923d0d563ef738366c8ae23ebf970565070f8 Mon Sep 17 00:00:00 2001
+From: Sergey Melnikov <sergey.melnikov@intel.com>
+Date: Thu, 31 Oct 2013 18:02:12 +0400
+Subject: [PATCH] [BACKPORT FROM GOOGLE] Fix linker crashes during unknown
+ symbol lookup
 
 Fix linker crashes during unknown symbol lookup
-Fixes VLC crash on the Razr I
+
+Integration of kernel VDSO into internal bionic data structures using
+common functions.
+Fix for dl_iterate_phdr function: the function provides incorrect
+address of object in case of nonzero virtual and base addresses.
+Location in address space of a particular program header should be
+calculated using the formula:  addr = base_addr + virtual_addr.
+
+[HazouPH] Razr I: Fix VLC symbol lookup crash
+
+Change-Id: I6a1693fd7d1254d3a3c0b5f7fb38721fe89b3d57
+Category: google backport
+Domain: AOSP-bionic
+Origin: internal
+Signed-off-by: Sergey Melnikov <sergey.melnikov@intel.com>
+Orig-Google-Change-Id: Ie2ab4257fd456242aab8afed0bd5bd6b29e81d6d
 
 diff --git a/linker/linker.cpp b/linker/linker.cpp
 index d776bdf..02aa853 100644
