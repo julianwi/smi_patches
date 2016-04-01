@@ -1,9 +1,15 @@
-From: Intel
+From c8b1c2da0f45d5408b9d9966c2752e60d28ab45c Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Mon, 28 Mar 2016 21:16:13 +0200
+Subject: [PATCH 1/2] Fix cpu- and meminfo lookup
 
-Fix lookup of cpu and mem info
+Change-Id: I388f70b65a099a7ea3e25054d3399c60b969cdaa
+---
+ src/com/android/settings/DeviceInfoSettings.java | 89 +++++++++++-------------
+ 1 file changed, 41 insertions(+), 48 deletions(-)
 
 diff --git a/src/com/android/settings/DeviceInfoSettings.java b/src/com/android/settings/DeviceInfoSettings.java
-index 9e82abf..7ed2ddf 100644
+index cc7f702..b7dd172 100644
 --- a/src/com/android/settings/DeviceInfoSettings.java
 +++ b/src/com/android/settings/DeviceInfoSettings.java
 @@ -149,8 +149,21 @@ public class DeviceInfoSettings extends RestrictedSettingsFragment {
@@ -121,3 +127,6 @@ index 9e82abf..7ed2ddf 100644
  
          return result;
      }
+-- 
+2.5.0
+

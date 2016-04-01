@@ -1,9 +1,17 @@
-From: HazouPH
+From cf6950357b5f0350b35763f0fecbc321fb140d63 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Mon, 28 Mar 2016 21:18:39 +0200
+Subject: [PATCH 2/2] Launch camera from standby
 
-Launch Camera from standby
+Change-Id: I46002c2bf563091ff56f00d8974a351b60058e3f
+---
+ res/values/cm_strings.xml                                |  2 ++
+ res/xml/button_settings.xml                              | 10 +++++++++-
+ src/com/android/settings/cyanogenmod/ButtonSettings.java |  5 +++++
+ 3 files changed, 16 insertions(+), 1 deletion(-)
 
 diff --git a/res/values/cm_strings.xml b/res/values/cm_strings.xml
-index 0376931..37fe5b9 100644
+index 79c8a8c..e611b13 100644
 --- a/res/values/cm_strings.xml
 +++ b/res/values/cm_strings.xml
 @@ -943,6 +943,8 @@ two in order to insert additional control points. \'Remove\' deletes the selecte
@@ -37,7 +45,7 @@ index 3a4c633..81168c9 100644
              android:title="@string/camera_music_controls_title"
              android:summary="@string/camera_music_controls_summary"
 diff --git a/src/com/android/settings/cyanogenmod/ButtonSettings.java b/src/com/android/settings/cyanogenmod/ButtonSettings.java
-index f689acd..2279ec0 100644
+index 684483c..53e93d5 100644
 --- a/src/com/android/settings/cyanogenmod/ButtonSettings.java
 +++ b/src/com/android/settings/cyanogenmod/ButtonSettings.java
 @@ -114,6 +114,7 @@ public class ButtonSettings extends SettingsPreferenceFragment implements
@@ -71,3 +79,6 @@ index f689acd..2279ec0 100644
              return true;
          } else if (preference == mDisableNavigationKeys) {
              mDisableNavigationKeys.setEnabled(false);
+-- 
+2.5.0
+
