@@ -1,3 +1,31 @@
+From 01926f274df2db3e7633144858dc736ea0655074 Mon Sep 17 00:00:00 2001
+From: Jeevaka Badrappan <jeevaka.badrappan@intel.com>
+Date: Tue, 5 Nov 2013 12:56:44 +0200
+Subject: [PATCH] Telephony: Device not registering on flight mode exit
+
+When entering Flight mode, in some platforms radio
+may be switched off but not the SIM. So, SIM
+notifications can be received in flight mode.
+Currently, restoring of saved network selection is
+done on SIM ready. Since radio is off in flight mode,
+restoring network selection request will be rejected.
+So, when the flight mode is deactivated, no network
+selection request is sent thus resulting in device
+not getting registered.
+
+Restore the saved network selection only if the radio is
+on and sim is ready.
+
+Change-Id: I6eeff5285e4cc63034f573886f7290900e4ddd9b
+Category: aosp improvement
+Domain: Telephony-base
+Origin: internal
+Signed-off-by: Jeevaka Badrappan <jeevaka.badrappan@intel.com>
+Signed-off-by: Arun Ravindran <arun.ravindran@intel.com>
+---
+ .../telephony/gsm/GsmServiceStateTracker.java      | 34 +++++++++++++++-------
+ 1 file changed, 24 insertions(+), 10 deletions(-)
+
 diff --git a/src/java/com/android/internal/telephony/gsm/GsmServiceStateTracker.java b/src/java/com/android/internal/telephony/gsm/GsmServiceStateTracker.java
 index cdc3178..127818c 100644
 --- a/src/java/com/android/internal/telephony/gsm/GsmServiceStateTracker.java
@@ -61,3 +89,6 @@ index cdc3178..127818c 100644
                  break;
  
              case EVENT_RADIO_STATE_CHANGED:
+-- 
+2.5.0
+
