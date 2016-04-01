@@ -1,7 +1,16 @@
-From: Intel
+From 2a14a9247dbf8560a168d1017e7322e996eced3e Mon Sep 17 00:00:00 2001
+From: zjin6 <zhuojun.jin@intel.com>
+Date: Tue, 21 Jan 2014 09:10:54 +0800
+Subject: [PATCH] Enable memory layout patch back
 
 SELinux renders the existing memory layout patch vain. This patch fixed this issue.
 It is designed for both 32 bits and 64 bits kernel.
+
+Change-Id: I9dc50283e79e23c4bae1b68ab22a9d1ec31c14f5
+Category: feature differentiation
+Domain: AOSP.Houdini-Integration
+Origin: internal
+Signed-off-by: zjin6 <zhuojun.jin@intel.com>
 
 diff --git a/init/init.c b/init/init.c
 index ae96440..33956df 100644

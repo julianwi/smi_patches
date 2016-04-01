@@ -1,8 +1,26 @@
-From: Intel
+From 26ae53ae5c044218087c62999bbcc8a4b6b17f1e Mon Sep 17 00:00:00 2001
+From: Lei Li <lei.l.li@intel.com>
+Date: Tue, 24 May 2011 08:40:50 +0800
+Subject: [PATCH] [PORT FROM MAIN] software-accelerated Pixel Flinger v1.0
 
-Add software-accelerated Pixel Flinger
 
-Fixes slow UI in recovery
+This patch is derived from the software-accelerated Pixel Flinger on froyo code base. The typical graphic workloads on
+VirtualBox are improved 3X.
+
+The commit id on ABSP/GB-stable is 67e50490231b86fa19a32420d0ffa3a952159bd1 under system/core project
+
+With this patch, the system can boot OK to HC home screen of VirtualBox
+
+removed the redundant white spaces
+
+Change-Id: I573339d380dfc710429d243ffd845cb3d23edd24
+Category: aosp improvement
+Domain: PUPDR-Recovery
+Origin: internal
+Orig-Change-Id: I799af498b50f4e2ad27d0d2343414f6d474bfc69
+Signed-off-by: Laurentiu Palcu <laurentiu.palcu@intel.com>
+Signed-off-by: Andrew Boie <andrew.p.boie@intel.com>
+Signed-off-by: Xiaokang Qin <xiaokang.qin@intel.com>
 
 diff --git a/charger/Android.mk b/charger/Android.mk
 index b9d3473..c16a1fa 100644

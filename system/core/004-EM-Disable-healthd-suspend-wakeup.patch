@@ -1,7 +1,21 @@
-From: Intel
+From 16f4440c2bd519894a0ceb6a77004e483cddbe28 Mon Sep 17 00:00:00 2001
+From: Pavan Kumar S <pavan.kumar.s@intel.com>
+Date: Tue, 10 Dec 2013 17:01:08 +0530
+Subject: [PATCH] EM: Disable healthd suspend wakeup
 
 healthd introduced in KK has a mechanism to block suspend (like a wakelock),
 while epoll events are pending. This is blocking S3.
+
+EPOLLWAKEUP flag prevents suspend while epoll events are ready.
+Since, healthd has uevent based monitoring, and as all the battery/charger related
+extreme conditions and event changes are monitored in driver-framework and notified
+through uevent, this flag is disabled to allow S3.
+
+Change-Id: I9fd7ade12fed23f35bb5cc577b6c73ae0240fce8
+Category: device enablement
+Domain: BatteryManagement-Common
+Origin: internal
+Signed-off-by: Pavan Kumar S <pavan.kumar.s@intel.com>
 
 diff --git a/healthd/healthd.cpp b/healthd/healthd.cpp
 index 70ccc35..621b85f 100644

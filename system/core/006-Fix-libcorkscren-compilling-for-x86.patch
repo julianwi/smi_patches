@@ -1,6 +1,12 @@
-From: Hazou
+From b399c5c2be151de8b4fdc3936ad5d7d20184089f Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Mon, 28 Mar 2016 21:34:09 +0200
+Subject: [PATCH 1/1] Fix libcorkscren compilling for x86
 
-Fixes build of libcorkscrew for x86 devices
+Change-Id: Ia86e69065ab7e31989a4e03d05b68783fd7b7a71
+---
+ libcorkscrew/arch-x86/backtrace-x86.c | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
 
 diff --git a/libcorkscrew/arch-x86/backtrace-x86.c b/libcorkscrew/arch-x86/backtrace-x86.c
 index 9c4428c..1677999 100755
@@ -28,3 +34,6 @@ index 9c4428c..1677999 100755
  #  include <ucontext.h>
  
  #endif
+-- 
+2.5.0
+
