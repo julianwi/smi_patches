@@ -27,9 +27,9 @@ index 146f534..decbfd3 100644
  
 +static const nsecs_t DEQUEUE_TIMEOUT_VALUE = seconds(3);
 +
- // Macros for including the BufferQueue name in log messages
- #define ST_LOGV(x, ...) ALOGV("[%s] "x, mConsumerName.string(), ##__VA_ARGS__)
- #define ST_LOGD(x, ...) ALOGD("[%s] "x, mConsumerName.string(), ##__VA_ARGS__)
+ #include <binder/IPCThreadState.h>
+ #include <binder/PermissionCache.h>
+ #include <private/android_filesystem_config.h>
 @@ -377,7 +379,10 @@ status_t BufferQueue::dequeueBuffer(int *outBuf, sp<Fence>* outFence, bool async
                      ST_LOGE("dequeueBuffer: would block! returning an error instead.");
                      return WOULD_BLOCK;
