@@ -1,0 +1,132 @@
+From 4295c114e1fa1d5895c746658143dc1ab503b219 Mon Sep 17 00:00:00 2001
+From: Ethan Chen <intervigil@gmail.com>
+Date: Mon, 14 Mar 2016 17:15:58 -0700
+Subject: [PATCH] stagefright-plugins: Convert calls to av_free_packet to
+ av_packet_unref
+
+* av_free_packet is marked as deprecated in avcodec 57.8.0 2015-10-29
+  and should be replaced by av_packet_unref instead.
+
+Change-Id: I2f06c4292e9f417e329768f6ff184bf511b4678e
+
+diff --git a/libstagefright/FFmpegExtractor/FFmpegExtractor.cpp b/libstagefright/FFmpegExtractor/FFmpegExtractor.cpp
+index 5c0773e..c23d001 100644
+--- a/libstagefright/FFmpegExtractor/FFmpegExtractor.cpp
++++ b/libstagefright/FFmpegExtractor/FFmpegExtractor.cpp
+@@ -1159,7 +1159,7 @@ void FFmpegExtractor::readerEntry() {
+                     memcpy(avctx->extradata, pkt->data, avctx->extradata_size);
+                     memset(avctx->extradata + i, 0, FF_INPUT_BUFFER_PADDING_SIZE);
+                 } else {
+-                    av_free_packet(pkt);
++                    av_packet_unref(pkt);
+                     continue;
+                 }
+ 
+@@ -1180,7 +1180,7 @@ void FFmpegExtractor::readerEntry() {
+                                    pkt->data, pkt->size, pkt->flags & AV_PKT_FLAG_KEY);
+ 
+                 if (ret < 0 ||!outbuf_size) {
+-                    av_free_packet(pkt);
++                    av_packet_unref(pkt);
+                     continue;
+                 }
+                 if (outbuf && outbuf != pkt->data) {
+@@ -1190,7 +1190,7 @@ void FFmpegExtractor::readerEntry() {
+             }
+             if (mDefersToCreateAudioTrack) {
+                 if (avctx->extradata_size <= 0) {
+-                    av_free_packet(pkt);
++                    av_packet_unref(pkt);
+                     continue;
+                 }
+                 stream_component_open(mAudioStreamIdx);
+@@ -1207,7 +1207,7 @@ void FFmpegExtractor::readerEntry() {
+         } else if (pkt->stream_index == mVideoStreamIdx) {
+             packet_queue_put(&mVideoQ, pkt);
+         } else {
+-            av_free_packet(pkt);
++            av_packet_unref(pkt);
+         }
+     }
+     /* wait until the end */
+@@ -1333,7 +1333,7 @@ retry:
+ 
+     if (seeking) {
+         if (pkt.data != mQueue->flush_pkt.data) {
+-            av_free_packet(&pkt);
++            av_packet_unref(&pkt);
+             goto retry;
+         } else {
+             seeking = false;
+@@ -1345,12 +1345,12 @@ retry:
+ 
+     if (pkt.data == mQueue->flush_pkt.data) {
+         ALOGV("read %s flush pkt", av_get_media_type_string(mMediaType));
+-        av_free_packet(&pkt);
++        av_packet_unref(&pkt);
+         mFirstKeyPktTimestamp = AV_NOPTS_VALUE;
+         goto retry;
+     } else if (pkt.data == NULL && pkt.size == 0) {
+         ALOGD("read %s eos pkt", av_get_media_type_string(mMediaType));
+-        av_free_packet(&pkt);
++        av_packet_unref(&pkt);
+         mExtractor->reachedEOS(mMediaType);
+ 	    return ERROR_END_OF_STREAM;
+     }
+@@ -1365,14 +1365,14 @@ retry:
+     //FIXME, drop, omxcodec requires a positive timestamp! e.g. vorbis
+     if (pktTS != AV_NOPTS_VALUE && pktTS < 0) {
+         ALOGW("drop the packet with negative timestamp(pts:%lld)", pktTS);
+-        av_free_packet(&pkt);
++        av_packet_unref(&pkt);
+         goto retry;
+     }
+ 
+     if (waitKeyPkt) {
+         if (!key) {
+             ALOGV("drop the non-key packet");
+-            av_free_packet(&pkt);
++            av_packet_unref(&pkt);
+             goto retry;
+         } else {
+             ALOGV("~~~~~~ got the key packet");
+@@ -1387,7 +1387,7 @@ retry:
+      
+     if (pktTS != AV_NOPTS_VALUE && pktTS < mFirstKeyPktTimestamp) {
+             ALOGV("drop the packet with the backward timestamp, maybe they are B-frames after I-frame ^_^");
+-            av_free_packet(&pkt);
++            av_packet_unref(&pkt);
+             goto retry;
+     }
+ 
+@@ -1407,7 +1407,7 @@ retry:
+             ALOGE("convertNal2AnnexB failed");
+             mediaBuffer->release();
+             mediaBuffer = NULL;
+-            av_free_packet(&pkt);
++            av_packet_unref(&pkt);
+             return ERROR_MALFORMED;
+         }
+     } else {
+@@ -1434,7 +1434,7 @@ retry:
+ 
+     *buffer = mediaBuffer;
+ 
+-    av_free_packet(&pkt);
++    av_packet_unref(&pkt);
+ 
+     return OK;
+ }
+diff --git a/utils/ffmpeg_utils.cpp b/utils/ffmpeg_utils.cpp
+index 4e9aac5..73e40d6 100644
+--- a/utils/ffmpeg_utils.cpp
++++ b/utils/ffmpeg_utils.cpp
+@@ -397,7 +397,7 @@ void packet_queue_flush(PacketQueue *q)
+     pthread_mutex_lock(&q->mutex);
+     for (pkt = q->first_pkt; pkt != NULL; pkt = pkt1) {
+         pkt1 = pkt->next;
+-        av_free_packet(&pkt->pkt);
++        av_packet_unref(&pkt->pkt);
+         av_freep(&pkt);
+     }
+     q->last_pkt = NULL;

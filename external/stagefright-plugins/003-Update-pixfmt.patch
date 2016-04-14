@@ -1,0 +1,26 @@
+From 24988a8942da9e734dfe996dd36e4b55d96f40b8 Mon Sep 17 00:00:00 2001
+From: Keith Mok <kmok@cyngn.com>
+Date: Tue, 19 Jan 2016 16:22:10 -0800
+Subject: [PATCH] stagefright-plugins: Update pixfmt
+
+PIX_FMT_YUV420P is going to be deprecated.
+Use AV_PIX_FMT_YUV420P instead.
+
+Change-Id: Ia6d119367bc2763da8206b1e6c61f3183830fe2b
+---
+ omx/SoftFFmpegVideo.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libstagefright/codecs/ffmpegdec/vdec/SoftFFmpegVideo.cpp b/libstagefright/codecs/ffmpegdec/vdec/SoftFFmpegVideo.cpp
+index 1cba05e..98618fe 100644
+--- a/libstagefright/codecs/ffmpegdec/vdec/SoftFFmpegVideo.cpp
++++ b/libstagefright/codecs/ffmpegdec/vdec/SoftFFmpegVideo.cpp
+@@ -941,7 +892,7 @@ int32_t SoftFFmpegVideo::drainOneOutputBuffer() {
+     int sws_flags = SWS_BICUBIC;
+     mImgConvertCtx = sws_getCachedContext(mImgConvertCtx,
+            mWidth, mHeight, (AVPixelFormat)mFrame->format, mWidth, mHeight,
+-           PIX_FMT_YUV420P, sws_flags, NULL, NULL, NULL);
++           AV_PIX_FMT_YUV420P, sws_flags, NULL, NULL, NULL);
+     if (mImgConvertCtx == NULL) {
+         ALOGE("Cannot initialize the conversion context");
+         return ERR_SWS_FAILED;

@@ -1,0 +1,23 @@
+From ee5d283db385847e598f19f6730f43f139efce8b Mon Sep 17 00:00:00 2001
+From: Steve Kondik <steve@cyngn.com>
+Date: Tue, 16 Jun 2015 12:53:44 -0700
+Subject: [PATCH] stagefright-plugins: Minor fix for FFMPEG 2.7
+
+Change-Id: Icc806b988830ee715f3d25fef6205401cc006c8d
+---
+ utils/codec_utils.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/utils/codec_utils.cpp b/utils/codec_utils.cpp
+index 9c14329..eebbb9a 100644
+--- a/utils/codec_utils.cpp
++++ b/utils/codec_utils.cpp
+@@ -329,7 +329,7 @@ sp<MetaData> setVORBISFormat(AVCodecContext *avctx)
+ {
+     ALOGV("VORBIS");
+ 
+-    uint8_t *header_start[3];
++    const uint8_t *header_start[3];
+     int header_len[3];
+     if (avpriv_split_xiph_headers(avctx->extradata,
+                 avctx->extradata_size, 30,

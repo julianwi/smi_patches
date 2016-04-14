@@ -1,0 +1,381 @@
+From a5d3c4c26a3cad385dcf55c8f7f46de89abf3c5d Mon Sep 17 00:00:00 2001
+From: Steve Kondik <steve@cyngn.com>
+Date: Thu, 27 Nov 2014 03:12:07 -0800
+Subject: [PATCH] stagefright-plugins: Implement frame dropping and AV sync
+
+ * Keep the video from lagging behind the audio by dropping
+   frames when we're too far behind.
+ * Set options to improve video playback performance
+ * It's still a quite terrible experience without hardware decoding,
+   but prior to this patch it was possible that the first slow
+   frame would be droped by Stagefright and the lag would just grow,
+   resulting in a black screen.
+
+Change-Id: Ib10933d385d593d8e887bca033f22b68a812bc7c
+---
+ .../codecs/ffmpegdec/adec/SoftFFmpegAudio.cpp      | 70 +++++++++++++++-------
+ .../codecs/ffmpegdec/adec/SoftFFmpegAudio.h        | 19 +++---
+ libstagefright/codecs/ffmpegdec/vdec/Android.mk    |  4 +-
+ .../codecs/ffmpegdec/vdec/SoftFFmpegVideo.cpp      | 46 +++++++++++---
+ .../codecs/ffmpegdec/vdec/SoftFFmpegVideo.h        |  3 +
+ utils/ffmpeg_utils.cpp                             |  7 +++
+ utils/ffmpeg_utils.h                               |  2 +
+ 7 files changed, 113 insertions(+), 38 deletions(-)
+
+diff --git a/libstagefright/codecs/ffmpegdec/adec/SoftFFmpegAudio.cpp b/libstagefright/codecs/ffmpegdec/adec/SoftFFmpegAudio.cpp
+index d750000..9641a4d 100644
+--- a/libstagefright/codecs/ffmpegdec/adec/SoftFFmpegAudio.cpp
++++ b/libstagefright/codecs/ffmpegdec/adec/SoftFFmpegAudio.cpp
+@@ -69,6 +69,8 @@ void SoftFFmpegAudio::setMode(const char *name) {
+     }
+ }
+ 
++int64_t *SoftFFmpegAudio::sAudioClock;
++
+ SoftFFmpegAudio::SoftFFmpegAudio(
+         const char *name,
+         const OMX_CALLBACKTYPE *callbacks,
+@@ -85,7 +87,6 @@ SoftFFmpegAudio::SoftFFmpegAudio(
+       mFrame(NULL),
+       mEOSStatus(INPUT_DATA_AVAILABLE),
+       mSignalledError(false),
+-      mAudioClock(0),
+       mInputBufferSize(0),
+       mResampledData(NULL),
+       mResampledDataSize(0),
+@@ -94,6 +95,8 @@ SoftFFmpegAudio::SoftFFmpegAudio(
+ 
+     setMode(name);
+ 
++    setAudioClock(0);
++
+     char value[PROPERTY_VALUE_MAX] = {0};
+     property_get("audio.offload.24bit.enable", value, "0");
+     mHighResAudioEnabled = atoi(value);
+@@ -236,17 +239,17 @@ void SoftFFmpegAudio::setDefaultCtx(AVCodecContext *avctx, const AVCodec *codec)
+ }
+ 
+ bool SoftFFmpegAudio::isConfigured() {
+-	return mAudioSrcChannels != -1;
++	return mAudioSrcChannels > 0;
+ }
+ 
+ void SoftFFmpegAudio::resetCtx() {
+-    mCtx->channels = -1;
+-    mCtx->sample_rate = -1;
+-    mCtx->bit_rate = -1;
++    mCtx->channels = 0;
++    mCtx->sample_rate = 0;
++    mCtx->bit_rate = 0;
+     mCtx->sample_fmt = AV_SAMPLE_FMT_NONE;
+ 
+-    mAudioSrcChannels = mAudioTgtChannels = -1;
+-    mAudioSrcFreq = mAudioTgtFreq = -1;
++    mAudioSrcChannels = mAudioTgtChannels = 0;
++    mAudioSrcFreq = mAudioTgtFreq = 0;
+     mAudioSrcFmt = mAudioTgtFmt = AV_SAMPLE_FMT_NONE;
+     mAudioSrcChannelLayout = mAudioTgtChannelLayout = 0;
+ }
+@@ -723,12 +726,12 @@ void SoftFFmpegAudio::adjustAudioParams() {
+     }
+ 
+     mAudioSrcChannels = channels;
+-    if (mAudioTgtChannels < 0) {
++    if (!mAudioTgtChannels) {
+         mAudioTgtChannels = channels;
+     }
+ 
+     mAudioSrcFreq = sampling_rate;
+-    if (mAudioTgtFreq < 0) {
++    if (!mAudioTgtFreq) {
+         mAudioTgtFreq = sampling_rate;
+     }
+ 
+@@ -1229,7 +1232,7 @@ void SoftFFmpegAudio::updateTimeStamp(OMX_BUFFERHEADERTYPE *inHeader) {
+ 
+     //update the audio clock if the pts is valid
+     if (inHeader->nTimeStamp != AV_NOPTS_VALUE) {
+-        mAudioClock = inHeader->nTimeStamp;
++        setAudioClock(inHeader->nTimeStamp);
+     }
+ }
+ 
+@@ -1275,8 +1278,8 @@ int32_t SoftFFmpegAudio::decodeAudio() {
+         CHECK(inInfo != NULL);
+         inHeader = inInfo->mHeader;
+ 
+-		if (mInputBufferSize == 0) {
+-		    updateTimeStamp(inHeader);
++	if (mInputBufferSize == 0) {
++	    updateTimeStamp(inHeader);
+             mInputBufferSize = inHeader->nFilledLen;
+         }
+     }
+@@ -1452,9 +1455,16 @@ int32_t SoftFFmpegAudio::resampleAudio() {
+ 
+ void SoftFFmpegAudio::drainOneOutputBuffer() {
+     List<BufferInfo *> &outQueue = getPortQueue(kOutputPortIndex);
+-	BufferInfo *outInfo = *outQueue.begin();
+-	CHECK(outInfo != NULL);
+-	OMX_BUFFERHEADERTYPE *outHeader = outInfo->mHeader;
++    BufferInfo *outInfo = *outQueue.begin();
++    CHECK(outInfo != NULL);
++    OMX_BUFFERHEADERTYPE *outHeader = outInfo->mHeader;
++    List<BufferInfo *> &inQueue = getPortQueue(kInputPortIndex);
++    BufferInfo *inInfo = *inQueue.begin();
++    OMX_BUFFERHEADERTYPE *inHeader = NULL;
++
++    if (inHeader != NULL) {
++        inHeader = inInfo->mHeader;
++    }
+ 
+ 	CHECK_GT(mResampledDataSize, 0);
+ 
+@@ -1465,7 +1475,7 @@ void SoftFFmpegAudio::drainOneOutputBuffer() {
+ 
+     outHeader->nOffset = 0;
+     outHeader->nFilledLen = copy;
+-    outHeader->nTimeStamp = mAudioClock; 
++    outHeader->nTimeStamp = getAudioClock();
+     memcpy(outHeader->pBuffer, mResampledData, copy);
+     outHeader->nFlags = 0;
+ 
+@@ -1475,11 +1485,11 @@ void SoftFFmpegAudio::drainOneOutputBuffer() {
+ 
+     //update audio pts
+     size_t frames = copy / (av_get_bytes_per_sample(mAudioTgtFmt) * mAudioTgtChannels);
+-    mAudioClock += (frames * 1000000ll) / mAudioTgtFreq;
++    setAudioClock(getAudioClock() + ((frames * 1000000ll) / mAudioTgtFreq));
+ 
+ #if DEBUG_FRM
+-    ALOGV("ffmpeg audio decoder, fill out buffer, copy:%u, pts: %lld",
+-            copy, outHeader->nTimeStamp);
++    ALOGV("ffmpeg audio decoder, fill out buffer, copy:%u, pts: %lld, clock: %lld",
++            copy, outHeader->nTimeStamp, getAudioClock());
+ #endif
+ 
+     outQueue.erase(outQueue.begin());
+@@ -1544,7 +1554,7 @@ void SoftFFmpegAudio::drainAllOutputBuffers() {
+     }
+ }
+ 
+-void SoftFFmpegAudio::onQueueFilled(OMX_U32 portIndex) {
++void SoftFFmpegAudio::onQueueFilled(OMX_U32 /* portIndex */) {
+     BufferInfo *inInfo = NULL;
+     OMX_BUFFERHEADERTYPE *inHeader = NULL;
+ 
+@@ -1625,7 +1635,7 @@ void SoftFFmpegAudio::onPortFlushCompleted(OMX_U32 portIndex) {
+             avcodec_flush_buffers(mCtx);
+         }
+ 
+-	    mAudioClock = 0;
++	    setAudioClock(0);
+ 	    mInputBufferSize = 0;
+ 	    mResampledDataSize = 0;
+ 	    mResampledData = NULL;
+@@ -1659,6 +1669,22 @@ void SoftFFmpegAudio::onPortEnableCompleted(OMX_U32 portIndex, bool enabled) {
+     }
+ }
+ 
++int64_t SoftFFmpegAudio::getAudioClock() {
++    if (sAudioClock == NULL) {
++        sAudioClock = (int64_t*) malloc(sizeof(int64_t));
++        *sAudioClock = 0;
++    }
++    ALOGV("getAudioClock: %lld", *sAudioClock);
++    return *sAudioClock;
++}
++
++void SoftFFmpegAudio::setAudioClock(int64_t ticks) {
++    if (sAudioClock == NULL) {
++        sAudioClock = (int64_t*) malloc(sizeof(int64_t));
++    }
++    *sAudioClock = ticks;
++}
++
+ }  // namespace android
+ 
+ android::SoftOMXComponent *createSoftOMXComponent(
+diff --git a/libstagefright/codecs/ffmpegdec/adec/SoftFFmpegAudio.h b/libstagefright/codecs/ffmpegdec/adec/SoftFFmpegAudio.h
+index 11eb09f..9509c0a 100644
+--- a/libstagefright/codecs/ffmpegdec/adec/SoftFFmpegAudio.h
++++ b/libstagefright/codecs/ffmpegdec/adec/SoftFFmpegAudio.h
+@@ -37,6 +37,11 @@ struct SoftFFmpegAudio : public SimpleSoftOMXComponent {
+             OMX_PTR appData,
+             OMX_COMPONENTTYPE **component);
+ 
++public:
++    static int64_t *sAudioClock;
++    static int64_t getAudioClock(void);
++    static void setAudioClock(int64_t value);
++
+ protected:
+     virtual ~SoftFFmpegAudio();
+ 
+@@ -107,7 +112,6 @@ private:
+ 
+     bool mSignalledError;
+ 
+-    int64_t mAudioClock;
+     int32_t mInputBufferSize;
+ 
+     //"Fatal signal 7 (SIGBUS)"!!! SIGBUS is because of an alignment exception
+@@ -120,10 +124,10 @@ private:
+     uint8_t *mResampledData;
+     int32_t mResampledDataSize;
+ 
+-    int32_t mAudioSrcFreq;
+-    int32_t mAudioTgtFreq;
+-    int32_t mAudioSrcChannels;
+-    int32_t mAudioTgtChannels;
++    uint32_t mAudioSrcFreq;
++    uint32_t mAudioTgtFreq;
++    uint32_t mAudioSrcChannels;
++    uint32_t mAudioTgtChannels;
+     int64_t mAudioSrcChannelLayout;
+     int64_t mAudioTgtChannelLayout;
+     enum AVSampleFormat mAudioSrcFmt;
+@@ -155,9 +159,9 @@ private:
+     int32_t handleExtradata();
+     int32_t handleVorbisExtradata(OMX_BUFFERHEADERTYPE *inHeader);
+     int32_t openDecoder();
+-	void    updateTimeStamp(OMX_BUFFERHEADERTYPE *inHeader);
+-	void    initPacket(AVPacket *pkt, OMX_BUFFERHEADERTYPE *inHeader);
+-	int32_t decodeAudio();
++    void    updateTimeStamp(OMX_BUFFERHEADERTYPE *inHeader);
++    void    initPacket(AVPacket *pkt, OMX_BUFFERHEADERTYPE *inHeader);
++    int32_t decodeAudio();
+     int32_t resampleAudio();
+     void    drainOneOutputBuffer();
+     void    drainEOSOutputBuffer();
+diff --git a/libstagefright/codecs/ffmpegdec/vdec/Android.mk b/libstagefright/codecs/ffmpegdec/vdec/Android.mk
+index db6b991..471d02f 100644
+--- a/libstagefright/codecs/ffmpegdec/vdec/Android.mk
++++ b/libstagefright/codecs/ffmpegdec/vdec/Android.mk
+@@ -11,6 +11,7 @@ LOCAL_C_INCLUDES += \
+ 	$(LOCAL_PATH)/../../../.. \
+ 	$(TOP)/frameworks/av/media/libstagefright/include \
+ 	$(TOP)/frameworks/native/include/media/openmax \
++	$(TOP)/external/stagefright-plugins/libstagefright/codecs/ffmpegdec/adec
+ 
+ LOCAL_C_INCLUDES += \
+ 	$(FFMPEG_SRC_DIR) \
+@@ -25,7 +26,8 @@ LOCAL_SHARED_LIBRARIES := \
+ 	libffmpeg_utils   \
+ 	libstagefright    \
+ 	libstagefright_omx \
+-	libstagefright_foundation
++	libstagefright_foundation \
++	libstagefright_soft_ffmpegadec
+ 
+ LOCAL_MODULE := libstagefright_soft_ffmpegvdec
+ LOCAL_MODULE_TAGS := optional
+diff --git a/libstagefright/codecs/ffmpegdec/vdec/SoftFFmpegVideo.cpp b/libstagefright/codecs/ffmpegdec/vdec/SoftFFmpegVideo.cpp
+index dbf8718..3a437ad 100644
+--- a/libstagefright/codecs/ffmpegdec/vdec/SoftFFmpegVideo.cpp
++++ b/libstagefright/codecs/ffmpegdec/vdec/SoftFFmpegVideo.cpp
+@@ -24,6 +24,8 @@
+ #include <media/stagefright/foundation/hexdump.h>
+ #include <media/stagefright/MediaDefs.h>
+ 
++#include "SoftFFmpegAudio.h"
++
+ #define DEBUG_PKT 0
+ #define DEBUG_FRM 0
+ 
+@@ -93,6 +95,8 @@ SoftFFmpegVideo::SoftFFmpegVideo(
+       mWidth(320),
+       mHeight(240),
+       mStride(320),
++      mLastFrameDelay(0),
++      mLastPTS(0),
+       mOutputPortSettingsChange(NONE) {
+ 
+     ALOGD("SoftFFmpegVideo component: %s mMode: %d appData: %p", name, mMode, appData);
+@@ -232,10 +236,10 @@ void SoftFFmpegVideo::initPorts() {
+ }
+ 
+ void SoftFFmpegVideo::setDefaultCtx(AVCodecContext *avctx, const AVCodec *codec) {
+-    int fast = 0;
++    int fast = 1;
+ 
+     avctx->workaround_bugs   = 1;
+-    avctx->lowres            = 0;
++    avctx->lowres            = 1;
+     if(avctx->lowres > codec->max_lowres){
+         ALOGW("The maximum value for lowres supported by the decoder is %d",
+                 codec->max_lowres);
+@@ -244,7 +248,7 @@ void SoftFFmpegVideo::setDefaultCtx(AVCodecContext *avctx, const AVCodec *codec)
+     avctx->idct_algo         = 0;
+     avctx->skip_frame        = AVDISCARD_DEFAULT;
+     avctx->skip_idct         = AVDISCARD_DEFAULT;
+-    avctx->skip_loop_filter  = AVDISCARD_DEFAULT;
++    avctx->skip_loop_filter  = AVDISCARD_ALL;
+     avctx->error_concealment = 3;
+ 
+     if(avctx->lowres) avctx->flags |= CODEC_FLAG_EMU_EDGE;
+@@ -1028,7 +1032,13 @@ void SoftFFmpegVideo::onQueueFilled(OMX_U32 portIndex __unused) {
+         }
+ 
+         inInfo   = *inQueue.begin();
++        if (inInfo == NULL) {
++            continue;
++        }
+         inHeader = inInfo->mHeader;
++        if (inHeader == NULL) {
++            continue;
++        }
+ 
+         if (inHeader->nFlags & OMX_BUFFERFLAG_EOS) {
+             ALOGD("ffmpeg video decoder empty eos inbuf");
+diff --git a/libstagefright/codecs/ffmpegdec/vdec/SoftFFmpegVideo.h b/libstagefright/codecs/ffmpegdec/vdec/SoftFFmpegVideo.h
+index cb98bf0..dbc0683 100644
+--- a/libstagefright/codecs/ffmpegdec/vdec/SoftFFmpegVideo.h
++++ b/libstagefright/codecs/ffmpegdec/vdec/SoftFFmpegVideo.h
+@@ -99,6 +99,9 @@ private:
+     bool mSignalledError;
+     int32_t mWidth, mHeight, mStride;
+ 
++    int64_t mLastFrameDelay;
++    int64_t mLastPTS;
++
+     enum {
+         NONE,
+         AWAITING_DISABLED,
+diff --git a/utils/ffmpeg_utils.cpp b/utils/ffmpeg_utils.cpp
+index 44c5e63..4e9aac5 100644
+--- a/utils/ffmpeg_utils.cpp
++++ b/utils/ffmpeg_utils.cpp
+@@ -31,6 +31,7 @@ extern "C" {
+ #include <inttypes.h>
+ #include <math.h>
+ #include <limits.h> /* INT_MAX */
++#include <time.h>
+ 
+ #undef strncpy
+ #include <string.h>
+@@ -532,5 +533,11 @@ bool setup_vorbis_extradata(uint8_t **extradata, int *extradata_size,
+     return true;
+ }
+ 
++int64_t get_timestamp() {
++    struct timeval tv;
++    gettimeofday(&tv, NULL);
++    return (int64_t)tv.tv_sec * 1000000 + tv.tv_usec;
++}
++
+ }  // namespace android
+ 
+diff --git a/utils/ffmpeg_utils.h b/utils/ffmpeg_utils.h
+index b47cc7e..0c05522 100644
+--- a/utils/ffmpeg_utils.h
++++ b/utils/ffmpeg_utils.h
+@@ -105,6 +105,8 @@ int packet_queue_get(PacketQueue *q, AVPacket *pkt, int block);
+ bool setup_vorbis_extradata(uint8_t **extradata, int *extradata_size,
+ 		const uint8_t *header_start[3], const int header_len[3]);
+ 
++int64_t get_timestamp(void);
++
+ }  // namespace android
+ 
+ #endif  // FFMPEG_UTILS_H_

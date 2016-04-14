@@ -1,0 +1,33 @@
+From f34d78381492f4f1707ad4173d5306c7df3aa8a8 Mon Sep 17 00:00:00 2001
+From: Steve Kondik <steve@cyngn.com>
+Date: Fri, 28 Nov 2014 11:36:39 -0800
+Subject: [PATCH] stagefright-plugins: Return target format in PCM params query
+
+ * If the framework told us to do something else, we should do it.
+
+Change-Id: Ie7777346012a96392a3baa9cca38c3ac31288b5d
+---
+ libstagefright/codecs/ffmpegdec/adec/SoftFFmpegAudio.cpp | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/libstagefright/codecs/ffmpegdec/adec/SoftFFmpegAudio.cpp b/libstagefright/codecs/ffmpegdec/adec/SoftFFmpegAudio.cpp
+index 5ec74e3..b6633e2 100644
+--- a/libstagefright/codecs/ffmpegdec/adec/SoftFFmpegAudio.cpp
++++ b/libstagefright/codecs/ffmpegdec/adec/SoftFFmpegAudio.cpp
+@@ -390,9 +390,13 @@ OMX_ERRORTYPE SoftFFmpegAudio::internalGetParameter(
+                 return OMX_ErrorNone;
+             }
+ 
+-            CHECK(isConfigured());
+-            profile->nChannels = mAudioSrcChannels;
+-            profile->nSamplingRate = mAudioSrcFreq;
++            if (isConfigured()) {
++                profile->nChannels = mAudioTgtChannels;
++                profile->nSamplingRate = mAudioTgtFreq;
++            } else {
++                profile->nChannels = 0;
++                profile->nSamplingRate = 0;
++            }
+ 
+             //mCtx has been updated(adjustAudioParams)!
+             ALOGV("get pcm params, nChannels:%lu, nSamplingRate:%lu, nBitsPerSample:%lu",

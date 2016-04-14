@@ -1,0 +1,25 @@
+From 12909a5ff5865d5c60eb0a093d527029d1a24674 Mon Sep 17 00:00:00 2001
+From: Steve Kondik <steve@cyngn.com>
+Date: Tue, 16 Dec 2014 01:40:42 -0800
+Subject: [PATCH] stagefright-plugins: Enable multithreaded decoding
+
+ * Set thread_count to zero in order for FFMPEG to choose an appropriate
+   number of threads based on available CPUs.
+
+Change-Id: Ifa74195cc07c64f535fad132b5b56db3f611d461
+---
+ libstagefright/codecs/ffmpegdec/vdec/SoftFFmpegVideo.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/libstagefright/codecs/ffmpegdec/vdec/SoftFFmpegVideo.cpp b/libstagefright/codecs/ffmpegdec/vdec/SoftFFmpegVideo.cpp
+index a8be651..a06b875 100644
+--- a/libstagefright/codecs/ffmpegdec/vdec/SoftFFmpegVideo.cpp
++++ b/libstagefright/codecs/ffmpegdec/vdec/SoftFFmpegVideo.cpp
+@@ -250,6 +250,7 @@ void SoftFFmpegVideo::setDefaultCtx(AVCodecContext *avctx, const AVCodec *codec)
+     avctx->skip_idct         = AVDISCARD_DEFAULT;
+     avctx->skip_loop_filter  = AVDISCARD_ALL;
+     avctx->error_concealment = 3;
++    avctx->thread_count      = 0;
+ 
+     if(avctx->lowres) avctx->flags |= CODEC_FLAG_EMU_EDGE;
+     if (fast)   avctx->flags2 |= CODEC_FLAG2_FAST;
