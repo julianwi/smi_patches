@@ -72,7 +72,9 @@ do projects "$proj" &
 done
 
 # Extra patch for timezone
-wget https://github.com/android/platform_bionic/raw/master/libc/zoneinfo/tzdata -P ${ROOT_DIR}/bionic/libc/zoneinfo/ -N
+curl -sSL https://github.com/android/platform_bionic/raw/master/libc/zoneinfo/tzdata > ${ROOT_DIR}/bionic/libc/zoneinfo/tzdata && echo "Timezone: Upstream Timezone downloaded"
+
+wait
 
 # All went well, disable the show-stopper Makefile
 (\rm -f ${PATCH_DIR}/Android.mk)
