@@ -29,14 +29,13 @@ cp ${PATCH_DIR}/Show-stopper.mk ${PATCH_DIR}/Android.mk
 
 cd ${PATCH_DIR}
 
-for proj in `find . -type d -name "*"`
-do
+projects () {
     ls ${proj}/*.patch 1>/dev/null 2>/dev/null
     if [ $? -ne 0 ]
     then
         continue
     fi
-    echo "Applying patches under ${proj}..."
+    #echo "Applying patches under ${proj}..."
     for patch_name in `ls ${PATCH_DIR}/${proj} --ignore-backups --ignore="*.bk"`
     do
         if [ -e ${ROOT_DIR}/${proj} ]; then
@@ -51,7 +50,7 @@ do
         ret=`git log | grep -w "^    Change-Id: ${change_id}" 2>/dev/null`
         if [ "${ret}" == "" ]
         then
-            echo "Applying ${patch_name}"
+            echo "Applying ${proj}:${patch_name}"
             git am -k -3 --ignore-space-change --ignore-whitespace ${patch}
             if [ $? -ne 0 ]
             then
@@ -61,11 +60,15 @@ do
                 exit
             fi
         else
-            echo "Applying ${patch_name}"
+            echo "Applying ${proj}:${patch_name}"
             echo "Applied, ignore and continue..."
         fi
     done
     cd ${PATCH_DIR}
+}
+
+for proj in `find . -type d -name "*"`
+do projects "$proj" &
 done
 
 # Extra patch for timezone
