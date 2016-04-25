@@ -26,6 +26,7 @@ PATCH_DIR=${ROOT_DIR}/device/motorola/smi-patches
 
 # Enable the temporary Makefile to abort the build in case of failure
 cp ${PATCH_DIR}/Show-stopper.mk ${PATCH_DIR}/Android.mk
+FAILED=false
 
 cd ${PATCH_DIR}
 
@@ -57,6 +58,7 @@ projects () {
                 echo "Failed at ${proj}"
                 echo "Abort..."
                 git am --abort
+                FAILED=true
                 exit
             fi
         else
@@ -72,9 +74,18 @@ do projects "$proj" &
 done
 
 # Extra patch for timezone
-curl -sSL https://github.com/android/platform_bionic/raw/master/libc/zoneinfo/tzdata > ${ROOT_DIR}/bionic/libc/zoneinfo/tzdata && echo "Timezone: Upstream Timezone downloaded"
+if curl --fail -sSL https://github.com/android/platform_bionic/raw/master/libc/zoneinfo/tzdata > tzdata; then
+    echo "Timezone: Upstream Timezone downloaded"
+    mv -f tzdata ${ROOT_DIR}/bionic/libc/zoneinfo/tzdata
+else
+    echo "Timezone: Downloading Timezone failed"
+    rm tzdata
+    FAILED=true
+fi;
 
 wait
 
 # All went well, disable the show-stopper Makefile
+if [ "$FAILED" = false ]; then
 (\rm -f ${PATCH_DIR}/Android.mk)
+fi;

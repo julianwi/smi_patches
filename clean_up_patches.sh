@@ -1,5 +1,5 @@
 #!/bin/bash
-
+CM13=(./external/ffmpeg) # ./external/stagefright-plugins)
 PATCH_DIR=device/motorola/smi-patches
 cd ../../../
 PATCHED_PROJECTS=$(
@@ -7,7 +7,7 @@ PATCHED_PROJECTS=$(
   do
     (
       cd $i
-      find . -path ./external/ffmpeg -prune -o -type d -print
+      find . -path ${CM13[0]} -prune -o -print
     )
   done | sort -u |
     while read _dir
@@ -21,11 +21,11 @@ PATCHED_PROJECTS=$(
 repo forall $PATCHED_PROJECTS -c git reset --hard github/cm-11.0
 repo forall $PATCHED_PROJECTS -c git clean -d -f -x
 # For CM13 and other projects
-repo forall external/ffmpeg -c git reset --hard github/cm-13.0
-repo forall external/ffmpeg -c git clean -d -f -x
+repo forall $CM13 -c git reset --hard github/cm-13.0
+repo forall $CM13 -c git clean -d -f -x
 
 echo
-echo Repo status for $PATCHED_PROJECTS
-repo status $PATCHED_PROJECTS
+echo Repo status for $PATCHED_PROJECTS ${CM13[*]}
+repo status $PATCHED_PROJECTS ${CM13[*]}
 cd ${PATCH_DIR}
 exit
