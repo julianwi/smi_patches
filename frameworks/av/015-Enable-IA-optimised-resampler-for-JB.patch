@@ -509,23 +509,20 @@ index 63e156b..d099064 100644
  #ifdef ADD_BATTERY_DATA
  #include <media/IMediaPlayerService.h>
  #include <media/IMediaDeathNotifier.h>
-@@ -1367,11 +1371,16 @@ sp<AudioFlinger::PlaybackThread::Track> AudioFlinger::PlaybackThread::createTrac
-                 goto Exit;
-         }
-         // Resampler implementation limits input sampling rate to 2/4 x output sampling rate.
-+#ifdef USE_INTEL_RSP
-+        //check if Intel SRC support this conversion
-+        if (!AudioResamplerIA::sampleRateSupported(sampleRate, mSampleRate)) {
-+#else
+@@ -1370,7 +1374,12 @@ sp<AudioFlinger::PlaybackThread::Track> AudioFlinger::PlaybackThread::createTrac
  #ifdef QTI_RESAMPLER
          if (sampleRate > mSampleRate * 4) {
  #else
-         if (sampleRate > mSampleRate * 2) {
- #endif
+-        if (sampleRate > mSampleRate * 2) {
++        if ((sampleRate > mSampleRate * 2)
++#ifdef USE_INTEL_SRC
++        //check if Intel SRC support this conversion
++        && (!AudioResamplerIA::sampleRateSupported(sampleRate, mSampleRate))
 +#endif
++        ) {
+ #endif
              ALOGE("Sample rate out of range: %u mSampleRate %u", sampleRate, mSampleRate);
              lStatus = BAD_VALUE;
-             goto Exit;
 @@ -3348,6 +3357,12 @@ AudioFlinger::PlaybackThread::mixer_state AudioFlinger::MixerThread::prepareTrac
              uint32_t maxSampleRate = mSampleRate * 2;
  #endif
@@ -582,4 +579,3 @@ index 63e156b..d099064 100644
          mRsmpOutBuffer = new int32_t[mFrameCount * FCC_2];
 -- 
 1.7.4.1
-
