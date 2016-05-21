@@ -1,0 +1,229 @@
+From ad86cabc9a4f70f62c7e5d89538facdfb57c02b3 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Fri, 15 Apr 2016 00:31:49 +0200
+Subject: [PATCH 3/3] Remove FFmpeg content here
+
+Change-Id: Ib90f31fbd172e3499e6230a9525dc6ce1fba8333
+---
+ media/libstagefright/Android.mk            |  4 ++++
+ media/libstagefright/DataSource.cpp        | 14 ++++++------
+ media/libstagefright/OMXCodec.cpp          | 34 ++++++++++++++++--------------
+ media/libstagefright/omx/SoftOMXPlugin.cpp | 23 --------------------
+ 4 files changed, 30 insertions(+), 45 deletions(-)
+
+diff --git a/media/libstagefright/Android.mk b/media/libstagefright/Android.mk
+index a918ce3..705c323 100644
+--- a/media/libstagefright/Android.mk
++++ b/media/libstagefright/Android.mk
+@@ -253,6 +253,10 @@ ifdef DOLBY_UDC_MULTICHANNEL
+   LOCAL_CFLAGS += -DDOLBY_UDC_MULTICHANNEL
+ endif #DOLBY_UDC_MULTICHANNEL
+ 
++# FFMPEG plugin
++LOCAL_C_INCLUDES += \
++	$(TOP)/external/stagefright-plugins/include
++
+ LOCAL_MODULE:= libstagefright
+ 
+ LOCAL_MODULE_TAGS := optional
+diff --git a/media/libstagefright/DataSource.cpp b/media/libstagefright/DataSource.cpp
+index d822756..a178cac 100755
+--- a/media/libstagefright/DataSource.cpp
++++ b/media/libstagefright/DataSource.cpp
+@@ -54,12 +54,14 @@ namespace android {
+ static void *loadExtractorPlugin() {
+     void *ret = NULL;
+     char lib[PROPERTY_VALUE_MAX];
+-    if (property_get("media.stagefright.extractor-plugin", lib, "libFFmpegExtractor.so")) {
+-        if (void *extractorLib = ::dlopen(lib, RTLD_LAZY)) {
+-            ret = ::dlsym(extractorLib, "getExtractorPlugin");
+-            ALOGW_IF(!ret, "Failed to find symbol, dlerror: %s", ::dlerror());
+-        } else {
+-            ALOGV("Failed to load %s, dlerror: %s", lib, ::dlerror());
++    if (property_get("media.sf.extractor-plugin", lib, NULL)) {
++        if (lib != NULL) {
++            if (void *extractorLib = ::dlopen(lib, RTLD_LAZY)) {
++                ret = ::dlsym(extractorLib, "getExtractorPlugin");
++                ALOGW_IF(!ret, "Failed to find symbol, dlerror: %s", ::dlerror());
++            } else {
++                ALOGV("Failed to load %s, dlerror: %s", lib, ::dlerror());
++            }
+         }
+     }
+     return ret;
+diff --git a/media/libstagefright/OMXCodec.cpp b/media/libstagefright/OMXCodec.cpp
+index 0529ea1..94929b4 100644
+--- a/media/libstagefright/OMXCodec.cpp
++++ b/media/libstagefright/OMXCodec.cpp
+@@ -88,6 +88,8 @@
+ #include "VAVideoDecoder.h"
+ #endif
+ 
++#include <OMX_FFMPEG_Extn.h>
++
+ namespace android {
+ 
+ #ifdef USE_SAMSUNG_COLORFORMAT
+@@ -1820,13 +1822,13 @@ status_t OMXCodec::setVideoOutputFormat(
+             }
+             compressionFormat = OMX_VIDEO_CodingRV;
+         } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_VC1, mime)) {
+-            compressionFormat = OMX_VIDEO_CodingVC1;
++            compressionFormat = (OMX_VIDEO_CODINGTYPE)OMX_VIDEO_CodingVC1;
+         } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_FLV1, mime)) {
+-            compressionFormat = OMX_VIDEO_CodingFLV1;
++            compressionFormat = (OMX_VIDEO_CODINGTYPE)OMX_VIDEO_CodingFLV1;
+         } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_DIVX, mime)) {
+-            compressionFormat = OMX_VIDEO_CodingDIVX;
++            compressionFormat = (OMX_VIDEO_CODINGTYPE)OMX_VIDEO_CodingDIVX;
+         } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_HEVC, mime)) {
+-            compressionFormat = OMX_VIDEO_CodingHEVC;
++            compressionFormat = (OMX_VIDEO_CODINGTYPE)OMX_VIDEO_CodingHEVC;
+         } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_FFMPEG, mime)) {
+             ALOGV("Setting the OMX_VIDEO_PARAM_FFMPEGTYPE params");
+             status_t err = setFFmpegVideoFormat(meta);
+@@ -4622,7 +4624,7 @@ status_t OMXCodec::setFFmpegVideoFormat(const sp<MetaData> &meta)
+     param.nPortIndex = kPortIndexInput;
+ 
+     status_t err = mOMX->getParameter(
+-            mNode, OMX_IndexParamVideoFFmpeg, &param, sizeof(param));
++            mNode, (OMX_INDEXTYPE)OMX_IndexParamVideoFFmpeg, &param, sizeof(param));
+     if (err != OK)
+         return err;
+ 
+@@ -4631,7 +4633,7 @@ status_t OMXCodec::setFFmpegVideoFormat(const sp<MetaData> &meta)
+     param.nHeight  = height;
+ 
+     err = mOMX->setParameter(
+-            mNode, OMX_IndexParamVideoFFmpeg, &param, sizeof(param));
++            mNode, (OMX_INDEXTYPE)OMX_IndexParamVideoFFmpeg, &param, sizeof(param));
+     return err;
+ }
+ 
+@@ -4897,7 +4899,7 @@ status_t OMXCodec::setMP2Format(const sp<MetaData> &meta)
+     param.nPortIndex = kPortIndexInput;
+ 
+     status_t err = mOMX->getParameter(
+-            mNode, OMX_IndexParamAudioMp2, &param, sizeof(param));
++            mNode, (OMX_INDEXTYPE)OMX_IndexParamAudioMp2, &param, sizeof(param));
+     if (err != OK)
+         return err;
+ 
+@@ -4905,7 +4907,7 @@ status_t OMXCodec::setMP2Format(const sp<MetaData> &meta)
+     param.nSampleRate = sampleRate;
+ 
+     err = mOMX->setParameter(
+-            mNode, OMX_IndexParamAudioMp2, &param, sizeof(param));
++            mNode, (OMX_INDEXTYPE)OMX_IndexParamAudioMp2, &param, sizeof(param));
+     return err;
+ }
+ 
+@@ -4931,7 +4933,7 @@ status_t OMXCodec::setAC3Format(const sp<MetaData> &meta)
+     param.nPortIndex = kPortIndexInput;
+ 
+     status_t err = mOMX->getParameter(
+-            mNode, OMX_IndexParamAudioAc3, &param, sizeof(param));
++            mNode, (OMX_INDEXTYPE)OMX_IndexParamAudioAc3, &param, sizeof(param));
+     if (err != OK)
+         return err;
+ 
+@@ -4939,7 +4941,7 @@ status_t OMXCodec::setAC3Format(const sp<MetaData> &meta)
+     param.nSamplingRate = sampleRate;
+ 
+     err = mOMX->setParameter(
+-            mNode, OMX_IndexParamAudioAc3, &param, sizeof(param));
++            mNode, (OMX_INDEXTYPE)OMX_IndexParamAudioAc3, &param, sizeof(param));
+     return err;
+ }
+ 
+@@ -4966,7 +4968,7 @@ status_t OMXCodec::setAPEFormat(const sp<MetaData> &meta)
+     param.nPortIndex = kPortIndexInput;
+ 
+     status_t err = mOMX->getParameter(
+-            mNode, OMX_IndexParamAudioApe, &param, sizeof(param));
++            mNode, (OMX_INDEXTYPE)OMX_IndexParamAudioApe, &param, sizeof(param));
+     if (err != OK)
+         return err;
+ 
+@@ -4975,7 +4977,7 @@ status_t OMXCodec::setAPEFormat(const sp<MetaData> &meta)
+     param.nBitsPerSample = bitsPerSample;
+ 
+     err = mOMX->setParameter(
+-            mNode, OMX_IndexParamAudioApe, &param, sizeof(param));
++            mNode, (OMX_INDEXTYPE)OMX_IndexParamAudioApe, &param, sizeof(param));
+     return err;
+ }
+ 
+@@ -5001,7 +5003,7 @@ status_t OMXCodec::setDTSFormat(const sp<MetaData> &meta)
+     param.nPortIndex = kPortIndexInput;
+ 
+     status_t err = mOMX->getParameter(
+-            mNode, OMX_IndexParamAudioDts, &param, sizeof(param));
++            mNode, (OMX_INDEXTYPE)OMX_IndexParamAudioDts, &param, sizeof(param));
+     if (err != OK)
+         return err;
+ 
+@@ -5009,7 +5011,7 @@ status_t OMXCodec::setDTSFormat(const sp<MetaData> &meta)
+     param.nSamplingRate = sampleRate;
+ 
+     err = mOMX->setParameter(
+-            mNode, OMX_IndexParamAudioDts, &param, sizeof(param));
++            mNode, (OMX_INDEXTYPE)OMX_IndexParamAudioDts, &param, sizeof(param));
+     return err;
+ }
+ 
+@@ -5043,7 +5045,7 @@ status_t OMXCodec::setFFmpegAudioFormat(const sp<MetaData> &meta)
+     param.nPortIndex = kPortIndexInput;
+ 
+     status_t err = mOMX->getParameter(
+-            mNode, OMX_IndexParamAudioFFmpeg, &param, sizeof(param));
++            mNode, (OMX_INDEXTYPE)OMX_IndexParamAudioFFmpeg, &param, sizeof(param));
+     if (err != OK)
+         return err;
+ 
+@@ -5056,7 +5058,7 @@ status_t OMXCodec::setFFmpegAudioFormat(const sp<MetaData> &meta)
+     param.eSampleFormat  = sampleFormat;
+ 
+     err = mOMX->setParameter(
+-            mNode, OMX_IndexParamAudioFFmpeg, &param, sizeof(param));
++            mNode, (OMX_INDEXTYPE)OMX_IndexParamAudioFFmpeg, &param, sizeof(param));
+ 
+     return err;
+ }
+diff --git a/media/libstagefright/omx/SoftOMXPlugin.cpp b/media/libstagefright/omx/SoftOMXPlugin.cpp
+index 934fccc..dbbad04 100644
+--- a/media/libstagefright/omx/SoftOMXPlugin.cpp
++++ b/media/libstagefright/omx/SoftOMXPlugin.cpp
+@@ -34,29 +34,6 @@ static const struct {
+     const char *mRole;
+ 
+ } kComponents[] = {
+-    { "OMX.ffmpeg.mpeg2v.decoder", "ffmpegvdec", "video_decoder.mpeg2v" },
+-    { "OMX.ffmpeg.h263.decoder", "ffmpegvdec", "video_decoder.h263" },
+-    { "OMX.ffmpeg.mpeg4.decoder", "ffmpegvdec", "video_decoder.mpeg4" },
+-    { "OMX.ffmpeg.wmv.decoder", "ffmpegvdec", "video_decoder.wmv" },
+-    { "OMX.ffmpeg.rv.decoder", "ffmpegvdec", "video_decoder.rv" },
+-    { "OMX.ffmpeg.h264.decoder", "ffmpegvdec", "video_decoder.avc" },
+-    { "OMX.ffmpeg.vp8.decoder", "ffmpegvdec", "video_decoder.vp8" },
+-    { "OMX.ffmpeg.vc1.decoder", "ffmpegvdec", "video_decoder.vc1" },
+-    { "OMX.ffmpeg.flv1.decoder", "ffmpegvdec", "video_decoder.flv1" },
+-    { "OMX.ffmpeg.divx.decoder", "ffmpegvdec", "video_decoder.divx" },
+-    { "OMX.ffmpeg.hevc.decoder", "ffmpegvdec", "video_decoder.hevc" },
+-    { "OMX.ffmpeg.vtrial.decoder", "ffmpegvdec", "video_decoder.trial" },
+-    { "OMX.ffmpeg.aac.decoder", "ffmpegadec", "audio_decoder.aac" },
+-    { "OMX.ffmpeg.mp3.decoder", "ffmpegadec", "audio_decoder.mp3" },
+-    { "OMX.ffmpeg.vorbis.decoder", "ffmpegadec", "audio_decoder.vorbis" },
+-    { "OMX.ffmpeg.wma.decoder", "ffmpegadec", "audio_decoder.wma" },
+-    { "OMX.ffmpeg.ra.decoder", "ffmpegadec", "audio_decoder.ra" },
+-    { "OMX.ffmpeg.flac.decoder", "ffmpegadec", "audio_decoder.flac" },
+-    { "OMX.ffmpeg.mp2.decoder", "ffmpegadec", "audio_decoder.mp2" },
+-    { "OMX.ffmpeg.ac3.decoder", "ffmpegadec", "audio_decoder.ac3" },
+-    { "OMX.ffmpeg.ape.decoder", "ffmpegadec", "audio_decoder.ape" },
+-    { "OMX.ffmpeg.dts.decoder", "ffmpegadec", "audio_decoder.dts" },
+-    { "OMX.ffmpeg.atrial.decoder", "ffmpegadec", "audio_decoder.trial" },
+     { "OMX.google.aac.decoder", "aacdec", "audio_decoder.aac" },
+     { "OMX.google.aac.encoder", "aacenc", "audio_encoder.aac" },
+     { "OMX.google.amrnb.decoder", "amrdec", "audio_decoder.amrnb" },
+-- 
+2.5.0
+

@@ -1,0 +1,26 @@
+From 76bcfc1ee470b571c2e5c8d88ddc8481e756a5c1 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Thu, 14 Apr 2016 21:58:02 +0200
+Subject: [PATCH 3/4] Update portdefinition
+
+Change-Id: I25286e40ed81dcb0c26225f32fc8fd80c9740e2c
+---
+ omx/SoftFFmpegVideo.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/omx/SoftFFmpegVideo.cpp b/omx/SoftFFmpegVideo.cpp
+index f65b48d..cd3f5b6 100644
+--- a/omx/SoftFFmpegVideo.cpp
++++ b/omx/SoftFFmpegVideo.cpp
+@@ -255,7 +255,7 @@ OMX_ERRORTYPE SoftFFmpegVideo::internalSetParameter(
+                     mWidth = newWidth;
+                     mHeight = newHeight;
+ 
+-                    updatePortDefinitions(true, true);
++                    updatePortDefinitions();
+                     // reset buffer size based on frame size
+                     newParams->nBufferSize = def->nBufferSize;
+                 } else {
+-- 
+2.5.0
+

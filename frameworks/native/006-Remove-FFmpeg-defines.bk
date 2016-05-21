@@ -1,0 +1,169 @@
+From f3bad27f440ba279f14ffd69116cfb8a834964db Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Thu, 14 Apr 2016 21:45:13 +0200
+Subject: [PATCH] Remove FFmpeg defines
+
+Change-Id: I76c76b38963483957814202ead7c9bc9dca3ac03
+---
+ include/media/openmax/OMX_Audio.h | 80 ---------------------------------------
+ include/media/openmax/OMX_Index.h |  9 -----
+ include/media/openmax/OMX_Video.h | 17 ---------
+ 3 files changed, 106 deletions(-)
+
+diff --git a/include/media/openmax/OMX_Audio.h b/include/media/openmax/OMX_Audio.h
+index 2aa6c95..926925b 100644
+--- a/include/media/openmax/OMX_Audio.h
++++ b/include/media/openmax/OMX_Audio.h
+@@ -131,11 +131,6 @@ typedef enum OMX_AUDIO_CODINGTYPE {
+ #endif // DOLBY_UDC
+     OMX_AUDIO_CodingKhronosExtensions = 0x6F000000, /**< Reserved region for introducing Khronos Standard Extensions */ 
+     OMX_AUDIO_CodingVendorStartUnused = 0x7F000000, /**< Reserved region for introducing Vendor Extensions */
+-    OMX_AUDIO_CodingMP2,         /**< Any variant of MP2 encoded data */
+-    OMX_AUDIO_CodingAC3,         /**< Any variant of AC3 encoded data */
+-    OMX_AUDIO_CodingAPE,         /**< Any variant of APE encoded data */
+-    OMX_AUDIO_CodingDTS,         /**< Any variant of DTS encoded data */
+-    OMX_AUDIO_CodingFFMPEG,      /**< Any variant of FFMPEG encoded data */
+     OMX_AUDIO_CodingMax = 0x7FFFFFFF
+ } OMX_AUDIO_CODINGTYPE;
+ 
+@@ -382,81 +377,6 @@ typedef struct OMX_AUDIO_PARAM_FLACTYPE {
+ } OMX_AUDIO_PARAM_FLACTYPE;
+ 
+ 
+-/** MP2 params */
+-typedef struct OMX_AUDIO_PARAM_MP2TYPE {
+-    OMX_U32 nSize;                 /**< size of the structure in bytes */
+-    OMX_VERSIONTYPE nVersion;      /**< OMX specification version information */
+-    OMX_U32 nPortIndex;            /**< port that this structure applies to */
+-    OMX_U32 nChannels;             /**< Number of channels */
+-    OMX_U32 nBitRate;              /**< Bit rate of the input data.  Use 0 for variable
+-                                        rate or unknown bit rates */
+-    OMX_U32 nSampleRate;           /**< Sampling rate of the source data.  Use 0 for
+-                                        variable or unknown sampling rate. */
+-    OMX_AUDIO_CHANNELMODETYPE eChannelMode;   /**< Channel mode enumeration */
+-    OMX_AUDIO_MP3STREAMFORMATTYPE eFormat;  /**< MP3 stream format */
+-} OMX_AUDIO_PARAM_MP2TYPE;
+-
+-
+-/** AC3 params */
+-typedef struct OMX_AUDIO_PARAM_AC3TYPE {
+-    OMX_U32 nSize;                 /**< size of the structure in bytes */
+-    OMX_VERSIONTYPE nVersion;      /**< OMX specification version information */
+-    OMX_U32 nPortIndex;            /**< port that this structure applies to */
+-    OMX_U32 nChannels;             /**< Number of channels */
+-    OMX_U32 nBitRate;              /**< Bit rate of the input data.  Use 0 for variable
+-                                        rate or unknown bit rates */
+-    OMX_U32 nSamplingRate;         /**< Sampling rate of the source data.  Use 0 for
+-                                        variable or unknown sampling rate. */
+-    OMX_AUDIO_CHANNELMODETYPE eChannelMode;   /**< Channel mode enumeration */
+-} OMX_AUDIO_PARAM_AC3TYPE;
+-
+-
+-/** APE params */
+-typedef struct OMX_AUDIO_PARAM_APETYPE {
+-    OMX_U32 nSize;                /**< size of the structure in bytes */
+-    OMX_VERSIONTYPE nVersion;     /**< OMX specification version information */
+-    OMX_U32 nPortIndex;           /**< port that this structure applies to */
+-    OMX_U32 nChannels;            /**< Number of channels */
+-    OMX_U32 nBitRate;             /**< Bit rate of the input data.  Use 0 for variable
+-                                       rate or unknown bit rates */
+-    OMX_U32 nSamplingRate;        /**< Sampling rate of the source data.  Use 0 for
+-                                       variable or unknown sampling rate. */
+-    OMX_U32 nBitsPerSample;       /**< Number of bits in each sample */
+-    OMX_AUDIO_CHANNELMODETYPE eChannelMode;   /**< Channel mode enumeration */
+-} OMX_AUDIO_PARAM_APETYPE;
+-
+-
+-/** DTS params */
+-typedef struct OMX_AUDIO_PARAM_DTSTYPE {
+-    OMX_U32 nSize;                 /**< size of the structure in bytes */
+-    OMX_VERSIONTYPE nVersion;      /**< OMX specification version information */
+-    OMX_U32 nPortIndex;            /**< port that this structure applies to */
+-    OMX_U32 nChannels;             /**< Number of channels */
+-    OMX_U32 nBitRate;              /**< Bit rate of the input data.  Use 0 for variable
+-                                        rate or unknown bit rates */
+-    OMX_U32 nSamplingRate;         /**< Sampling rate of the source data.  Use 0 for
+-                                        variable or unknown sampling rate. */
+-    OMX_AUDIO_CHANNELMODETYPE eChannelMode;   /**< Channel mode enumeration */
+-} OMX_AUDIO_PARAM_DTSTYPE;
+-
+-/** FFMPEG Audio params */
+-typedef struct OMX_AUDIO_PARAM_FFMPEGTYPE {
+-    OMX_U32 nSize;
+-    OMX_VERSIONTYPE nVersion;
+-    OMX_U32 nPortIndex;
+-
+-    OMX_S32 eCodecId;              /**< enum AVCodecID */
+-    OMX_U32 nChannels;             /**< Number of channels */
+-    OMX_U32 nBitRate;              /**< Bit rate of the input data.  Use 0 for variable
+-                                        rate or unknown bit rates */
+-    OMX_U32 nBitsPerSample;        /**< Number of bits in each sample */
+-    OMX_U32 nSampleRate;           /**< Sampling rate of the source data.  Use 0 for
+-                                        variable or unknown sampling rate. */
+-    OMX_U32 nBlockAlign;           /**< is the block alignment, or block size, in bytes of the audio codec */
+-
+-    OMX_S32 eSampleFormat;         /**< enum AVSampleFormat */
+-} OMX_AUDIO_PARAM_FFMPEGTYPE;
+-
+ /** WMA Version */
+ typedef enum OMX_AUDIO_WMAFORMATTYPE {
+   OMX_AUDIO_WMAFormatUnused = 0, /**< format unused or unknown */
+diff --git a/include/media/openmax/OMX_Index.h b/include/media/openmax/OMX_Index.h
+index ab3f55e..dd8c8f9 100644
+--- a/include/media/openmax/OMX_Index.h
++++ b/include/media/openmax/OMX_Index.h
+@@ -285,15 +285,6 @@ typedef enum OMX_INDEXTYPE {
+     OMX_IndexVendorMtkOmxVideoSetClientLocally = 0x7f000020,
+ #endif
+ 
+-    OMX_IndexParamAudioMp2,                 /**< reference: OMX_AUDIO_PARAM_MP2TYPE */
+-    OMX_IndexParamAudioAc3,                 /**< reference: OMX_AUDIO_PARAM_AC3TYPE */
+-#ifndef MTK_HARDWARE
+-    OMX_IndexParamAudioApe,                 /**< reference: OMX_AUDIO_PARAM_APETYPE */
+-#endif
+-    OMX_IndexParamAudioDts,                 /**< reference: OMX_AUDIO_PARAM_DTSTYPE */
+-    OMX_IndexParamVideoFFmpeg,              /**< reference: OMX_VIDEO_PARAM_FFMPEGTYPE */
+-    OMX_IndexParamAudioFFmpeg,              /**< reference: OMX_AUDIO_PARAM_FFMPEGTYPE */
+-
+     OMX_IndexMax = 0x7FFFFFFF
+ 
+ } OMX_INDEXTYPE;
+diff --git a/include/media/openmax/OMX_Video.h b/include/media/openmax/OMX_Video.h
+index 03d2b10..fd00357 100644
+--- a/include/media/openmax/OMX_Video.h
++++ b/include/media/openmax/OMX_Video.h
+@@ -89,11 +89,7 @@ typedef enum OMX_VIDEO_CODINGTYPE {
+     OMX_VIDEO_CodingVP9,        /**< Google VP9 */
+     OMX_VIDEO_CodingKhronosExtensions = 0x6F000000, /**< Reserved region for introducing Khronos Standard Extensions */ 
+     OMX_VIDEO_CodingVendorStartUnused = 0x7F000000, /**< Reserved region for introducing Vendor Extensions */
+-    OMX_VIDEO_CodingVC1,        /**< VC1 */
+-    OMX_VIDEO_CodingFLV1,       /**< Sorenson's H.263 */
+-    OMX_VIDEO_CodingDIVX,       /**< DIVX */
+     OMX_VIDEO_CodingHEVC,       /**< HEVC */
+-    OMX_VIDEO_CodingFFMPEG,     /**< FFMPEG */
+     OMX_VIDEO_CodingMax = 0x7FFFFFFF
+ } OMX_VIDEO_CODINGTYPE;
+ 
+@@ -1073,19 +1069,6 @@ typedef struct OMX_VIDEO_CONFIG_NALSIZE {
+     OMX_U32 nNaluBytes;
+ } OMX_VIDEO_CONFIG_NALSIZE;
+ 
+-/**
+- * FFMPEG Video Params
+- */
+-typedef struct OMX_VIDEO_PARAM_FFMPEGTYPE {
+-    OMX_U32 nSize;
+-    OMX_VERSIONTYPE nVersion;
+-    OMX_U32 nPortIndex;
+-
+-    OMX_S32 eCodecId;              /**< enum AVCodecID */
+-    OMX_U32 nWidth;
+-    OMX_U32 nHeight;
+-} OMX_VIDEO_PARAM_FFMPEGTYPE;
+-
+ /** @} */
+ 
+ #ifdef __cplusplus
+-- 
+2.5.0
+

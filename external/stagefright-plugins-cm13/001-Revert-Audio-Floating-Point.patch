@@ -1,0 +1,170 @@
+From 36d7cd72e41bc4708da146a5ea0468beb799ceb0 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Thu, 14 Apr 2016 20:36:26 +0200
+Subject: [PATCH 1/4] Revert Audio Floating Point
+
+Change-Id: I45ba55d9157e4ecc4cf9ae96db6940222433e700
+---
+ extractor/FFmpegExtractor.cpp |  6 +-----
+ omx/SoftFFmpegAudio.cpp       | 36 ++++++++++++++++++------------------
+ omx/SoftFFmpegAudio.h         |  1 +
+ utils/ffmpeg_utils.cpp        | 13 -------------
+ utils/ffmpeg_utils.h          |  4 ----
+ 5 files changed, 20 insertions(+), 40 deletions(-)
+
+diff --git a/extractor/FFmpegExtractor.cpp b/extractor/FFmpegExtractor.cpp
+index 2577b96..a98855d 100644
+--- a/extractor/FFmpegExtractor.cpp
++++ b/extractor/FFmpegExtractor.cpp
+@@ -556,14 +556,10 @@ sp<MetaData> FFmpegExtractor::setAudioFormat(AVStream *stream)
+ 
+         meta->setInt32(kKeyChannelCount, avctx->channels);
+         meta->setInt32(kKeyBitRate, avctx->bit_rate);
+-        int32_t bits = avctx->bits_per_raw_sample > 0 ?
+-                avctx->bits_per_raw_sample :
+-                av_get_bytes_per_sample(avctx->sample_fmt) * 8;
+-        meta->setInt32(kKeyBitsPerSample, bits > 0 ? bits : 16);
++        meta->setInt32(kKeyBitsPerSample, av_get_bytes_per_sample(avctx->sample_fmt) > 2 ? 24 : 16);
+         meta->setInt32(kKeySampleRate, avctx->sample_rate);
+         meta->setInt32(kKeyBlockAlign, avctx->block_align);
+         meta->setInt32(kKeySampleFormat, avctx->sample_fmt);
+-        meta->setInt32('pfmt', to_android_audio_format(avctx->sample_fmt));
+         meta->setCString('ffmt', findMatchingContainer(mFormatCtx->iformat->name));
+         setDurationMetaData(stream, meta);
+     }
+diff --git a/omx/SoftFFmpegAudio.cpp b/omx/SoftFFmpegAudio.cpp
+index 230af55..e882703 100644
+--- a/omx/SoftFFmpegAudio.cpp
++++ b/omx/SoftFFmpegAudio.cpp
+@@ -75,8 +75,12 @@ SoftFFmpegAudio::SoftFFmpegAudio(
+ 
+     setAudioClock(0);
+ 
+-    ALOGD("SoftFFmpegAudio component: %s mCodingType: %d",
+-            name, mCodingType);
++    char value[PROPERTY_VALUE_MAX] = {0};
++    property_get("audio.offload.24bit.enable", value, "1");
++    mHighResAudioEnabled = atoi(value);
++
++    ALOGD("SoftFFmpegAudio component: %s mCodingType: %d mHighResAudioEnabled: %d",
++            name, mCodingType, mHighResAudioEnabled);
+ 
+     initPorts();
+     CHECK_EQ(initDecoder(codecID), (status_t)OK);
+@@ -277,17 +281,9 @@ OMX_ERRORTYPE SoftFFmpegAudio::internalGetParameter(
+             profile->ePCMMode = OMX_AUDIO_PCMModeLinear;
+ 
+             if (isConfigured()) {
+-                AVSampleFormat packed = av_get_packed_sample_fmt(mAudioTgtFmt);
+-                if (packed == AV_SAMPLE_FMT_U8)
+-                    profile->nBitPerSample = 8;
+-                else if (packed == AV_SAMPLE_FMT_S16)
+-                    profile->nBitPerSample = 16;
+-                else if (packed == AV_SAMPLE_FMT_S32)
+-                    profile->nBitPerSample = 24;
+-                else
+-                    profile->nBitPerSample = av_get_bytes_per_sample(mAudioTgtFmt) * 8;
++                profile->nBitPerSample = av_get_bytes_per_sample(mAudioTgtFmt) > 2 ? 24 : 16;
+             } else {
+-                profile->nBitPerSample = 32;
++                profile->nBitPerSample = mHighResAudioEnabled ? 24 : 16;
+             }
+ 
+             if (getOMXChannelMapping(mAudioTgtChannels, profile->eChannelMapping) != OK) {
+@@ -544,13 +540,20 @@ OMX_ERRORTYPE SoftFFmpegAudio::isRoleSupported(
+ 
+ void SoftFFmpegAudio::adjustAudioParams() {
+ 
++    uint32_t max_rate = 48000;
++
+     mReconfiguring = isConfigured();
+ 
+     // let android audio mixer to downmix if there is no multichannel output
+     // and use number of channels from the source file, useful for HDMI/offload output
+     mAudioTgtChannels = mCtx->channels;
+ 
+-    mAudioTgtFreq = FFMIN(192000, FFMAX(8000, mCtx->sample_rate));
++    // 4000 <= sampling rate <= 48000/192000
++    if (mHighResAudioEnabled) {
++        max_rate = 192000;
++    }
++
++    mAudioTgtFreq = FFMIN(max_rate, FFMAX(8000, mCtx->sample_rate));
+ 
+     mAudioTgtChannels = mCtx->channels;
+     mAudioTgtFreq = mCtx->sample_rate;
+@@ -581,12 +584,9 @@ OMX_ERRORTYPE SoftFFmpegAudio::internalSetParameter(
+                 return OMX_ErrorUndefined;
+             }
+ 
+-            if (profile->nBitPerSample == 24) {
++            if (mHighResAudioEnabled &&
++                    (profile->nBitPerSample > 16 || profile->nBitPerSample == 0)) {
+                 mAudioTgtFmt = AV_SAMPLE_FMT_S32;
+-            } else if (profile->nBitPerSample == 32) {
+-                mAudioTgtFmt = AV_SAMPLE_FMT_FLT;
+-            } else if (profile->nBitPerSample == 8) {
+-                mAudioTgtFmt = AV_SAMPLE_FMT_U8;
+             } else {
+                 mAudioTgtFmt = AV_SAMPLE_FMT_S16;
+             }
+diff --git a/omx/SoftFFmpegAudio.h b/omx/SoftFFmpegAudio.h
+index bd68bad..4a25671 100644
+--- a/omx/SoftFFmpegAudio.h
++++ b/omx/SoftFFmpegAudio.h
+@@ -138,6 +138,7 @@ private:
+         AWAITING_ENABLED
+     } mOutputPortSettingsChange;
+ 
++    bool mHighResAudioEnabled;
+     bool mReconfiguring;
+ 
+     void setMode(const char *name);
+diff --git a/utils/ffmpeg_utils.cpp b/utils/ffmpeg_utils.cpp
+index 7d241da..d4daa35 100644
+--- a/utils/ffmpeg_utils.cpp
++++ b/utils/ffmpeg_utils.cpp
+@@ -525,18 +525,5 @@ int64_t get_timestamp() {
+     return (int64_t)tv.tv_sec * 1000000 + tv.tv_usec;
+ }
+ 
+-audio_format_t to_android_audio_format(enum AVSampleFormat fmt) {
+-    AVSampleFormat packed = av_get_packed_sample_fmt(fmt);
+-    if (packed == AV_SAMPLE_FMT_U8)
+-        return AUDIO_FORMAT_PCM_8_BIT;
+-    if (packed == AV_SAMPLE_FMT_S16)
+-        return AUDIO_FORMAT_PCM_16_BIT;
+-    if (packed == AV_SAMPLE_FMT_S32)
+-        return AUDIO_FORMAT_PCM_32_BIT;
+-    if (packed == AV_SAMPLE_FMT_FLT)
+-        return AUDIO_FORMAT_PCM_FLOAT;
+-    return AUDIO_FORMAT_DEFAULT;
+-}
+-
+ }  // namespace android
+ 
+diff --git a/utils/ffmpeg_utils.h b/utils/ffmpeg_utils.h
+index 83be7fa..1001976 100644
+--- a/utils/ffmpeg_utils.h
++++ b/utils/ffmpeg_utils.h
+@@ -52,8 +52,6 @@ extern "C" {
+ #include "libavcodec/xiph.h"
+ #include "libswresample/swresample.h"
+ 
+-#include <system/audio.h>
+-
+ #ifdef __cplusplus
+ }
+ #endif
+@@ -114,8 +112,6 @@ bool setup_vorbis_extradata(uint8_t **extradata, int *extradata_size,
+ 
+ int64_t get_timestamp(void);
+ 
+-audio_format_t to_android_audio_format(enum AVSampleFormat fmt);
+-
+ }  // namespace android
+ 
+ #endif  // FFMPEG_UTILS_H_
+-- 
+2.5.0
+

@@ -1,0 +1,332 @@
+From 4a87cd7ffdcac4be4c7bc9cb8fa04b01b186e5b1 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Thu, 14 Apr 2016 22:46:20 +0200
+Subject: [PATCH 4/4] Revert handlePortSettingsChange to old one
+
+Also fix some warnings
+
+Change-Id: I8cd3ab924ed03c2e822750c20f7b95a63b83c783
+---
+ omx/SoftFFmpegVideo.cpp | 175 ++++++++++++++++++++++++++++++------------------
+ omx/SoftFFmpegVideo.h   |  10 +--
+ 2 files changed, 117 insertions(+), 68 deletions(-)
+
+diff --git a/omx/SoftFFmpegVideo.cpp b/omx/SoftFFmpegVideo.cpp
+index cd3f5b6..ce210af 100644
+--- a/omx/SoftFFmpegVideo.cpp
++++ b/omx/SoftFFmpegVideo.cpp
+@@ -54,6 +54,8 @@ SoftFFmpegVideo::SoftFFmpegVideo(
+       mCodingType(codingType),
+       mFFmpegAlreadyInited(false),
+       mCodecAlreadyOpened(false),
++      mPendingSettingChangeEvent(false),
++      mPendingFrameAsSettingChanged(false),
+       mCtx(NULL),
+       mImgConvertCtx(NULL),
+       mFrame(NULL),
+@@ -346,6 +348,28 @@ OMX_ERRORTYPE SoftFFmpegVideo::internalSetParameter(
+     }
+ }
+ 
++bool SoftFFmpegVideo::isPortSettingChanged() {
++    return (mCtx->width != mWidth || mCtx->height != mHeight);
++}
++
++bool SoftFFmpegVideo::handlePortSettingChangeEvent() {
++    if (mCtx->width != mWidth || mCtx->height != mHeight) {
++       ALOGI("ffmpeg video port setting change event(%dx%d)->(%dx%d).",
++               mWidth, mHeight, mCtx->width, mCtx->height);
++
++       mWidth = mCtx->width;
++       mHeight = mCtx->height;
++       mStride = mWidth;
++
++       updatePortDefinitions();
++       notify(OMX_EventPortSettingsChanged, 1, 0, NULL);
++       mOutputPortSettingsChange = AWAITING_DISABLED;
++       return true;
++    }
++
++    return false;
++}
++
+ int32_t SoftFFmpegVideo::handleExtradata() {
+     List<BufferInfo *> &inQueue = getPortQueue(kInputPortIndex);
+     BufferInfo *inInfo = *inQueue.begin();
+@@ -482,6 +506,8 @@ int32_t SoftFFmpegVideo::decodeVideo() {
+         //don't send error to OMXCodec, skip!
+         ret = ERR_NO_FRM;
+     } else {
++        mPendingSettingChangeEvent = isPortSettingChanged();
++
+         if (!gotPic) {
+             ALOGI("ffmpeg video decoder failed to get frame.");
+             //stop sending empty packets if the decoder is finished
+@@ -491,6 +517,9 @@ int32_t SoftFFmpegVideo::decodeVideo() {
+                 ret = ERR_NO_FRM;
+             }
+         } else {
++            if (mPendingSettingChangeEvent) {
++                mPendingFrameAsSettingChanged = true;
++            }
+             ret = ERR_OK;
+         }
+     }
+@@ -513,32 +542,27 @@ int32_t SoftFFmpegVideo::drainOneOutputBuffer() {
+     int64_t pts = AV_NOPTS_VALUE;
+     uint8_t *dst = outHeader->pBuffer;
+ 
+-    uint32_t width = outputBufferWidth();
+-    uint32_t height = outputBufferHeight();
+-
+     memset(&pict, 0, sizeof(AVPicture));
+     pict.data[0] = dst;
+-    pict.data[1] = dst + width * height;
+-    pict.data[2] = pict.data[1] + (width / 2  * height / 2);
+-    pict.linesize[0] = width;
+-    pict.linesize[1] = width / 2;
+-    pict.linesize[2] = width / 2;
+-
+-    ALOGV("drainOneOutputBuffer: frame_width=%d frame_height=%d width=%d height=%d ctx_width=%d ctx_height=%d", mFrame->width, mFrame->height, width, height, mCtx->width, mCtx->height);
++    pict.data[1] = dst + mWidth * mHeight;
++    pict.data[2] = pict.data[1] + (mWidth / 2  * mHeight / 2);
++    pict.linesize[0] = mWidth;
++    pict.linesize[1] = mWidth / 2;
++    pict.linesize[2] = mWidth / 2;
+ 
+     int sws_flags = SWS_BICUBIC;
+     mImgConvertCtx = sws_getCachedContext(mImgConvertCtx,
+-           mFrame->width, mFrame->height, (AVPixelFormat)mFrame->format, width, height,
++           mCtx->width, mCtx->height, (AVPixelFormat)mFrame->format, mWidth, mHeight,
+            AV_PIX_FMT_YUV420P, sws_flags, NULL, NULL, NULL);
+     if (mImgConvertCtx == NULL) {
+         ALOGE("Cannot initialize the conversion context");
+         return ERR_SWS_FAILED;
+     }
+     sws_scale(mImgConvertCtx, mFrame->data, mFrame->linesize,
+-            0, height, pict.data, pict.linesize);
++            0, mHeight, pict.data, pict.linesize);
+ 
+     outHeader->nOffset = 0;
+-    outHeader->nFilledLen = (outputBufferWidth() * outputBufferHeight() * 3) / 2;
++    outHeader->nFilledLen = (mWidth * mHeight * 3) / 2;
+     outHeader->nFlags = 0;
+     if (mFrame->key_frame) {
+         outHeader->nFlags |= OMX_BUFFERFLAG_SYNCFRAME;
+@@ -602,45 +626,32 @@ void SoftFFmpegVideo::drainAllOutputBuffers() {
+         return;
+     }
+ 
+-    while (!outQueue.empty()) {
+-        int32_t err = decodeVideo();
+-        if (err < ERR_OK) {
+-            notify(OMX_EventError, OMX_ErrorUndefined, 0, NULL);
+-            mSignalledError = true;
+-            return;
+-        } else if (err == ERR_FLUSHED) {
+-            drainEOSOutputBuffer();
+-            return;
+-        } else {
+-            CHECK_EQ(err, ERR_OK);
+-        }
++     while (!outQueue.empty()) {
++        if (!mPendingFrameAsSettingChanged) {
++            int32_t err = decodeVideo();
++	    if (err < ERR_OK) {
++                notify(OMX_EventError, OMX_ErrorUndefined, 0, NULL);
++                mSignalledError = true;
++                return;
++            } else if (err == ERR_FLUSHED) {
++                drainEOSOutputBuffer();
++                return;
++            } else {
++                CHECK_EQ(err, ERR_OK);
++                if (mPendingSettingChangeEvent) {
++                    return;
++                }
++            }
++	}
+         if (drainOneOutputBuffer() != ERR_OK) {
+             notify(OMX_EventError, OMX_ErrorUndefined, 0, NULL);
+             mSignalledError = true;
+             return;
+         }
+-    }
+-}
+-
+-bool SoftFFmpegVideo::handlePortSettingsChange() {
+-    CropSettingsMode crop = kCropUnSet;
+-    uint32_t width  = outputBufferWidth();
+-    uint32_t height = outputBufferHeight();
+-    if (width != (uint32_t)mCtx->width || height != (uint32_t)mCtx->height) {
+-        crop = kCropSet;
+-        if (mCropWidth != width || mCropHeight != height) {
+-            mCropLeft = 0;
+-            mCropTop = 0;
+-            mCropWidth = width;
+-            mCropHeight = height;
+-            crop = kCropChanged;
++        if (mPendingFrameAsSettingChanged) {
++            mPendingFrameAsSettingChanged = false;
+         }
+     }
+-
+-    bool portWillReset = false;
+-    SoftVideoDecoderOMXComponent::handlePortSettingsChange(
+-            &portWillReset, mCtx->width, mCtx->height, crop);
+-    return portWillReset;
+ }
+ 
+ void SoftFFmpegVideo::onQueueFilled(OMX_U32 portIndex __unused) {
+@@ -657,6 +668,14 @@ void SoftFFmpegVideo::onQueueFilled(OMX_U32 portIndex __unused) {
+ 
+     while (((mEOSStatus != INPUT_DATA_AVAILABLE) || !inQueue.empty())
+             && !outQueue.empty()) {
++        if (mPendingSettingChangeEvent) {
++            //fix crash! We don't notify event until wait for all output buffers
++            if (outQueue.size() == kNumOutputBuffers) {
++                CHECK(handlePortSettingChangeEvent() == true);
++                mPendingSettingChangeEvent = false;
++            }
++            return;
++        }
+ 
+         if (mEOSStatus == INPUT_EOS_SEEN) {
+             drainAllOutputBuffers();
+@@ -693,30 +712,30 @@ void SoftFFmpegVideo::onQueueFilled(OMX_U32 portIndex __unused) {
+             }
+         }
+ 
+-        int32_t err = decodeVideo();
+-        if (err < ERR_OK) {
+-            notify(OMX_EventError, OMX_ErrorUndefined, 0, NULL);
+-            mSignalledError = true;
+-            return;
+-        } else if (err == ERR_FLUSHED) {
+-            drainEOSOutputBuffer();
+-            return;
+-        } else if (err == ERR_NO_FRM) {
+-            continue;
+-        } else {
+-            CHECK_EQ(err, ERR_OK);
+-        }
+-
+-        if (handlePortSettingsChange()) {
+-            ALOGV("PORT RESET w=%d h=%d", mCtx->width, mCtx->height);
+-            return;
+-        }
++        if (!mPendingFrameAsSettingChanged) {
++            int32_t err = decodeVideo();
++		    if (err < ERR_OK) {
++                notify(OMX_EventError, OMX_ErrorUndefined, 0, NULL);
++                mSignalledError = true;
++                return;
++            } else if (err == ERR_NO_FRM) {
++                continue;
++            } else {
++                CHECK_EQ(err, ERR_OK);
++                if (mPendingSettingChangeEvent) {
++                    continue;
++                }
++            }
++	}
+ 
+         if (drainOneOutputBuffer() != ERR_OK) {
+             notify(OMX_EventError, OMX_ErrorUndefined, 0, NULL);
+             mSignalledError = true;
+             return;
+         }
++        if (mPendingFrameAsSettingChanged) {
++            mPendingFrameAsSettingChanged = false;
++        }
+     }
+ }
+ 
+@@ -733,8 +752,10 @@ void SoftFFmpegVideo::onPortFlushCompleted(OMX_U32 portIndex) {
+ }
+ 
+ void SoftFFmpegVideo::onReset() {
+-    ALOGV("onReset()");
+     SoftVideoDecoderOMXComponent::onReset();
++    mFFmpegAlreadyInited = false;
++    mCodecAlreadyOpened = false;
++    mCtx = NULL;
+     mSignalledError = false;
+     mExtradataReady = false;
+ }
+@@ -771,4 +792,30 @@ SoftOMXComponent* SoftFFmpegVideo::createSoftOMXComponent(
+                 callbacks, appData, component, codecID);
+ }
+ 
++void SoftFFmpegVideo::updatePortDefinitions() {
++    OMX_PARAM_PORTDEFINITIONTYPE *def = &editPortInfo(0)->mDef;
++    def->format.video.nFrameWidth = mWidth;
++    def->format.video.nFrameHeight = mHeight;
++    def->format.video.nStride = def->format.video.nFrameWidth;
++    def->format.video.nSliceHeight = def->format.video.nFrameHeight;
++    def->nBufferSize =
++        (def->format.video.nFrameWidth
++            * def->format.video.nFrameHeight * 3) / 2;
++
++    def = &editPortInfo(1)->mDef;
++    def->format.video.nFrameWidth = mWidth;
++    def->format.video.nFrameHeight = mHeight;
++    def->format.video.nStride = def->format.video.nFrameWidth;
++    def->format.video.nSliceHeight = def->format.video.nFrameHeight;
++#if 0
++    def->nBufferSize =
++        (def->format.video.nFrameWidth
++            * def->format.video.nFrameHeight * 3) / 2;
++#else
++    def->nBufferSize =
++        (((def->format.video.nFrameWidth + 15) & -16)
++            * ((def->format.video.nFrameHeight + 15) & -16) * 3) / 2;
++#endif
++}
++
+ }  // namespace android
+diff --git a/omx/SoftFFmpegVideo.h b/omx/SoftFFmpegVideo.h
+index 85d937b..605caf6 100644
+--- a/omx/SoftFFmpegVideo.h
++++ b/omx/SoftFFmpegVideo.h
+@@ -81,6 +81,8 @@ private:
+     OMX_VIDEO_CODINGTYPE mCodingType;
+     bool mFFmpegAlreadyInited;
+     bool mCodecAlreadyOpened;
++    bool mPendingSettingChangeEvent;
++    bool mPendingFrameAsSettingChanged;
+     AVCodecContext *mCtx;
+     struct SwsContext *mImgConvertCtx;
+     AVFrame *mFrame;
+@@ -89,9 +91,7 @@ private:
+ 
+     bool mExtradataReady;
+     bool mIgnoreExtradata;
+-    int32_t mStride;
+-    int32_t mOutputWidth;
+-    int32_t mOutputHeight;
++    int32_t mWidth, mHeight, mStride;
+ 
+     bool mSignalledError;
+ 
+@@ -104,6 +104,7 @@ private:
+     void     deInitDecoder();
+ 
+     bool     isPortSettingChanged();
++    bool     handlePortSettingChangeEvent();
+ 
+     int32_t  handleExtradata();
+     int32_t  openDecoder();
+@@ -113,7 +114,8 @@ private:
+     int32_t  drainOneOutputBuffer();
+     void     drainEOSOutputBuffer();
+     void     drainAllOutputBuffers();
+-    bool     handlePortSettingsChange();
++
++    void     updatePortDefinitions();
+ 
+     DISALLOW_EVIL_CONSTRUCTORS(SoftFFmpegVideo);
+ };
+-- 
+2.5.0
+
