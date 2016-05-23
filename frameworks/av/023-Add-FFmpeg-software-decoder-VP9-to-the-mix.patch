@@ -1,0 +1,27 @@
+From a08238622bcbcf0c7fc21d8ae226a7a9a5d26719 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Tue, 24 May 2016 01:15:42 +0200
+Subject: [PATCH] Add FFmpeg software decoder VP9 to the mix
+
+2x times better than Google one
+
+Change-Id: Ieec2291a5ac7d8cd901a24397c6a416b30099129
+---
+ media/libstagefright/omx/SoftOMXPlugin.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/media/libstagefright/omx/SoftOMXPlugin.cpp b/media/libstagefright/omx/SoftOMXPlugin.cpp
+index 934fccc..b258f75 100644
+--- a/media/libstagefright/omx/SoftOMXPlugin.cpp
++++ b/media/libstagefright/omx/SoftOMXPlugin.cpp
+@@ -41,6 +41,7 @@ static const struct {
+     { "OMX.ffmpeg.rv.decoder", "ffmpegvdec", "video_decoder.rv" },
+     { "OMX.ffmpeg.h264.decoder", "ffmpegvdec", "video_decoder.avc" },
+     { "OMX.ffmpeg.vp8.decoder", "ffmpegvdec", "video_decoder.vp8" },
++    { "OMX.ffmpeg.vp9.decoder", "ffmpegvdec", "video_decoder.vp9" },
+     { "OMX.ffmpeg.vc1.decoder", "ffmpegvdec", "video_decoder.vc1" },
+     { "OMX.ffmpeg.flv1.decoder", "ffmpegvdec", "video_decoder.flv1" },
+     { "OMX.ffmpeg.divx.decoder", "ffmpegvdec", "video_decoder.divx" },
+-- 
+2.7.4
+
