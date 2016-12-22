@@ -1,0 +1,24 @@
+From 9204ff2b481965e4074e54f326645aec9269a477 Mon Sep 17 00:00:00 2001
+From: Adam Seaton <aseaton@google.com>
+Date: Tue, 18 Oct 2016 15:11:42 -0700
+Subject: [PATCH] Update Security String to 2016-12-01
+
+lmp-dev
+b/32249855
+
+Change-Id: I36e36f83f007351f6f90b5210f02798a5b54664a
+---
+
+diff --git a/core/version_defaults.mk b/core/version_defaults.mk
+index 74ed0c7..ca4350d 100644
+--- a/core/version_defaults.mk
++++ b/core/version_defaults.mk
+@@ -68,7 +68,7 @@
+   # Can be an arbitrary string, but must be a single word.
+   #
+   # If there is no $PLATFORM_SECURITY_PATCH set, keep it empty.
+-  PLATFORM_SECURITY_PATCH := 2016-11-01
++  PLATFORM_SECURITY_PATCH := 2016-12-01
+ endif
+ 
+ ifeq "" "$(PLATFORM_BASE_OS)"
