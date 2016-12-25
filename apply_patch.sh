@@ -74,14 +74,14 @@ do projects "$proj" &
 done
 
 # Extra patch for timezone
-if curl --fail -sSL https://github.com/android/platform_bionic/raw/master/libc/zoneinfo/tzdata > tzdata; then
-    echo "Timezone: Upstream Timezone downloaded"
-    mv -f tzdata ${ROOT_DIR}/bionic/libc/zoneinfo/tzdata
-else
-    echo "Timezone: Downloading Timezone failed"
-    rm tzdata
-    FAILED=true
-fi;
+#if curl --fail -sSL https://github.com/android/platform_bionic/raw/master/libc/zoneinfo/tzdata > tzdata; then
+#    echo "Timezone: Upstream Timezone downloaded"
+#    mv -f tzdata ${ROOT_DIR}/bionic/libc/zoneinfo/tzdata
+#else
+#    echo "Timezone: Downloading Timezone failed"
+#    rm tzdata
+#    FAILED=true
+#fi;
 
 wait
 
