@@ -1,0 +1,221 @@
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index c63fb33..f26fc2f 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -558,6 +558,9 @@ a        ren't members of any other group. [CHAR LIMIT=25] -->
+          [CHAR LIMIT=40] -->
+     <string name="importing_vcard_canceled_title">Importing <xliff:g id="filename" example="import.vcf">%s</xliff:g> canceled</string>
+ 
++    <!-- Dialog message asking the user for confirmation before starting to import contacts from a .vcf file. [CHAR LIMIT=NONE] -->
++    <string name="import_from_vcf_file_confirmation_message" product="default">Import contacts from vCard?</string>
++
+     <!-- The message shown when vCard import request is accepted. The system may start that work soon, or do it later
+          when there are already other import/export requests.
+          The argument is file name the user imported.
+diff --git a/src/com/android/contacts/common/util/AccountSelectionUtil.java b/src/com/android/contacts/common/util/AccountSelectionUtil.java
+index cfe763d..7e5dd9f 100644
+--- a/src/com/android/contacts/common/util/AccountSelectionUtil.java
++++ b/src/com/android/contacts/common/util/AccountSelectionUtil.java
+@@ -18,6 +18,7 @@
+ 
+ package com.android.contacts.common.util;
+ 
++import android.app.Activity;
+ import android.app.AlertDialog;
+ import android.app.Dialog;
+ import android.content.Context;
+@@ -68,24 +69,24 @@ public class AccountSelectionUtil {
+     public static class AccountSelectedListener
+             implements DialogInterface.OnClickListener {
+ 
+-        final private Context mContext;
++        final private Activity mActivity;
+         final private int mResId;
+ 
+         protected List<AccountWithDataSet> mAccountList;
+ 
+-        public AccountSelectedListener(Context context, List<AccountWithDataSet> accountList,
++        public AccountSelectedListener(Activity activity, List<AccountWithDataSet> accountList,
+                 int resId) {
+             if (accountList == null || accountList.size() == 0) {
+                 Log.e(LOG_TAG, "The size of Account list is 0.");
+             }
+-            mContext = context;
++            mActivity = activity;
+             mAccountList = accountList;
+             mResId = resId;
+         }
+ 
+         public void onClick(DialogInterface dialog, int which) {
+             dialog.dismiss();
+-            doImport(mContext, mResId, mAccountList.get(which));
++            doImport(mActivity, mResId, mAccountList.get(which));
+         }
+         /**
+          * Reset the account list for this listener, to make sure the selected
+@@ -102,19 +103,19 @@ public class AccountSelectionUtil {
+         mImportSub = subscription;
+     }
+ 
+-    public static Dialog getSelectAccountDialog(Context context, int resId) {
+-        return getSelectAccountDialog(context, resId, null, null);
++    public static Dialog getSelectAccountDialog(Activity activity, int resId) {
++        return getSelectAccountDialog(activity, resId, null, null);
+     }
+ 
+-    public static Dialog getSelectAccountDialog(Context context, int resId,
++    public static Dialog getSelectAccountDialog(Activity activity, int resId,
+             DialogInterface.OnClickListener onClickListener) {
+-        return getSelectAccountDialog(context, resId, onClickListener, null);
++        return getSelectAccountDialog(activity, resId, onClickListener, null);
+     }
+ 
+-    public static Dialog getSelectAccountDialog(Context context, int resId,
++    public static Dialog getSelectAccountDialog(Activity activity, int resId,
+             DialogInterface.OnClickListener onClickListener,
+             DialogInterface.OnCancelListener onCancelListener) {
+-        return getSelectAccountDialog(context, resId, onClickListener,
++        return getSelectAccountDialog(activity, resId, onClickListener,
+             onCancelListener, true);
+     }
+ 
+@@ -122,10 +123,10 @@ public class AccountSelectionUtil {
+      * When OnClickListener or OnCancelListener is null, uses a default listener.
+      * The default OnCancelListener just closes itself with {@link Dialog#dismiss()}.
+      */
+-    public static Dialog getSelectAccountDialog(Context context, int resId,
++    public static Dialog getSelectAccountDialog(Activity activity, int resId,
+             DialogInterface.OnClickListener onClickListener,
+             DialogInterface.OnCancelListener onCancelListener, boolean includeSIM) {
+-        final AccountTypeManager accountTypes = AccountTypeManager.getInstance(context);
++        final AccountTypeManager accountTypes = AccountTypeManager.getInstance(activity);
+         List<AccountWithDataSet> writableAccountList = accountTypes.getAccounts(true);
+         if (includeSIM) {
+             writableAccountList = accountTypes.getAccounts(true);
+@@ -140,11 +141,11 @@ public class AccountSelectionUtil {
+ 
+         // Wrap our context to inflate list items using correct theme
+         final Context dialogContext = new ContextThemeWrapper(
+-                context, android.R.style.Theme_Light);
++                activity, android.R.style.Theme_Light);
+         final LayoutInflater dialogInflater = (LayoutInflater)dialogContext
+                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+         final ArrayAdapter<AccountWithDataSet> accountAdapter =
+-            new ArrayAdapter<AccountWithDataSet>(context, android.R.layout.simple_list_item_2,
++            new ArrayAdapter<AccountWithDataSet>(activity, android.R.layout.simple_list_item_2,
+                     writableAccountList) {
+ 
+             @Override
+@@ -175,7 +176,7 @@ public class AccountSelectionUtil {
+ 
+         if (onClickListener == null) {
+             AccountSelectedListener accountSelectedListener =
+-                new AccountSelectedListener(context, writableAccountList, resId);
++                new AccountSelectedListener(activity, writableAccountList, resId);
+             onClickListener = accountSelectedListener;
+         } else if (onClickListener instanceof AccountSelectedListener) {
+             // Because the writableAccountList is different if includeSIM or not, so
+@@ -192,21 +193,21 @@ public class AccountSelectionUtil {
+                 }
+             };
+         }
+-        return new AlertDialog.Builder(context)
++        return new AlertDialog.Builder(activity)
+             .setTitle(R.string.dialog_new_contact_account)
+             .setSingleChoiceItems(accountAdapter, 0, onClickListener)
+             .setOnCancelListener(onCancelListener)
+             .create();
+     }
+ 
+-    public static void doImport(Context context, int resId, AccountWithDataSet account) {
++    public static void doImport(Activity activity, int resId, AccountWithDataSet account) {
+         switch (resId) {
+             case R.string.import_from_sim: {
+-                    doImportFromSim(context, account);
++                    doImportFromSim(activity, account);
+                 break;
+             }
+             case R.string.import_from_sdcard: {
+-                doImportFromSdCard(context, account);
++                doImportFromSdCard(activity, account);
+                 break;
+             }
+         }
+@@ -241,8 +242,8 @@ public class AccountSelectionUtil {
+         context.startActivity(importIntent);
+     }
+ 
+-    public static void doImportFromSdCard(Context context, AccountWithDataSet account) {
+-        Intent importIntent = new Intent(context, ImportVCardActivity.class);
++    public static void doImportFromSdCard(Activity activity, AccountWithDataSet account) {
++        Intent importIntent = new Intent(activity, ImportVCardActivity.class);
+         if (account != null) {
+             importIntent.putExtra(SimContactsConstants.ACCOUNT_NAME, account.name);
+             importIntent.putExtra(SimContactsConstants.ACCOUNT_TYPE, account.type);
+@@ -260,7 +261,7 @@ public class AccountSelectionUtil {
+         }
+         mVCardShare = false;
+         mPath = null;
+-        context.startActivity(importIntent);
++        activity.startActivityForResult(importIntent, 0);
+     }
+ 
+     public static class SimSelectedListener
+diff --git a/src/com/android/contacts/common/vcard/ImportVCardActivity.java b/src/com/android/contacts/common/vcard/ImportVCardActivity.java
+index c15d5df..c94ec2e 100644
+--- a/src/com/android/contacts/common/vcard/ImportVCardActivity.java
++++ b/src/com/android/contacts/common/vcard/ImportVCardActivity.java
+@@ -92,7 +92,7 @@ import java.util.regex.Pattern;
+  * any Dialog in the instance. So this code is careless about the management around managed
+  * dialogs stuffs (like how onCreateDialog() is used).
+  */
+-public class ImportVCardActivity extends Activity implements SelectAccountDialogFragment.Listener {
++public class ImportVCardActivity extends Activity implements SelectAccountDialogFragment.Listener, ImportVCardDialogFragment.Listener {
+     private static final String LOG_TAG = "VCardImport";
+ 
+     /* package */ static final String VCARD_URI_ARRAY = "vcard_uri";
+@@ -909,9 +909,44 @@ public class ImportVCardActivity extends Activity implements SelectAccountDialog
+             }
+         }
+ 
++        if (isCallerSelf(this)) {
++            startImport();
++        } else {
++            ImportVCardDialogFragment.show(this);
++        }
++    }
++
++    private static boolean isCallerSelf(Activity activity) {
++        // {@link Activity#getCallingActivity()} is a safer alternative to
++        // {@link Activity#getCallingPackage()} that works around a
++        // framework bug where getCallingPackage() can sometimes return null even when the
++        // current activity *was* in fact launched via a startActivityForResult() call.
++        //
++        // (The bug happens if the task stack needs to be re-created by the framework after
++        // having been killed due to memory pressure or by the "Don't keep activities"
++        // developer option; see bug 7494866 for the full details.)
++        //
++        // Turns out that {@link Activity#getCallingActivity()} *does* return correct info
++        // even in the case where getCallingPackage() is broken, so the workaround is simply
++        // to get the package name from getCallingActivity().getPackageName() instead.
++        final ComponentName callingActivity = activity.getCallingActivity();
++        if (callingActivity == null) return false;
++        final String packageName = callingActivity.getPackageName();
++        if (packageName == null) return false;
++        return packageName.equals(activity.getApplicationContext().getPackageName());
++    }
++
++
++    @Override
++    public void onImportVCardConfirmed() {
+         startImport();
+     }
+ 
++    @Override
++    public void onImportVCardDenied() {
++        finish();
++    }
++
+     private void startImport() {
+         Intent intent = getIntent();
+         // Handle inbound files
