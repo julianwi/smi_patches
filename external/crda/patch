@@ -1,0 +1,90 @@
+From e40afba19fef7c0c76939efc9ca4a593dfdaa840 Mon Sep 17 00:00:00 2001
+From: "Luis R. Rodriguez" <mcgrof@qca.qualcomm.com>
+Date: Fri, 7 Oct 2011 13:47:53 -0700
+Subject: crda: fix null string assumption for alpha2
+
+The wireless-regdb only accounts for two bytes for
+the country code but CRDA defined the alpha2 to be
+as a string of length 2, and so does the nl80211 attribute
+policy:
+
+        [NL80211_ATTR_REG_ALPHA2] = { .type = NLA_STRING, .len = 2 },
+
+The meaning of a string is it'll be null terminated, so if you
+do not add the null termination a country without the null termination
+will not match up with the nl80211 attribute policy.
+
+This has no impact for us unless we want to use the next available
+pad byte on the wireless-regdb. This fixes CRDA by using a local copy
+of the regdb's alpha2 that is properly null terminated and sending it.
+
+The implications of this change is that new wirelesss-regdb's that
+make use of the next pad byte for a country will get that country
+ignored for regulatory hints sent to the kernel. At this point we
+don't yet know what the next byte will be used for though so this
+has no impact. The second pad byte is being used for DFS and that
+is not impacted by this nor is this change required for it.
+
+Distributions should upgrade though in case we ever do decide to use
+this last precious country byte. I've tested that this indeed fixes
+the bogus issue I saw when instead of using the second pad byte we
+use the first pad byte. Thanks to Johannes for spotting the issue.
+
+Signed-off-by: Johannes Berg <johannes@sipsolutions.net>
+Signed-off-by: Luis R. Rodriguez <mcgrof@qca.qualcomm.com>
+---
+ crda.c   |  4 ++--
+ reglib.h | 13 -------------
+ 2 files changed, 2 insertions(+), 15 deletions(-)
+
+diff --git a/crda.c b/crda.c
+index 6857e3f..fcb0c11 100644
+--- a/crda.c
++++ b/crda.c
+@@ -149,7 +149,7 @@ int main(int argc, char **argv)
+ 	struct regdb_file_header *header;
+ 	struct regdb_file_reg_country *countries;
+ 	int dblen, siglen, num_countries, i, j, r;
+-	char alpha2[2];
++	char alpha2[3] = {}; /* NUL-terminate */
+ 	char *env_country;
+ 	struct nl80211_state nlstate;
+ 	struct nl_cb *cb = NULL;
+@@ -279,7 +279,7 @@ int main(int argc, char **argv)
+ 				sizeof(*rcoll) + num_rules * sizeof(__be32),
+ 				country->reg_collection_ptr);
+ 
+-	NLA_PUT_STRING(msg, NL80211_ATTR_REG_ALPHA2, (char *) country->alpha2);
++	NLA_PUT_STRING(msg, NL80211_ATTR_REG_ALPHA2, alpha2);
+ 
+ 	nl_reg_rules = nla_nest_start(msg, NL80211_ATTR_REG_RULES);
+ 	if (!nl_reg_rules) {
+diff --git a/reglib.h b/reglib.h
+index f3a76ef..9fe5d8b 100644
+--- a/reglib.h
++++ b/reglib.h
+@@ -53,21 +53,8 @@ static inline int is_alpha2(const char *alpha2)
+ 	return 0;
+ }
+ 
+-/* Avoid stdlib */
+-static inline int is_len_2(const char *alpha2)
+-{
+-        if (alpha2[0] == '\0' || (alpha2[1] == '\0'))
+-                return 0;
+-        if (alpha2[2] == '\0')
+-                return 1;
+-        return 0;
+-}
+-
+ static inline int is_valid_regdom(const char *alpha2)
+ {
+-	if (!is_len_2(alpha2))
+-		return 0;
+-
+ 	if (!is_alpha2(alpha2) && !is_world_regdom(alpha2))
+ 		return 0;
+ 
+-- 
+cgit v0.12
+
