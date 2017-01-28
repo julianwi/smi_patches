@@ -1,3 +1,17 @@
+From ce32770d34160311879df2e62860ec66856229b7 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Fri, 27 Jan 2017 23:56:29 +0100
+Subject: [PATCH] ABS patch for contactscommon
+
+Change-Id: I275c99b6edf0e6843853c8bbd222773d942a4f85
+---
+ res/values/strings.xml                             |  3 +
+ .../contacts/common/util/AccountSelectionUtil.java | 45 ++++++------
+ .../contacts/common/vcard/ImportVCardActivity.java | 37 +++++++++-
+ .../common/vcard/ImportVCardDialogFragment.java    | 83 ++++++++++++++++++++++
+ 4 files changed, 145 insertions(+), 23 deletions(-)
+ create mode 100644 src/com/android/contacts/common/vcard/ImportVCardDialogFragment.java
+
 diff --git a/res/values/strings.xml b/res/values/strings.xml
 index c63fb33..f26fc2f 100644
 --- a/res/values/strings.xml
@@ -219,3 +233,95 @@ index c15d5df..c94ec2e 100644
      private void startImport() {
          Intent intent = getIntent();
          // Handle inbound files
+diff --git a/src/com/android/contacts/common/vcard/ImportVCardDialogFragment.java b/src/com/android/contacts/common/vcard/ImportVCardDialogFragment.java
+new file mode 100644
+index 0000000..7c4b7bf
+--- /dev/null
++++ b/src/com/android/contacts/common/vcard/ImportVCardDialogFragment.java
+@@ -0,0 +1,83 @@
++/*
++ * Copyright (C) 2016 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package com.android.contacts.common.vcard;
++
++import android.app.Activity;
++import android.app.AlertDialog;
++import android.app.Dialog;
++import android.app.DialogFragment;
++import android.content.DialogInterface;
++import android.net.Uri;
++import android.os.Bundle;
++
++import com.android.contacts.common.R;
++
++/** Asks for confirmation before importing contacts from a vcard. */
++public class ImportVCardDialogFragment extends DialogFragment {
++
++    static final String TAG = "importVCardDialog";
++
++    private static final String ARG_SOURCE_URI = "sourceUri";
++    private static final String ARG_SOURCE_DISPLAY_NAME = "sourceDisplayName";
++
++    /** Callbacks for hosts of the {@link ImportVCardDialogFragment}. */
++    public interface Listener {
++
++        /** Invoked after the user has confirmed that contacts should be imported. */
++        void onImportVCardConfirmed();
++
++        /** Invoked after the user has rejected importing contacts. */
++        void onImportVCardDenied();
++    }
++
++    /** Displays the dialog asking for confirmation before importing contacts. */
++    public static void show(Activity activity) {
++        if (!(activity instanceof Listener)) {
++            throw new IllegalArgumentException(
++                    "Activity must implement " + Listener.class.getName());
++        }
++
++        final ImportVCardDialogFragment dialog = new ImportVCardDialogFragment();
++        dialog.show(activity.getFragmentManager(), TAG);
++    }
++
++    @Override
++    public Dialog onCreateDialog(Bundle savedInstanceState) {
++
++        return new AlertDialog.Builder(getActivity())
++                .setIconAttribute(android.R.attr.alertDialogIcon)
++                .setMessage(R.string.import_from_vcf_file_confirmation_message)
++                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
++                    @Override
++                    public void onClick(DialogInterface dialog, int whichButton) {
++                        final Listener listener = (Listener) getActivity();
++                        if (listener != null) {
++                            listener.onImportVCardConfirmed();
++                        }
++                    }
++                })
++                .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
++                    @Override
++                    public void onClick(DialogInterface dialog, int whichButton) {
++                        final Listener listener = (Listener) getActivity();
++                        if (listener != null) {
++                            listener.onImportVCardDenied();
++                        }
++                    }
++                })
++                .create();
++    }
++}
+-- 
+2.7.4
+
