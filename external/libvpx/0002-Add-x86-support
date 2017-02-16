@@ -9,13 +9,14 @@ diff --git a/libvpx.mk b/libvpx.mk
 index 285a758..20c6259 100644
 --- a/libvpx.mk
 +++ b/libvpx.mk
-@@ -9,6 +9,11 @@ else ifeq ($(ARCH_ARM_HAVE_ARMV7A),true)
+@@ -9,6 +9,12 @@ else ifeq ($(ARCH_ARM_HAVE_ARMV7A),true)
    libvpx_asm := .asm.s
  endif
  
 +ifeq ($(TARGET_ARCH),x86)
 +  libvpx_target := x86
 +  libvpx_asm := .asm
++  LOCAL_VPX := $(LOCAL_PATH)
 +endif
 +
  ifeq ($(TARGET_ARCH),mips)
@@ -41,7 +42,7 @@ index 285a758..20c6259 100644
 +$(X86_ASM_OBJS) : $(X86_ASM_SRCS)
 +$(libvpx_intermediates)/%.asm.o: $(LOCAL_PATH)/libvpx/%.asm
 +	mkdir -p `dirname $@`
-+	yasm -f elf32 -I$(LOCAL_PATH)/ -I$(LOCAL_PATH)/x86/ -I$(LOCAL_PATH)/libvpx/ -o $@ $<
++	yasm -f elf32 -I$(LOCAL_VPX)/ -I$(LOCAL_VPX)/x86/ -I$(LOCAL_VPX)/libvpx/ -o $@ $<
 +
 +LOCAL_GENERATED_SOURCES += $(X86_ASM_OBJS)
 +LOCAL_PREBUILT_MODULE_FILE += $(X86_ASM_OBJS)
@@ -871,7 +872,7 @@ index 0000000..5260328
 +#ifndef VPX_CONFIG_H
 +#define __ANDROID__
 +#define VPX_CONFIG_H
-+#define RESTRICT    
++#define RESTRICT
 +#define INLINE      inline
 +#define ARCH_ARM 0
 +#define ARCH_MIPS 0
