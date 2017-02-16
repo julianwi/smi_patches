@@ -1,0 +1,81 @@
+From 718d0bcf6d16a2723c47e5e69d30138e92484cb7 Mon Sep 17 00:00:00 2001
+From: Dan Liang <dan.liang@intel.com>
+Date: Thu, 4 Jul 2013 11:41:17 +0800
+Subject: mkvparser: recheck the earlier cue point if track number doesn't
+ match
+
+BZ: 96389
+
+The original algorithm does the binary search based on the timecode only.
+The track number is checked after one cue point is selected and there may
+be probably mismatch and we need to reselect another cuepoint around the
+previous one.
+
+The root cause of BZ#83053 is the same.
+
+Change-Id: I8f6b2683be4476234dbd37ba774d7455592e72d8
+Orig-Change-Id: I90f56c5d11c02a9559b5400a69fe391d3b9a6c28
+Category: aosp improvement
+Domain: Video.Media-container
+Origin: internal
+Upstream-Candidate: yes
+Signed-off-by: Dan Liang <dan.liang@intel.com>
+Signed-off-by: ywan171 <yi.a.wang@intel.com>
+Signed-off-by: Yuanjun Huang <yuanjun.huang@intel.com>
+
+diff --git a/libwebm/mkvparser.cpp b/libwebm/mkvparser.cpp
+index f0cd97f..e494354 100644
+--- a/libwebm/mkvparser.cpp
++++ b/libwebm/mkvparser.cpp
+@@ -2002,15 +2002,18 @@ bool Cues::Find(long long time_ns, const Track* pTrack, const CuePoint*& pCP,
+   if (pCP == NULL || pCP->GetTime(m_pSegment) > time_ns)
+     return false;
+ 
+-  // TODO: here and elsewhere, it's probably not correct to search
+-  // for the cue point with this time, and then search for a matching
+-  // track.  In principle, the matching track could be on some earlier
+-  // cue point, and with our current algorithm, we'd miss it.  To make
+-  // this bullet-proof, we'd need to create a secondary structure,
+-  // with a list of cue points that apply to a track, and then search
+-  // that track-based structure for a matching cue point.
+-
+-  pTP = pCP->Find(pTrack);
++    //It's probably not correct to search for the cue point with this
++    //time, and then search for a matching track.  In principle, the
++    //matching track could be on some earlier cue point. So we recheck
++    //the earlier cue point if the track doesn't match.
++    long index = pCP->GetIndex();
++    while (index >= 0) {
++        pTP = pCP->Find(pTrack);
++        if (pTP == NULL)
++            pCP = m_cue_points[index--];
++        else
++            break;
++    }
+   return (pTP != NULL);
+ }
+ 
+@@ -2413,6 +2416,11 @@ long long CuePoint::GetTime(const Segment* pSegment) const {
+   return time;
+ }
+ 
++long CuePoint::GetIndex() const
++{
++    return m_index;
++}
++
+ bool Segment::DoneParsing() const {
+   if (m_size < 0) {
+     long long total, avail;
+diff --git a/libwebm/mkvparser.hpp b/libwebm/mkvparser.hpp
+index 75ef69d..7fb3e08 100644
+--- a/libwebm/mkvparser.hpp
++++ b/libwebm/mkvparser.hpp
+@@ -781,6 +781,7 @@ class CuePoint {
+ 
+   long long GetTimeCode() const;  // absolute but unscaled
+   long long GetTime(const Segment*) const;  // absolute and scaled (ns units)
++  long GetIndex() const;
+ 
+   struct TrackPosition {
+     long long m_track;
