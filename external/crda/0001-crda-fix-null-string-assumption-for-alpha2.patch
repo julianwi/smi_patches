@@ -30,6 +30,7 @@ this last precious country byte. I've tested that this indeed fixes
 the bogus issue I saw when instead of using the second pad byte we
 use the first pad byte. Thanks to Johannes for spotting the issue.
 
+Change-Id: I7cb5906902d8a8e52fb01db2e20d9acbb8e5df5f
 Signed-off-by: Johannes Berg <johannes@sipsolutions.net>
 Signed-off-by: Luis R. Rodriguez <mcgrof@qca.qualcomm.com>
 ---
