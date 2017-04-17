@@ -1,7 +1,7 @@
 From bc616e7f6bad1a6938259a1281087ee75aa6bd0f Mon Sep 17 00:00:00 2001
 From: Patrick Harbers <jgrharbers@gmail.com>
 Date: Sat, 16 Apr 2016 23:48:18 +0200
-Subject: [PATCH] From: Intel/HazouPH
+Subject: [PATCH] Void, Manual resume
 
 The Wi-Fi card doesn't power up again after going into
 power-saving mode. MMC tries to open it, but can't connect.
