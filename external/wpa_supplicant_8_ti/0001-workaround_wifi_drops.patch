@@ -1,0 +1,33 @@
+From e23f74562fb32a58c9111ce9718d023e6c079781 Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Mon, 18 Sep 2017 20:55:11 +0200
+Subject: [PATCH] add wpa_supplicant patch to workaround some wifi problems
+
+- Workaround a problem where android (4,4?, 5.0+) prefixes wpa_supplicant commands with IFNAME=wlan0 while writing to non global control socket. No connection drops anymore
+
+Change-Id: Ib8e7235c801b47c4f0ac7ce8c6e304554e146642
+---
+ patches/external_wpa_supplicant_8-wlan-workaround.patch | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+ create mode 100644 patches/external_wpa_supplicant_8-wlan-workaround.patch
+
+diff --git a/patches/external_wpa_supplicant_8-wlan-workaround.patch b/patches/external_wpa_supplicant_8-wlan-workaround.patch
+new file mode 100644
+index 0000000..7500762
+--- /dev/null
++++ b/patches/external_wpa_supplicant_8-wlan-workaround.patch
+@@ -0,0 +1,14 @@
++diff --git a/wpa_supplicant/ctrl_iface.c b/wpa_supplicant/ctrl_iface.c
++index e0c82dd..509dd92 100644
++--- a/wpa_supplicant/ctrl_iface.c
+++++ b/wpa_supplicant/ctrl_iface.c
++@@ -8104,6 +8104,9 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
++       const int reply_size = 4096;
++       int reply_len;
++
+++      if (os_strncmp(buf, "IFNAME=wlan0 ", 13) == 0)
+++            buf += 13;
+++
++       if (os_strncmp(buf, WPA_CTRL_RSP, os_strlen(WPA_CTRL_RSP)) == 0 ||
++           os_strncmp(buf, "SET_NETWORK ", 12) == 0) {
++             if (wpa_debug_show_keys)
