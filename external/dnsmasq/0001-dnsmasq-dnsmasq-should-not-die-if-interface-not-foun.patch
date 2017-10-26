@@ -1,0 +1,33 @@
+From 131a58b56687860f4c071c1fad15ebc4b619cdd0 Mon Sep 17 00:00:00 2001
+From: Subash Abhinov Kasiviswanathan <subashab@codeaurora.org>
+Date: Mon, 24 Feb 2014 18:28:55 -0700
+Subject: [PATCH] dnsmasq: dnsmasq should not die if interface not found
+
+When an instantaneous tether and untether command are issued
+the dnsmasq operation of tether happens after the interface
+has been brought down by the untether command hence
+tethering goes into bad state. The fix is to let dnsmasq
+running so that it can be killed later by the untether command.
+
+CRs-Fixed: 620556
+Change-Id: Ia92f530d2d082758bcefd1c4728bb21edcc39043
+---
+ src/network.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/network.c b/src/network.c
+index 3923c2e..5e2b07d 100755
+--- a/src/network.c
++++ b/src/network.c
+@@ -934,7 +934,7 @@ void set_interfaces(const char *interfaces)
+ 
+     for (if_tmp = daemon->if_names; if_tmp; if_tmp = if_tmp->next) {
+         if (if_tmp->name && !if_tmp->used) {
+-            die(_("unknown interface given %s in set_interfaces: %s"), if_tmp->name, EC_BADNET);
++            my_syslog(LOG_DEBUG, _("unknown interface given %s in set_interfaces: %s"), if_tmp->name);
+         }
+     }
+     /* success! - setup to free the old */
+-- 
+2.7.4
+
