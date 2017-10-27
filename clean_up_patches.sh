@@ -1,5 +1,6 @@
 #!/bin/bash
-CM13= #(./external/ffmpeg) ./external/stagefright-plugins)
+CM13="./external/ffmpeg"
+# ./external/stagefright-plugins)
 PATCH_DIR=device/motorola/smi-patches
 cd ../../../
 PATCHED_PROJECTS=$(
@@ -21,8 +22,8 @@ PATCHED_PROJECTS=$(
 repo forall $PATCHED_PROJECTS -c git reset --hard github/cm-11.0
 repo forall $PATCHED_PROJECTS -c git clean -d -f -x
 # For CM13 and other projects
-#repo forall $CM13 -c git reset --hard github/cm-13.0
-#repo forall $CM13 -c git clean -d -f -x
+repo forall $CM13 -c git reset --hard github/cm-14.1
+repo forall $CM13 -c git clean -d -f -x
 
 echo
 echo Repo status for $PATCHED_PROJECTS ${CM13[*]}
