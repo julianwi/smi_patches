@@ -63,7 +63,7 @@ projects () {
             fi
         else
             echo "Applying ${proj}:${patch_name}"
-            echo "Applied, ignore and continue..."
+            echo "Applied ${patch_name}, ignore and continue..."
         fi
     done
     cd ${PATCH_DIR}
