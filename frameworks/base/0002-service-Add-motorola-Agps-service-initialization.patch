@@ -1,0 +1,60 @@
+From 02b841679cdf02911060e3489748d4bc008668f6 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Mon, 13 Nov 2017 00:49:37 +0100
+Subject: [PATCH] service: Add motorola Agps service initialization
+
+Modified from https://github.com/Quarx2k/android_frameworks_base/commit/4856b5ea96706cf4138b32d3468701a8a44e34e2.patch
+
+Change-Id: I87023ecba107f11523cada7735cde159d9b09df3
+---
+ services/java/com/android/server/SystemServer.java | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/services/java/com/android/server/SystemServer.java b/services/java/com/android/server/SystemServer.java
+index f4f0bb1..4dd09df 100644
+--- a/services/java/com/android/server/SystemServer.java
++++ b/services/java/com/android/server/SystemServer.java
+@@ -581,6 +581,7 @@ public final class SystemServer {
+         ConsumerIrService consumerIr = null;
+         MmsServiceBroker mmsService = null;
+         HardwarePropertiesManagerService hardwarePropertiesService = null;
++        Object motoAGPSService = null;
+         Object wigigP2pService = null;
+         Object wigigService = null;
+ 
+@@ -609,6 +610,7 @@ public final class SystemServer {
+                 false);
+ 
+         boolean isEmulator = SystemProperties.get("ro.kernel.qemu").equals("1");
++        boolean enableMotoAGPS = SystemProperties.getBoolean("persist.motoagps.enable", true);
+         boolean enableWigig = SystemProperties.getBoolean("persist.wigig.enable", false);
+ 
+         String externalServer = context.getResources().getString(
+@@ -861,6 +863,24 @@ public final class SystemServer {
+                 mSystemServiceManager.startService(TextServicesManagerService.Lifecycle.class);
+             }
+ 
++            if (enableMotoAGPS) {
++                try {
++                    Slog.i(TAG, "Motorola AGPS Service");
++                    PathClassLoader motoagpsClassLoader =
++                            new PathClassLoader("/system/framework/com.motorola.android.location.jar",
++                                    "/system/lib64:/system/vendor/lib64",
++                                    getClass().getClassLoader());
++                    Class motoAGPSClass = motoagpsClassLoader.loadClass(
++                        "com.motorola.android.locationproxyservice.LocationProxyService");
++                    Constructor<Class> ctor = motoAGPSClass.getConstructor(Context.class);
++                    motoAGPSService = ctor.newInstance(context);
++                    Slog.i(TAG, "Successfully Motorola AGPS service");
++                    ServiceManager.addService("motoagps", (IBinder) motoAGPSService);
++                } catch (Throwable e) {
++                    reportWtf("starting MotoAGPSService", e);
++                }
++            }
++
+             if (!disableNetwork) {
+                 traceBeginAndSlog("StartNetworkScoreService");
+                 try {
+-- 
+2.7.4
+

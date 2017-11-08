@@ -1,7 +1,7 @@
 From e6904fbdf7976abbadf3e7e658e9416ca49402f9 Mon Sep 17 00:00:00 2001
 From: Vincent Becker <vincentx.becker@intel.com>
 Date: Fri, 10 Aug 2012 14:17:33 +0200
-Subject: [PATCH] Vibra: Add loading of the vibrator hardware module.
+Subject: [PATCH] Vibra: [OLD VERSION] Add loading of the vibrator hardware module.
 
 Vibrator HAL is now formed of two hardware modules: one is the default
 AOSP and the other is the vendor implementation.
@@ -10,7 +10,7 @@ The vendor implementation will be loaded prior to the default one.
 For that, the vibrator service has to load the module before
 registering itself to the JNI.
 
-Change-Id: I844279f5535289f079d412fdc44c5cb3c9c1130c
+Change-Id: I6465cfee663eabf06d63aef47df772ae78650746
 Author: Vincent Becker <vincentx.becker@intel.com>
 Signed-off-by: Vincent Becker <vincentx.becker@intel.com>
 Author-tracking-BZ: 49760 94611
