@@ -4,14 +4,6 @@
 
     # Patch the tree
     bash device/motorola/smi-patches/apply_patch.sh
-    if [ -e "prebuilts/chromium/smi/Android.mk" ]
-    then
-        echo "** Prebuilt chromium exist, exporting variable     **"
-        echo "** Remove the prebuilt directory to build chromium **"
-        export USE_PREBUILT_CHROMIUM=1
-    else
-        unset USE_PREBUILT_CHROMIUM
-    fi
     
     # RE-Execute the contents of any vendorsetup.sh files we can find.
     for f in `test -d device && find device -maxdepth 6 -name 'vendorsetup.sh' 2> /dev/null` \

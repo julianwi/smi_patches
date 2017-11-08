@@ -1,0 +1,29 @@
+From 384197d8a446460944edc162bf08d9c41d5efda9 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Thu, 9 Nov 2017 00:14:32 +0100
+Subject: [PATCH] wlan: workaround for disconnection issues
+
+- See cm-11.0 patch update for author
+
+Change-Id: Ibe8cfc7f5778933e00008a0eb2dba9fb1dfcb6c6
+---
+ wpa_supplicant/ctrl_iface.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/wpa_supplicant/ctrl_iface.c b/wpa_supplicant/ctrl_iface.c
+index 0cae659..ad9b7ae 100644
+--- a/wpa_supplicant/ctrl_iface.c
++++ b/wpa_supplicant/ctrl_iface.c
+@@ -8441,6 +8441,9 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
+ 	const int reply_size = 4096;
+ 	int reply_len;
+ 
++	if (os_strncmp(buf, "IFNAME=wlan0 ", 13) == 0)
++		buf += 13;
++
+ 	if (os_strncmp(buf, WPA_CTRL_RSP, os_strlen(WPA_CTRL_RSP)) == 0 ||
+ 	    os_strncmp(buf, "SET_NETWORK ", 12) == 0) {
+ 		if (wpa_debug_show_keys)
+-- 
+2.7.4
+
