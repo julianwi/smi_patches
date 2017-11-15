@@ -1,0 +1,42 @@
+From 4b0ed527ee18a231e599f3e22da0f4dcec551b6a Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Wed, 15 Nov 2017 21:17:28 +0100
+Subject: [PATCH] [PATCH] ART: Can't build with this
+
+Change-Id: I5325e57693b93f128aa9f5be3b5de73e44af93ae
+---
+ art-extension/Android.mk       | 3 ++-
+ art-extension/gcspy/Android.mk | 8 ++++----
+ 2 files changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/art-extension/Android.mk b/art-extension/Android.mk
+index d3fe9d4..85986ad 100644
+--- a/art-extension/Android.mk
++++ b/art-extension/Android.mk
+@@ -15,5 +15,6 @@
+ #
+ # Modified by Intel Corporation
+ #
+-
++ifneq ($(VENDOR_ART_PATH),)
+ include $(VENDOR_ART_PATH)/gcspy/Android.mk
++endif
+diff --git a/art-extension/gcspy/Android.mk b/art-extension/gcspy/Android.mk
+index 1aff789..b77abfd 100644
+--- a/art-extension/gcspy/Android.mk
++++ b/art-extension/gcspy/Android.mk
+@@ -1,7 +1,7 @@
+-/**
+- ** See the file "license.terms" for information on usage and redistribution
+- ** of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+- **/
++#/**
++# ** See the file "license.terms" for information on usage and redistribution
++# ** of this file, and for a DISCLAIMER OF ALL WARRANTIES.
++# **/
+ 
+ 
+ LOCAL_PATH:= $(call my-dir)
+-- 
+2.7.4
+
