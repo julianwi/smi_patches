@@ -1,0 +1,189 @@
+From e622acdedf3837256b2b9613907500b69c6ffcdd Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Beno=C3=AEt=20Laniel?= <nels+git@pgroupe.net>
+Date: Wed, 10 May 2017 20:52:15 +0200
+Subject: [PATCH] libavc: do not enforce sse4.2 for clovertrail and medfield
+
+Since -msse4.2 allows the compiler to generate sse4.2 for all source files,
+unset it and add proper attribute to sse4.2 functions.
+
+Change-Id: If953bb19dd6168e72fa17a05cef4f9d241514807
+---
+ common/x86/ih264_ihadamard_scaling_sse42.c   | 2 ++
+ common/x86/ih264_iquant_itrans_recon_sse42.c | 2 ++
+ common/x86/ih264_resi_trans_quant_sse42.c    | 4 ++++
+ common/x86/ih264_weighted_pred_sse42.c       | 4 ++++
+ decoder.x86.mk                               | 4 ++++
+ encoder.x86.mk                               | 4 ++++
+ encoder/x86/ih264e_function_selector.c       | 4 ++++
+ encoder/x86/ime_distortion_metrics_sse42.c   | 1 +
+ 8 files changed, 25 insertions(+)
+
+diff --git a/common/x86/ih264_ihadamard_scaling_sse42.c b/common/x86/ih264_ihadamard_scaling_sse42.c
+index d68d105..d1e1b88 100644
+--- a/common/x86/ih264_ihadamard_scaling_sse42.c
++++ b/common/x86/ih264_ihadamard_scaling_sse42.c
+@@ -86,6 +86,7 @@
+  *
+  *******************************************************************************
+  */
++__attribute__ ((target("sse4.2")))
+ void ih264_ihadamard_scaling_4x4_sse42(WORD16* pi2_src,
+                                        WORD16* pi2_out,
+                                        const UWORD16 *pu2_iscal_mat,
+@@ -201,6 +202,7 @@ void ih264_ihadamard_scaling_4x4_sse42(WORD16* pi2_src,
+     _mm_storeu_si128((__m128i *) (&pi2_out[8]), src_r2_r3);
+ }
+ 
++__attribute__ ((target("sse4.2")))
+ void ih264_ihadamard_scaling_2x2_uv_sse42(WORD16* pi2_src,
+                                           WORD16* pi2_out,
+                                           const UWORD16 *pu2_iscal_mat,
+diff --git a/common/x86/ih264_iquant_itrans_recon_sse42.c b/common/x86/ih264_iquant_itrans_recon_sse42.c
+index f27111f..75228f5 100644
+--- a/common/x86/ih264_iquant_itrans_recon_sse42.c
++++ b/common/x86/ih264_iquant_itrans_recon_sse42.c
+@@ -97,6 +97,7 @@
+  *
+  *******************************************************************************
+  */
++__attribute__ ((target("sse4.2")))
+ void ih264_iquant_itrans_recon_4x4_sse42(WORD16 *pi2_src,
+                                    UWORD8 *pu1_pred,
+                                    UWORD8 *pu1_out,
+@@ -348,6 +349,7 @@ void ih264_iquant_itrans_recon_4x4_sse42(WORD16 *pi2_src,
+  *
+  *******************************************************************************
+  */
++__attribute__ ((target("sse4.2")))
+ void ih264_iquant_itrans_recon_chroma_4x4_sse42(WORD16 *pi2_src,
+                                    UWORD8 *pu1_pred,
+                                    UWORD8 *pu1_out,
+diff --git a/common/x86/ih264_resi_trans_quant_sse42.c b/common/x86/ih264_resi_trans_quant_sse42.c
+index f4f5cbf..9c44420 100644
+--- a/common/x86/ih264_resi_trans_quant_sse42.c
++++ b/common/x86/ih264_resi_trans_quant_sse42.c
+@@ -103,6 +103,7 @@
+  *
+  *******************************************************************************
+  */
++__attribute__ ((target("sse4.2")))
+ void ih264_resi_trans_quant_4x4_sse42(UWORD8 *pu1_src, UWORD8 *pu1_pred,
+                                       WORD16 *pi2_out, WORD32 src_strd, WORD32 pred_strd,
+                                       const UWORD16 *pu2_scale_matrix, const UWORD16 *pu2_threshold_matrix,
+@@ -376,6 +377,7 @@ void ih264_resi_trans_quant_4x4_sse42(UWORD8 *pu1_src, UWORD8 *pu1_pred,
+  *
+  *******************************************************************************
+  */
++__attribute__ ((target("sse4.2")))
+ void ih264_resi_trans_quant_chroma_4x4_sse42(UWORD8 *pu1_src,UWORD8 *pu1_pred,WORD16 *pi2_out,
+                                             WORD32 src_strd,WORD32 pred_strd,
+                                             const UWORD16 *pu2_scale_matrix,
+@@ -663,6 +665,7 @@ void ih264_resi_trans_quant_chroma_4x4_sse42(UWORD8 *pu1_src,UWORD8 *pu1_pred,WO
+  *
+  */
+ 
++__attribute__ ((target("sse4.2")))
+ void ih264_hadamard_quant_4x4_sse42(WORD16 *pi2_src, WORD16 *pi2_dst,
+                           const UWORD16 *pu2_scale_matrix,
+                           const UWORD16 *pu2_threshold_matrix, UWORD32 u4_qbits,
+@@ -892,6 +895,7 @@ void ih264_hadamard_quant_4x4_sse42(WORD16 *pi2_src, WORD16 *pi2_dst,
+  *
+  */
+ 
++__attribute__ ((target("sse4.2")))
+ void ih264_hadamard_quant_2x2_uv_sse42(WORD16 *pi2_src, WORD16 *pi2_dst,
+                             const UWORD16 *pu2_scale_matrix,
+                             const UWORD16 *pu2_threshold_matrix, UWORD32 u4_qbits,
+diff --git a/common/x86/ih264_weighted_pred_sse42.c b/common/x86/ih264_weighted_pred_sse42.c
+index 48f1f54..0a9482d 100644
+--- a/common/x86/ih264_weighted_pred_sse42.c
++++ b/common/x86/ih264_weighted_pred_sse42.c
+@@ -375,6 +375,7 @@ void ih264_default_weighted_pred_chroma_sse42(UWORD8 *pu1_src1,
+ /*                      Senthoor                                             */
+ /*                                                                           */
+ /*****************************************************************************/
++__attribute__ ((target("sse4.2")))
+ void ih264_weighted_pred_luma_sse42(UWORD8 *pu1_src,
+                                     UWORD8 *pu1_dst,
+                                     WORD32 src_strd,
+@@ -605,6 +606,7 @@ void ih264_weighted_pred_luma_sse42(UWORD8 *pu1_src,
+ /*                      Senthoor                                             */
+ /*                                                                           */
+ /*****************************************************************************/
++__attribute__ ((target("sse4.2")))
+ void ih264_weighted_pred_chroma_sse42(UWORD8 *pu1_src,
+                                       UWORD8 *pu1_dst,
+                                       WORD32 src_strd,
+@@ -814,6 +816,7 @@ void ih264_weighted_pred_chroma_sse42(UWORD8 *pu1_src,
+ /*                      Senthoor                                             */
+ /*                                                                           */
+ /*****************************************************************************/
++__attribute__ ((target("sse4.2")))
+ void ih264_weighted_bi_pred_luma_sse42(UWORD8 *pu1_src1,
+                                        UWORD8 *pu1_src2,
+                                        UWORD8 *pu1_dst,
+@@ -1101,6 +1104,7 @@ void ih264_weighted_bi_pred_luma_sse42(UWORD8 *pu1_src1,
+ /*                      Senthoor                                             */
+ /*                                                                           */
+ /*****************************************************************************/
++__attribute__ ((target("sse4.2")))
+ void ih264_weighted_bi_pred_chroma_sse42(UWORD8 *pu1_src1,
+                                          UWORD8 *pu1_src2,
+                                          UWORD8 *pu1_dst,
+diff --git a/decoder.x86.mk b/decoder.x86.mk
+index 100a501..e30bc02 100644
+--- a/decoder.x86.mk
++++ b/decoder.x86.mk
+@@ -1,4 +1,8 @@
++ifneq ($(filter $(TARGET_BOARD_PLATFORM),clovertrail medfield sc1),)
++libavcd_cflags_x86 += -DX86 -DDEFAULT_ARCH=D_ARCH_X86_SSE3
++else
+ libavcd_cflags_x86 += -DX86 -msse4.2 -DDEFAULT_ARCH=D_ARCH_X86_SSE42
++endif
+ 
+ libavcd_inc_dir_x86     +=  $(LOCAL_PATH)/decoder/x86
+ libavcd_inc_dir_x86     +=  $(LOCAL_PATH)/common/x86
+diff --git a/encoder.x86.mk b/encoder.x86.mk
+index 91f20d9..487507b 100644
+--- a/encoder.x86.mk
++++ b/encoder.x86.mk
+@@ -1,4 +1,8 @@
++ifneq ($(filter $(TARGET_BOARD_PLATFORM),clovertrail medfield sc1),)
++libavce_cflags_x86 += -DX86 -DDEFAULT_ARCH=ARCH_X86_SSSE3
++else
+ libavce_cflags_x86 += -DX86 -msse4.2
++endif
+ 
+ libavce_inc_dir_x86     +=  $(LOCAL_PATH)/encoder/x86
+ libavce_inc_dir_x86     +=  $(LOCAL_PATH)/common/x86
+diff --git a/encoder/x86/ih264e_function_selector.c b/encoder/x86/ih264e_function_selector.c
+index b0acb19..cdc1c24 100644
+--- a/encoder/x86/ih264e_function_selector.c
++++ b/encoder/x86/ih264e_function_selector.c
+@@ -101,7 +101,11 @@ void ih264e_init_function_ptr(void *pv_codec)
+ {
+     codec_t *ps_codec = (codec_t *)pv_codec;
+     ih264e_init_function_ptr_generic(ps_codec);
++#ifdef DEFAULT_ARCH
++    switch(DEFAULT_ARCH)
++#else
+     switch(ps_codec->s_cfg.e_arch)
++#endif
+     {
+         case ARCH_X86_GENERIC:
+             ih264e_init_function_ptr_generic(ps_codec);
+diff --git a/encoder/x86/ime_distortion_metrics_sse42.c b/encoder/x86/ime_distortion_metrics_sse42.c
+index 0266916..89f4ed0 100644
+--- a/encoder/x86/ime_distortion_metrics_sse42.c
++++ b/encoder/x86/ime_distortion_metrics_sse42.c
+@@ -1717,6 +1717,7 @@ void ime_sub_pel_compute_sad_16x16_sse42(UWORD8 *pu1_src,
+ *
+ ******************************************************************************
+ */
++__attribute__ ((target("sse4.2")))
+ void ime_compute_satqd_16x16_lumainter_sse42(UWORD8 *pu1_src,
+                                          UWORD8 *pu1_est,
+                                          WORD32 src_strd,
+-- 
+2.7.4
+

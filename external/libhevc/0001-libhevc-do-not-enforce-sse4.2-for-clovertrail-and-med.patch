@@ -1,0 +1,198 @@
+From 57bf762d3e2b987557d3f1410da6cc0828c8f1d1 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Beno=C3=AEt=20Laniel?= <nels+git@pgroupe.net>
+Date: Wed, 10 May 2017 21:04:17 +0200
+Subject: [PATCH] libhevc: do not enforce sse4.2 for clovertrail and medfield
+
+Since -msse4.2 allows the compiler to generate sse4.2 for all source files,
+unset it and add proper attribute to sse4.2 functions.
+
+Change-Id: I1aae00588d2f821124e8571262188debc8db7a49
+---
+ common/x86/ihevc_chroma_intra_pred_filters_sse42_intr.c | 2 ++
+ common/x86/ihevc_inter_pred_filters_sse42_intr.c        | 2 ++
+ common/x86/ihevc_intra_pred_filters_sse42_intr.c        | 8 ++++++++
+ common/x86/ihevc_itrans_recon_sse42_intr.c              | 2 ++
+ common/x86/ihevc_weighted_pred_sse42_intr.c             | 4 ++++
+ decoder.x86.mk                                          | 4 ++++
+ 6 files changed, 22 insertions(+)
+
+diff --git a/common/x86/ihevc_chroma_intra_pred_filters_sse42_intr.c b/common/x86/ihevc_chroma_intra_pred_filters_sse42_intr.c
+index 1de4253..887b298 100644
+--- a/common/x86/ihevc_chroma_intra_pred_filters_sse42_intr.c
++++ b/common/x86/ihevc_chroma_intra_pred_filters_sse42_intr.c
+@@ -119,6 +119,7 @@
+ *******************************************************************************
+ */
+ 
++__attribute__ ((target("sse4.2")))
+ void ihevc_intra_pred_chroma_planar_sse42(UWORD8 *pu1_ref,
+                                           WORD32 src_strd,
+                                           UWORD8 *pu1_dst,
+@@ -273,6 +274,7 @@ void ihevc_intra_pred_chroma_planar_sse42(UWORD8 *pu1_ref,
+ *******************************************************************************
+ */
+ 
++__attribute__ ((target("sse4.2")))
+ void ihevc_intra_pred_chroma_dc_sse42(UWORD8 *pu1_ref,
+                                       WORD32 src_strd,
+                                       UWORD8 *pu1_dst,
+diff --git a/common/x86/ihevc_inter_pred_filters_sse42_intr.c b/common/x86/ihevc_inter_pred_filters_sse42_intr.c
+index 154b613..d9220b0 100644
+--- a/common/x86/ihevc_inter_pred_filters_sse42_intr.c
++++ b/common/x86/ihevc_inter_pred_filters_sse42_intr.c
+@@ -106,6 +106,7 @@
+ *******************************************************************************
+ */
+ 
++__attribute__ ((target("sse4.2")))
+ void ihevc_inter_pred_luma_copy_w16out_sse42(UWORD8 *pu1_src,
+                                              WORD16 *pi2_dst,
+                                              WORD32 src_strd,
+@@ -454,6 +455,7 @@ void ihevc_inter_pred_chroma_copy_sse42(UWORD8 *pu1_src,
+ *******************************************************************************
+ */
+ 
++__attribute__ ((target("sse4.2")))
+ void ihevc_inter_pred_chroma_copy_w16out_sse42(UWORD8 *pu1_src,
+                                                WORD16 *pi2_dst,
+                                                WORD32 src_strd,
+diff --git a/common/x86/ihevc_intra_pred_filters_sse42_intr.c b/common/x86/ihevc_intra_pred_filters_sse42_intr.c
+index 6488de6..c9bd2dd 100644
+--- a/common/x86/ihevc_intra_pred_filters_sse42_intr.c
++++ b/common/x86/ihevc_intra_pred_filters_sse42_intr.c
+@@ -118,6 +118,7 @@
+ */
+ 
+ 
++__attribute__ ((target("sse4.2")))
+ void ihevc_intra_pred_ref_filtering_sse42(UWORD8 *pu1_src,
+                                           WORD32 nt,
+                                           UWORD8 *pu1_dst,
+@@ -394,6 +395,7 @@ void ihevc_intra_pred_ref_filtering_sse42(UWORD8 *pu1_src,
+ *******************************************************************************
+ */
+ 
++__attribute__ ((target("sse4.2")))
+ void ihevc_intra_pred_luma_dc_sse42(UWORD8 *pu1_ref,
+                                     WORD32 src_strd,
+                                     UWORD8 *pu1_dst,
+@@ -926,6 +928,7 @@ void ihevc_intra_pred_luma_dc_sse42(UWORD8 *pu1_ref,
+ *******************************************************************************
+ */
+ 
++__attribute__ ((target("sse4.2")))
+ void ihevc_intra_pred_luma_horz_sse42(UWORD8 *pu1_ref,
+                                       WORD32 src_strd,
+                                       UWORD8 *pu1_dst,
+@@ -1194,6 +1197,7 @@ void ihevc_intra_pred_luma_horz_sse42(UWORD8 *pu1_ref,
+ */
+ 
+ 
++__attribute__ ((target("sse4.2")))
+ void ihevc_intra_pred_luma_ver_sse42(UWORD8 *pu1_ref,
+                                      WORD32 src_strd,
+                                      UWORD8 *pu1_dst,
+@@ -1410,6 +1414,7 @@ void ihevc_intra_pred_luma_ver_sse42(UWORD8 *pu1_ref,
+ */
+ 
+ 
++__attribute__ ((target("sse4.2")))
+ void ihevc_intra_pred_luma_mode_3_to_9_sse42(UWORD8 *pu1_ref,
+                                              WORD32 src_strd,
+                                              UWORD8 *pu1_dst,
+@@ -1947,6 +1952,7 @@ void ihevc_intra_pred_luma_mode_3_to_9_sse42(UWORD8 *pu1_ref,
+ */
+ 
+ 
++__attribute__ ((target("sse4.2")))
+ void ihevc_intra_pred_luma_mode_11_to_17_sse42(UWORD8 *pu1_ref,
+                                                WORD32 src_strd,
+                                                UWORD8 *pu1_dst,
+@@ -2786,6 +2792,7 @@ void ihevc_intra_pred_luma_mode_11_to_17_sse42(UWORD8 *pu1_ref,
+ */
+ 
+ 
++__attribute__ ((target("sse4.2")))
+ void ihevc_intra_pred_luma_mode_19_to_25_sse42(UWORD8 *pu1_ref,
+                                                WORD32 src_strd,
+                                                UWORD8 *pu1_dst,
+@@ -3555,6 +3562,7 @@ void ihevc_intra_pred_luma_mode_19_to_25_sse42(UWORD8 *pu1_ref,
+ */
+ 
+ 
++__attribute__ ((target("sse4.2")))
+ void ihevc_intra_pred_luma_mode_27_to_33_sse42(UWORD8 *pu1_ref,
+                                                WORD32 src_strd,
+                                                UWORD8 *pu1_dst,
+diff --git a/common/x86/ihevc_itrans_recon_sse42_intr.c b/common/x86/ihevc_itrans_recon_sse42_intr.c
+index 2a1f3d6..dbe00d0 100644
+--- a/common/x86/ihevc_itrans_recon_sse42_intr.c
++++ b/common/x86/ihevc_itrans_recon_sse42_intr.c
+@@ -108,6 +108,7 @@
+  */
+ 
+ 
++__attribute__ ((target("sse4.2")))
+ void ihevc_itrans_recon_4x4_ttype1_sse42(WORD16 *pi2_src,
+                                          WORD16 *pi2_tmp,
+                                          UWORD8 *pu1_pred,
+@@ -438,6 +439,7 @@ void ihevc_itrans_recon_4x4_ttype1_sse42(WORD16 *pi2_src,
+  *******************************************************************************
+  */
+ 
++__attribute__ ((target("sse4.2")))
+ void ihevc_itrans_recon_4x4_sse42(WORD16 *pi2_src,
+                                   WORD16 *pi2_tmp,
+                                   UWORD8 *pu1_pred,
+diff --git a/common/x86/ihevc_weighted_pred_sse42_intr.c b/common/x86/ihevc_weighted_pred_sse42_intr.c
+index 94a3f6d..c08d940 100644
+--- a/common/x86/ihevc_weighted_pred_sse42_intr.c
++++ b/common/x86/ihevc_weighted_pred_sse42_intr.c
+@@ -108,6 +108,7 @@
+ *******************************************************************************
+ */
+ 
++__attribute__ ((target("sse4.2")))
+ void ihevc_weighted_pred_uni_sse42(WORD16 *pi2_src,
+                                    UWORD8 *pu1_dst,
+                                    WORD32 src_strd,
+@@ -407,6 +408,7 @@ void ihevc_weighted_pred_uni_sse42(WORD16 *pi2_src,
+ *******************************************************************************
+ */
+ 
++__attribute__ ((target("sse4.2")))
+ void ihevc_weighted_pred_chroma_uni_sse42(WORD16 *pi2_src,
+                                           UWORD8 *pu1_dst,
+                                           WORD32 src_strd,
+@@ -1244,6 +1246,7 @@ void ihevc_weighted_pred_chroma_uni_sse42(WORD16 *pi2_src,
+ *******************************************************************************
+ */
+ 
++__attribute__ ((target("sse4.2")))
+ void ihevc_weighted_pred_bi_sse42(WORD16 *pi2_src1,
+                                   WORD16 *pi2_src2,
+                                   UWORD8 *pu1_dst,
+@@ -1513,6 +1516,7 @@ void ihevc_weighted_pred_bi_sse42(WORD16 *pi2_src1,
+ *******************************************************************************
+ */
+ 
++__attribute__ ((target("sse4.2")))
+ void ihevc_weighted_pred_chroma_bi_sse42(WORD16 *pi2_src1,
+                                          WORD16 *pi2_src2,
+                                          UWORD8 *pu1_dst,
+diff --git a/decoder.x86.mk b/decoder.x86.mk
+index 3f86923..5ce439e 100644
+--- a/decoder.x86.mk
++++ b/decoder.x86.mk
+@@ -1,4 +1,8 @@
++ifneq ($(filter $(TARGET_BOARD_PLATFORM),clovertrail medfield sc1),)
++libhevcd_cflags_x86 += -DX86 -DDISABLE_AVX2 -m32 -mno-avx -DDEFAULT_ARCH=D_ARCH_X86_SSE3
++else
+ libhevcd_cflags_x86 += -DX86 -DDISABLE_AVX2 -m32 -msse4.2 -mno-avx -DDEFAULT_ARCH=D_ARCH_X86_SSE42
++endif
+ 
+ libhevcd_inc_dir_x86   +=  $(LOCAL_PATH)/decoder/x86
+ libhevcd_inc_dir_x86   +=  $(LOCAL_PATH)/common/x86
+-- 
+2.7.4
+
