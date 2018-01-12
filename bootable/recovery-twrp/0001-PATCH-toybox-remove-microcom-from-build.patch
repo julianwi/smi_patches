@@ -1,0 +1,52 @@
+From 29859578b5384686dd8c7e2073b119762e409b63 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Fri, 15 Dec 2017 01:04:03 +0100
+Subject: [PATCH] [PATCH] toybox: remove microcom from build
+
+Change-Id: Ie13a4ed9d11bef7f45ddf88c7067df72c683e4b0
+---
+ toolbox/Android.mk | 14 +++++++-------
+ toybox/Android.mk  |  1 -
+ 2 files changed, 7 insertions(+), 8 deletions(-)
+
+diff --git a/toolbox/Android.mk b/toolbox/Android.mk
+index b8f4d2e..45edd01 100644
+--- a/toolbox/Android.mk
++++ b/toolbox/Android.mk
+@@ -47,14 +47,14 @@ ifeq ($(TW_USE_TOOLBOX), true)
+             $(if $(filter $(PLATFORM_SDK_VERSION), 23 24), du)
+ 
+         OUR_TOOLS := \
+-            $(if $(shell test $(PLATFORM_SDK_VERSION) -lt 26; iftop),) \
+-            $(if $(shell test $(PLATFORM_SDK_VERSION) -lt 26; ioctl),) \
+-            $(if $(shell test $(PLATFORM_SDK_VERSION) -lt 26; nandread),) \
++            iftop \
++            ioctl \
++            nandread \
+             newfs_msdos \
+-            $(if $(shell test $(PLATFORM_SDK_VERSION) -lt 26; prlimit),) \
+-            $(if $(shell test $(PLATFORM_SDK_VERSION) -lt 26; sendevent),) \
+-            $(if $(shell test $(PLATFORM_SDK_VERSION) -lt 26; start),) \
+-            $(if $(shell test $(PLATFORM_SDK_VERSION) -lt 26; stop),) \
++            prlimit \
++            sendevent \
++            start \
++            stop \
+ 
+         ifneq (,$(filter $(PLATFORM_SDK_VERSION), 23))
+             BSD_TOOLS += \
+diff --git a/toybox/Android.mk b/toybox/Android.mk
+index 43a893d..1d067ce 100644
+--- a/toybox/Android.mk
++++ b/toybox/Android.mk
+@@ -238,7 +238,6 @@ LOCAL_SRC_FILES += \
+     toys/android/sendevent.c \
+     toys/android/start.c \
+     toys/net/ifconfig.c \
+-    toys/net/microcom.c \
+     toys/net/netcat.c \
+     toys/net/netstat.c \
+     toys/net/rfkill.c \
+-- 
+2.7.4
+
