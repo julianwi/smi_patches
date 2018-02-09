@@ -1,0 +1,176 @@
+From d82eccd3bfff48761f30e9109d6e5ca652c29e1c Mon Sep 17 00:00:00 2001
+From: Gabriele M <moto.falcon.git@gmail.com>
+Date: Tue, 10 Jan 2017 23:14:12 +0100
+Subject: [PATCH] ota_from_target_files: Remove device dependent arguments
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+These device-specific arguments are defined at build time and are
+necessary to generate the zip correctly. Don't use command line
+arguments to specify them, but write all the needed information
+in misc_info.txt when the target-files zip is generated.
+ota_from_target_files will then read misc_info.txt and set
+everything automatically.
+
+Change-Id: Ibdbca575b76eb07b53fccfcea52a351c7e333f91
+Signed-off-by: André Pinela <sheffzor@gmail.com>
+Signed-off-by: Andreas Blaesius <skate4life@gmx.de>
+---
+ core/Makefile                            | 39 ++++++++++++++------------------
+ tools/releasetools/ota_from_target_files | 39 ++++++++++----------------------
+ 2 files changed, 29 insertions(+), 49 deletions(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index f2429d9e4..87e3199ac 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -1411,21 +1411,16 @@ endif
+ 	$(hide) echo "multistage_support=1" >> $(zip_root)/META/misc_info.txt
+ 	$(hide) echo "update_rename_support=1" >> $(zip_root)/META/misc_info.txt
+ 	$(hide) echo "ota_script_path=$(OTA_FROM_TARGET_SCRIPT)" >> $(zip_root)/META/misc_info.txt
+-ifdef TARGET_OTA_ASSERT_DEVICE
+-	$(hide) echo "override_device=$(TARGET_OTA_ASSERT_DEVICE)" >> $(zip_root)/META/misc_info.txt
+-endif
+ ifdef BOARD_CUSTOM_BOOTIMG_MK
+ 	$(hide) echo "custom_bootimg_mk=$(BOARD_CUSTOM_BOOTIMG_MK)" >> $(zip_root)/META/misc_info.txt
+ endif
+-ifdef TARGET_UNIFIED_DEVICE
+-	$(hide) echo "override_prop=true" >> $(zip_root)/META/misc_info.txt
+-endif
+-ifdef TARGET_NO_SEPARATE_RECOVERY
+-	$(hide) echo "no_separate_recovery=true" >> $(zip_root)/META/misc_info.txt
+-endif
+ ifdef BUILD_NO
+ 	$(hide) echo "build_number=$(BUILD_NO)" >> $(zip_root)/META/misc_info.txt
+ endif
++	$(hide) echo "ota_no_separate_recovery=$(OTA_SCRIPT_NO_SEPARATE_RECOVERY)" >> $(zip_root)/META/misc_info.txt
++	$(hide) echo "ota_override_device=$(OTA_SCRIPT_OVERRIDE_DEVICE)" >> $(zip_root)/META/misc_info.txt
++	$(hide) echo "ota_override_prop=$(OTA_SCRIPT_OVERRIDE_PROP)" >> $(zip_root)/META/misc_info.txt
++	$(hide) echo "ota_backuptool=$(OTA_SCRIPT_BACKUPTOOL)" >> $(zip_root)/META/misc_info.txt
+ 	$(call generate-userimage-prop-dictionary, $(zip_root)/META/misc_info.txt)
+ ifdef PRODUCT_DEFAULT_DEV_CERTIFICATE
+ 	$(hide) build/tools/getb64key.py $(PRODUCT_DEFAULT_DEV_CERTIFICATE).x509.pem > $(zip_root)/META/releasekey.txt
+@@ -1469,27 +1464,31 @@ else
+ endif
+ 
+ ifeq ($(WITH_GMS),true)
+-    $(INTERNAL_OTA_PACKAGE_TARGET): backuptool := false
++    OTA_SCRIPT_BACKUPTOOL := false
+ else
+ ifneq ($(CM_BUILD),)
+-    $(INTERNAL_OTA_PACKAGE_TARGET): backuptool := true
++    OTA_SCRIPT_BACKUPTOOL := true
+ else
+-    $(INTERNAL_OTA_PACKAGE_TARGET): backuptool := false
++    OTA_SCRIPT_BACKUPTOOL := false
+ endif
+ endif
+ 
+ ifeq ($(TARGET_OTA_ASSERT_DEVICE),)
+-    $(INTERNAL_OTA_PACKAGE_TARGET): override_device := auto
++    OTA_SCRIPT_OVERRIDE_DEVICE := auto
+ else
+-    $(INTERNAL_OTA_PACKAGE_TARGET): override_device := $(TARGET_OTA_ASSERT_DEVICE)
++    OTA_SCRIPT_OVERRIDE_DEVICE := $(TARGET_OTA_ASSERT_DEVICE)
+ endif
+ 
+-ifneq ($(TARGET_UNIFIED_DEVICE),)
+-    $(INTERNAL_OTA_PACKAGE_TARGET): override_prop := --override_prop=true
++ifeq ($(TARGET_UNIFIED_DEVICE),)
++    OTA_SCRIPT_OVERRIDE_PROP := false
++else
++    OTA_SCRIPT_OVERRIDE_PROP := true
+ endif
+ 
+-ifneq ($(TARGET_NO_SEPARATE_RECOVERY),)
+-    $(INTERNAL_OTA_PACKAGE_TARGET): separate_recovery := --no_separate_recovery=true
++ifeq ($(TARGET_NO_SEPARATE_RECOVERY),)
++    OTA_SCRIPT_NO_SEPARATE_RECOVERY := false
++else
++    OTA_SCRIPT_NO_SEPARATE_RECOVERY := true
+ endif
+ 
+ $(INTERNAL_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(DISTTOOLS)
+@@ -1498,10 +1497,6 @@ $(INTERNAL_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(DISTTOOLS)
+ 	$(OTA_FROM_TARGET_SCRIPT) -v \
+ 	   -p $(HOST_OUT) \
+ 	   -k $(KEY_CERT_PAIR) \
+-	   --backup=$(backuptool) \
+-	   --override_device=$(override_device) \
+-	   $(override_prop) \
+-	   $(separate_recovery) \
+ 	   $(BUILT_TARGET_FILES_PACKAGE) $@
+ 
+ CM_TARGET_PACKAGE := $(PRODUCT_OUT)/lineage-$(LINEAGE_VERSION).zip
+diff --git a/tools/releasetools/ota_from_target_files b/tools/releasetools/ota_from_target_files
+index 01f75383c..4feceef4d 100755
+--- a/tools/releasetools/ota_from_target_files
++++ b/tools/releasetools/ota_from_target_files
+@@ -57,21 +57,6 @@ Usage:  ota_from_target_files [flags] input_target_files output_ota_package
+       first, so that any changes made to the system partition are done
+       using the new recovery (new kernel, etc.).
+ 
+-  --backup <boolean>
+-      Enable or disable the execution of backuptool.sh.
+-      Disabled by default.
+-
+-  --override_device <device>
+-      Override device-specific asserts. Can be a comma-separated list.
+-
+-  --override_prop <boolean>
+-      Override build.prop items with custom vendor init.
+-      Enabled when TARGET_UNIFIED_DEVICE is defined in BoardConfig
+-
+-  --no_separate_recovery <boolean>
+-      Do not generate recovery image. For devices which do not have a truly
+-      separate recovery partition.
+-
+ """
+ 
+ import sys
+@@ -1031,14 +1016,6 @@ def main(argv):
+       OPTIONS.worker_threads = int(a)
+     elif o in ("-2", "--two_step"):
+       OPTIONS.two_step = True
+-    elif o in ("--backup"):
+-      OPTIONS.backuptool = bool(a.lower() == 'true')
+-    elif o in ("--override_device"):
+-      OPTIONS.override_device = a
+-    elif o in ("--override_prop"):
+-      OPTIONS.override_prop = bool(a.lower() == 'true')
+-    elif o in ("--no_separate_recovery"):
+-      OPTIONS.no_separate_recovery = bool(a.lower() == 'true')
+     else:
+       return False
+     return True
+@@ -1054,10 +1031,6 @@ def main(argv):
+                                               "worker_threads=",
+                                               "aslr_mode=",
+                                               "two_step",
+-                                              "backup=",
+-                                              "override_device=",
+-                                              "override_prop=",
+-                                              "no_separate_recovery=",
+                                               ],
+                              extra_option_handler=option_handler)
+ 
+@@ -1074,6 +1047,18 @@ def main(argv):
+   OPTIONS.target_tmp = OPTIONS.input_tmp
+   OPTIONS.info_dict = common.LoadInfoDict(input_zip)
+ 
++  if "ota_override_device" in OPTIONS.info_dict:
++    OPTIONS.override_device = OPTIONS.info_dict.get("ota_override_device")
++
++  if "ota_override_prop" in OPTIONS.info_dict:
++    OPTIONS.override_prop = OPTIONS.info_dict.get("ota_override_prop") == "true"
++
++  if "ota_backuptool" in OPTIONS.info_dict:
++    OPTIONS.backuptool = OPTIONS.info_dict.get("ota_backuptool") == "true"
++
++  if "ota_no_separate_recovery" in OPTIONS.info_dict:
++    OPTIONS.no_separate_recovery = OPTIONS.info_dict.get("ota_no_separate_recovery") == "true"
++
+   # If this image was originally labelled with SELinux contexts, make sure we
+   # also apply the labels in our new image. During building, the "file_contexts"
+   # is in the out/ directory tree, but for repacking from target-files.zip it's
