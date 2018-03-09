@@ -1,0 +1,40 @@
+From 2ea612efe1719527cd182110aa9f8dd2f64a70e9 Mon Sep 17 00:00:00 2001
+From: Tim Schumacher <timschumi@gmx.de>
+Date: Tue, 13 Feb 2018 10:35:18 +0100
+Subject: [PATCH 1/2] cmremote: Respect 'https' and 'www.' when determining the
+ path
+
+Additionally, I squashed together the checks for
+git:// and http://
+
+Change-Id: Icfa2328a07d520376020770e3d98309aaef99a6b
+---
+ envsetup.sh | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
+
+diff --git a/envsetup.sh b/envsetup.sh
+index 5e5b075..010c8f9 100644
+--- a/envsetup.sh
++++ b/envsetup.sh
+@@ -1498,15 +1498,11 @@ function cmremote()
+     then
+         echo .git directory not found. Please run this from the root directory of the Android repository you wish to set up.
+     fi
+-    GERRIT_REMOTE=$(cat .git/config  | grep git://github.com | awk '{ print $NF }' | sed s#git://github.com/##g)
++    GERRIT_REMOTE=$(cat .git/config  | grep -E '(git|http(s)?)://(www\.)?github.com' | awk '{ print $NF }' | sed -r 's#(git|http(s)?)://(www\.)?github.com/##g')
+     if [ -z "$GERRIT_REMOTE" ]
+     then
+-        GERRIT_REMOTE=$(cat .git/config  | grep http://github.com | awk '{ print $NF }' | sed s#http://github.com/##g)
+-        if [ -z "$GERRIT_REMOTE" ]
+-        then
+-          echo Unable to set up the git remote, are you in the root of the repo?
+-          return 0
+-        fi
++        echo Unable to set up the git remote, are you in the root of the repo?
++        return 0
+     fi
+     CMUSER=`git config --get review.review.lineageos.org.username`
+     if [ -z "$CMUSER" ]
+-- 
+2.7.4
+
