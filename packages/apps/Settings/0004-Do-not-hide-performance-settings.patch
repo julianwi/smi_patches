@@ -1,0 +1,39 @@
+From a80d07006ba7648bac3c754c35ed79d51dd30cac Mon Sep 17 00:00:00 2001
+From: niks255 <niks255@mail.ru>
+Date: Tue, 4 Oct 2016 20:20:51 +0600
+Subject: [PATCH 04/10] Do not hide performance settings
+
+Change-Id: I36ba0596e12460c7ca9b1135137ac0bcf24875e1
+---
+ src/com/android/settings/Settings.java | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/src/com/android/settings/Settings.java b/src/com/android/settings/Settings.java
+index 81b8cf6..2caf498 100644
+--- a/src/com/android/settings/Settings.java
++++ b/src/com/android/settings/Settings.java
+@@ -773,14 +773,14 @@ public class Settings extends PreferenceActivity
+                         target.remove(i);
+                     }
+                 }
+-            } else if (id == R.id.development_settings
+-                    || id == R.id.performance_settings) {
+-                boolean removePreference = !showDev;
+-                if (!removePreference && id == R.id.performance_settings) {
+-                    final Resources res = getResources();
+-                    removePreference = res.getBoolean(R.bool.config_hidePerformanceSettings);
++            } else if (id == R.id.development_settings) {
++                if (!showDev) {
++                    target.remove(i);
+                 }
+-                if (removePreference) {
++            } else if (id == R.id.performance_settings) {
++                final Resources res = getResources();
++                boolean hide = res.getBoolean(R.bool.config_hidePerformanceSettings);
++                if (hide) {
+                     target.remove(i);
+                 }
+             } else if (id == R.id.account_add) {
+-- 
+2.7.4
+

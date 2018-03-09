@@ -1,0 +1,37 @@
+From 4304e2876ae121a8b443bc8b9dfb1f86cdf4fcbe Mon Sep 17 00:00:00 2001
+From: Arulselvan M <arulselvan.m@intel.com>
+Date: Tue, 26 Nov 2013 16:35:53 +0530
+Subject: [PATCH 46/56] Ending time of RTSP streaming to show ""-.--.--"
+ instead of "0:00"
+
+BZ: 154143
+
+Setting -1 for rtsp streaming contents which are unable to provide valid duration
+information.
+
+Change-Id: I6a884671855faa90d2578ed00f14b6ab131ab06d
+Category: aosp improvement
+Domain: AUDIO_MEDIA-Audio Framework
+Origin: internal
+Upstream-Candidate: yes
+Signed-off-by: Arulselvan M <arulselvan.m@intel.com>
+---
+ media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp b/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
+index b678a49..5d38f30 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
+@@ -323,7 +323,7 @@ status_t NuPlayerDriver::getDuration(int *msec) {
+     Mutex::Autolock autoLock(mLock);
+ 
+     if (mDurationUs < 0) {
+-        return UNKNOWN_ERROR;
++        *msec = -1;//invalid duration
+     }
+ 
+     *msec = (mDurationUs + 500ll) / 1000;
+-- 
+2.7.4
+

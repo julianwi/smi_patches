@@ -1,0 +1,61 @@
+From 7bdad5599bb4617627c6582def4a2eb4b45c5a61 Mon Sep 17 00:00:00 2001
+From: Lei Li <lei.l.li@intel.com>
+Date: Mon, 5 Aug 2013 13:03:07 +0800
+Subject: [PATCH 02/17] make SSE2 optimizations for SKIA by default
+
+BZ: 19389
+
+The original patch combined the above feature with rgb565 optimizations
+Now we separated with them while BZ is the same
+
+Change-Id: Iede16c22659f0776240e9284d952ec21b5b38986
+Category: aosp improvement
+Domain: AOSP.Optimization-Browser
+Origin: internal
+Upstream-Candidate: no, key fix
+Author: Lei Li <lei.l.li@intel.com>
+Orig-ABT-Change-Id: I5abc72fad01f2300592c0c34df3b2eea8ce61955
+Signed-off-by: Jin Yang <jin.a.yang@intel.com>
+---
+ Android.mk | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/Android.mk b/Android.mk
+index b574ceb..84df891 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -552,6 +552,23 @@ LOCAL_SRC_FILES += \
+ 	src/opts/SkXfermode_opts_arm.cpp
+ 
+ else
++ifeq ($(TARGET_ARCH),x86)
++
++LOCAL_CFLAGS += -D__SSE2__
++
++LOCAL_SRC_FILES += \
++    src/opts/SkBitmapFilter_opts_SSE2.cpp \
++    src/opts/SkBlitRow_opts_SSE2.cpp \
++    src/opts/SkBitmapProcState_opts_SSE2.cpp \
++    src/opts/SkBitmapProcState_opts_SSSE3.cpp \
++    src/opts/SkBlitRect_opts_SSE2.cpp \
++    src/opts/opts_check_SSE2.cpp \
++    src/opts/SkUtils_opts_SSE2.cpp \
++    src/opts/SkXfermode_opts_none.cpp \
++    src/opts/SkMorphology_opts_SSE2.cpp \
++    src/opts/SkBlurImage_opts_SSE2.cpp
++
++else
+ LOCAL_SRC_FILES += \
+ 	src/opts/SkBitmapProcState_opts_none.cpp \
+ 	src/opts/SkBlitMask_opts_none.cpp \
+@@ -561,6 +578,7 @@ LOCAL_SRC_FILES += \
+ 	src/opts/SkUtils_opts_none.cpp \
+ 	src/opts/SkXfermode_opts_none.cpp
+ endif
++endif
+ 
+ LOCAL_SHARED_LIBRARIES := \
+ 	liblog \
+-- 
+2.7.4
+

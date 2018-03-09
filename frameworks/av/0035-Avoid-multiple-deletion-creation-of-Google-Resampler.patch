@@ -1,0 +1,44 @@
+From ed5d7935af005fa31376a2a175c35773db8a5591 Mon Sep 17 00:00:00 2001
+From: Divya Prakash <divya1.prakash@intel.com>
+Date: Wed, 4 Dec 2013 09:39:37 +0530
+Subject: [PATCH 35/56] Avoid multiple deletion&creation of Google Resampler
+ nonsupported SR
+
+BZ: 151321
+
+When an audio track has a non -standard sampling rate,the
+google resampler object is created instead of Intel SRC .
+However ,when the sampling rate is dynamically changed,
+the google resampler object is getting deleted and again
+recreated for every mix buffer .This leads to glitches in
+audio in the case of non-standard input sampling rate .
+
+This fix ensures that the Google resampler object is created
+and deleted only once.
+
+Change-Id: Ieb54b4da2ac492a48aa8fead3aa5005e7451059d
+Category: aosp improvement
+Domain: AUDIO_MEDIA-Audio Flinger
+Origin: internal
+Upstream-Candidate: no, proprietary
+Signed-off-by: Divya Prakash <divya1.prakash@intel.com>
+---
+ services/audioflinger/AudioResampler.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/audioflinger/AudioResampler.cpp b/services/audioflinger/AudioResampler.cpp
+index 480e50f..9cc6b1c 100644
+--- a/services/audioflinger/AudioResampler.cpp
++++ b/services/audioflinger/AudioResampler.cpp
+@@ -263,7 +263,7 @@ AudioResampler* AudioResampler::create(int bitDepth, int inChannelCount,
+ 
+     }
+ #ifdef USE_INTEL_RSP
+-    if (quality == LOW_QUALITY || quality == MED_QUALITY ||
++    if (quality == DEFAULT_QUALITY || quality == LOW_QUALITY || quality == MED_QUALITY ||
+                             quality == HIGH_QUALITY) {
+         resampler->mResType = AF_DEFAULT_SRC;
+     } else {
+-- 
+2.7.4
+

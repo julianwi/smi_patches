@@ -1,0 +1,62 @@
+From d8e3511e359d3c81660ab352f637033af35ef75e Mon Sep 17 00:00:00 2001
+From: Thomas Buhot <thomas.buhot@intel.com>
+Date: Fri, 29 Nov 2013 14:34:13 +0100
+Subject: [PATCH 08/17] fix SSE compilation issue for libskia
+
+BZ: 142341
+
+Activation of SSE inline functions relies on the definition of __SSE2__ and
+__SSSE3__. Both defines come with the -march=atom option in the gcc command
+line. We do not need to explicitely define them in the makefile.
+
+Reverse SK_CPU_SSE_LEVEL initialization, otherwise only SSE2 is taken into
+account.
+
+Change-Id: I43bed844014aa6002b43754cb9dc0f51fd9da06d
+Category: aosp improvement
+Domain: AOSP-Others
+Origin: internal
+Upstream-Candidate: yes
+Signed-off-by: Thomas Buhot <thomas.buhot@intel.com>
+---
+ Android.mk                 | 2 --
+ include/core/SkPreConfig.h | 8 ++++----
+ 2 files changed, 4 insertions(+), 6 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index 375938e..757b76f 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -554,8 +554,6 @@ LOCAL_SRC_FILES += \
+ else
+ ifeq ($(TARGET_ARCH),x86)
+ 
+-LOCAL_CFLAGS += -D__SSE2__
+-
+ LOCAL_SRC_FILES += \
+     src/opts/SkBitmapFilter_opts_SSE2.cpp \
+     src/opts/SkBlitRow_opts_SSE2.cpp \
+diff --git a/include/core/SkPreConfig.h b/include/core/SkPreConfig.h
+index ab995d7..1fe8afa 100644
+--- a/include/core/SkPreConfig.h
++++ b/include/core/SkPreConfig.h
+@@ -122,12 +122,12 @@
+ 
+ // Are we in GCC?
+ #ifndef SK_CPU_SSE_LEVEL
+-    #if defined(__SSE2__)
+-        #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSE2
++    #if defined(__SSSE3__)
++        #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSSE3
+     #elif defined(__SSE3__)
+         #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSE3
+-    #elif defined(__SSSE3__)
+-        #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSSE3
++    #elif defined(__SSE2__)
++        #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSE2
+     #endif
+ #endif
+ 
+-- 
+2.7.4
+

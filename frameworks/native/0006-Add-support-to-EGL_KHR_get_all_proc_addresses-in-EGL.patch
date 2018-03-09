@@ -1,0 +1,122 @@
+From 6723c5039221acbf085e9740900380b01f19a339 Mon Sep 17 00:00:00 2001
+From: Yunwei Zhang <yunwei.zhang@intel.com>
+Date: Tue, 22 Jul 2014 13:52:40 -0700
+Subject: [PATCH 6/8] Add support to EGL_KHR_get_all_proc_addresses in EGL
+ wrapper
+
+BZ: 207826
+
+Some games that use Unity engine make eglSwapBuffer call through
+eglGetProcAddress() which bypasses the Android EGL wrappers. Add a
+regular egl function map to support EGL_KHR_get_all_proc_addresses
+extension in EGL wrapper
+
+Change-Id: I611ba7441f63708fb847f31ebd833ac6dad8c5bc
+Category: aosp improvement
+Domain: Graphics-3D
+Origin: internal
+Upstream-Candidate: yes
+Signed-off-by: Yunwei Zhang <yunwei.zhang@intel.com>
+---
+ opengl/libs/EGL/eglApi.cpp | 78 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 78 insertions(+)
+
+diff --git a/opengl/libs/EGL/eglApi.cpp b/opengl/libs/EGL/eglApi.cpp
+index ab73060..9fa3aae 100644
+--- a/opengl/libs/EGL/eglApi.cpp
++++ b/opengl/libs/EGL/eglApi.cpp
+@@ -154,6 +154,78 @@ static const extention_map_t sExtensionMap[] = {
+             (__eglMustCastToProperFunctionPointerType)&eglPresentationTimeANDROID },
+ };
+ 
++//EGL regular procedures MAP for EGL_KHR_get_all_proc_addresses
++static const extention_map_t sRegularEGLProcMap[] = {
++    { "eglBindAPI",
++            (__eglMustCastToProperFunctionPointerType)&eglBindAPI },
++    { "eglBindTexImage",
++            (__eglMustCastToProperFunctionPointerType)&eglBindTexImage },
++    { "eglChooseConfig",
++            (__eglMustCastToProperFunctionPointerType)&eglChooseConfig },
++    { "eglCopyBuffers",
++            (__eglMustCastToProperFunctionPointerType)&eglCopyBuffers },
++    { "eglCreateContext",
++            (__eglMustCastToProperFunctionPointerType)&eglCreateContext },
++    { "eglCreatePbufferFromClientBuffer",
++            (__eglMustCastToProperFunctionPointerType)&eglCreatePbufferFromClientBuffer },
++    { "eglCreatePbufferSurface",
++            (__eglMustCastToProperFunctionPointerType)&eglCreatePbufferSurface },
++    { "eglCreatePixmapSurface",
++            (__eglMustCastToProperFunctionPointerType)&eglCreatePixmapSurface },
++    { "eglCreateWindowSurface",
++            (__eglMustCastToProperFunctionPointerType)&eglCreateWindowSurface },
++    { "eglDestroyContext",
++            (__eglMustCastToProperFunctionPointerType)&eglDestroyContext },
++    { "eglDestroySurface",
++            (__eglMustCastToProperFunctionPointerType)&eglDestroySurface },
++    { "eglGetConfigAttrib",
++            (__eglMustCastToProperFunctionPointerType)&eglGetConfigAttrib },
++    { "eglGetConfigs",
++            (__eglMustCastToProperFunctionPointerType)&eglGetConfigs },
++    { "eglGetCurrentContext",
++            (__eglMustCastToProperFunctionPointerType)&eglGetCurrentContext },
++    { "eglGetCurrentDisplay",
++            (__eglMustCastToProperFunctionPointerType)&eglGetCurrentDisplay },
++    { "eglGetCurrentSurface",
++            (__eglMustCastToProperFunctionPointerType)&eglGetCurrentSurface },
++    { "eglGetDisplay",
++            (__eglMustCastToProperFunctionPointerType)&eglGetDisplay },
++    { "eglGetError",
++            (__eglMustCastToProperFunctionPointerType)&eglGetError },
++    { "eglGetProcAddress",
++            (__eglMustCastToProperFunctionPointerType)&eglGetProcAddress },
++    { "eglInitialize",
++            (__eglMustCastToProperFunctionPointerType)&eglInitialize },
++    { "eglMakeCurrent",
++            (__eglMustCastToProperFunctionPointerType)&eglMakeCurrent },
++    { "eglQueryAPI",
++            (__eglMustCastToProperFunctionPointerType)&eglQueryAPI },
++    { "eglQueryContext",
++            (__eglMustCastToProperFunctionPointerType)&eglQueryContext },
++    { "eglQueryString",
++            (__eglMustCastToProperFunctionPointerType)&eglQueryString },
++    { "eglQuerySurface",
++            (__eglMustCastToProperFunctionPointerType)&eglQuerySurface },
++    { "eglReleaseTexImage",
++            (__eglMustCastToProperFunctionPointerType)&eglReleaseTexImage },
++    { "eglReleaseThread",
++            (__eglMustCastToProperFunctionPointerType)&eglReleaseThread },
++    { "eglSurfaceAttrib",
++            (__eglMustCastToProperFunctionPointerType)&eglSurfaceAttrib },
++    { "eglSwapBuffers",
++            (__eglMustCastToProperFunctionPointerType)&eglSwapBuffers },
++    { "eglSwapInterval",
++            (__eglMustCastToProperFunctionPointerType)&eglSwapInterval },
++    { "eglTerminate",
++            (__eglMustCastToProperFunctionPointerType)&eglTerminate },
++    { "eglWaitClient",
++            (__eglMustCastToProperFunctionPointerType)&eglWaitClient },
++    { "eglWaitGL",
++            (__eglMustCastToProperFunctionPointerType)&eglWaitGL },
++    { "eglWaitNative",
++            (__eglMustCastToProperFunctionPointerType)&eglWaitNative }
++};
++
+ /*
+  * These extensions entry-points should not be exposed to applications.
+  * They're used internally by the Android EGL layer.
+@@ -918,6 +990,12 @@ __eglMustCastToProperFunctionPointerType eglGetProcAddress(const char *procname)
+     }
+ 
+     __eglMustCastToProperFunctionPointerType addr;
++
++    // EGL_KHR_get_all_proc_addresses allows using eglGetProcAddress to return the
++    // function address regular EGL procedures, enable this in EGL wrapper
++    addr = findProcAddress(procname, sRegularEGLProcMap, NELEM(sRegularEGLProcMap));
++    if (addr) return addr;
++
+     addr = findProcAddress(procname, sExtensionMap, NELEM(sExtensionMap));
+     if (addr) return addr;
+ 
+-- 
+2.7.4
+

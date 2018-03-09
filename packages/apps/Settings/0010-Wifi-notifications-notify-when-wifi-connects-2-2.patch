@@ -1,0 +1,161 @@
+From 3f64e14001c6fcd7f462deee4902dd8861cbdbb1 Mon Sep 17 00:00:00 2001
+From: PrimeDirective <activethrasher00@gmail.com>
+Date: Fri, 10 Oct 2014 12:15:25 -0400
+Subject: [PATCH 10/10] Wifi notifications: notify when wifi connects [2/2]
+
+Options:
+  off (default)
+  a dry white toast
+  a notification
+  a notification with a sound
+
+For those of us that survive on wifi islands in small college towns this is
+pretty nice to have
+
+Any notification within 30 seconds of broadcast intent ACTION_BOOT_COMPLETED
+will be canceled to prevent startup notification spamming. 8 (default) of the
+previous connections are remembered and it will update the notification's content
+accordingly if you've restored a connection.
+
+PS2: clean up strings
+PS3: fix build & fix list preference not being updated
+
+Change-Id: I18448773c64a6a0d65e7c39d008de2b371f4d556
+---
+ res/values-ru/cm_strings.xml                          |  5 +++++
+ res/values/cm_arrays.xml                              | 15 +++++++++++++++
+ res/values/cm_strings.xml                             |  7 +++++++
+ res/xml/wifi_advanced_settings.xml                    |  7 +++++++
+ .../android/settings/wifi/AdvancedWifiSettings.java   | 19 +++++++++++++++++++
+ 5 files changed, 53 insertions(+)
+
+diff --git a/res/values-ru/cm_strings.xml b/res/values-ru/cm_strings.xml
+index f38aa74..eb5806f 100644
+--- a/res/values-ru/cm_strings.xml
++++ b/res/values-ru/cm_strings.xml
+@@ -1028,4 +1028,9 @@
+   <string name="lock_to_cyanogen_create_account_msg">Устройство использует пароль аккаунта ОС Cyanogen для защиты устройства от сброса настроек. Потребуется создать новый аккаунт ОС Cyanogen.</string>
+   <string name="lock_to_cyanogen_disable_msg">Отключение этой функции позволит другим людям выполнить удаление всех данных на устройстве в случае его кражи. Ваши личные данные могут стать недостаточно защищёнными. Вы действительно хотите отключить эту функцию?</string>
+   <string name="lock_to_cyanogen_master_clear_warning">Защита устройства включена. Необходимо отключить её, чтобы выполнить сброс настроек на устройстве.</string>
++  <string name="wifi_notify_changed_networks">Уведомление о подключении к сети</string>
++  <string name="notify_changed_networks_default">Отключено (по умолчанию)</string>
++  <string name="notify_changed_networks_toast">Всплывающее оповещение</string>
++  <string name="notify_changed_networks_notification">Уведомление</string>
++  <string name="notify_changed_networks_notification_sound">Уведомление и звук</string>
+ </resources>
+diff --git a/res/values/cm_arrays.xml b/res/values/cm_arrays.xml
+index 4de6b14..264a462 100644
+--- a/res/values/cm_arrays.xml
++++ b/res/values/cm_arrays.xml
+@@ -624,6 +624,21 @@
+         <item>1</item>
+     </string-array>
+ 
++    <!-- Wifi connection notifications -->
++    <string-array name="notify_changed_networks_entries" translatable="false">
++        <item>@string/notify_changed_networks_default</item>
++        <item>@string/notify_changed_networks_toast</item>
++        <item>@string/notify_changed_networks_notification</item>
++        <item>@string/notify_changed_networks_notification_sound</item>
++    </string-array>
++
++    <string-array name="notify_changed_networks_values" translatable="false">
++        <item>0</item>
++        <item>1</item>
++        <item>2</item>
++        <item>3</item>
++    </string-array>
++
+     <!-- App ops, extension of AOSP app_ops_summaries and app_ops_labels -->
+     <string-array name="app_ops_summaries_cm" translatable="false">
+         <item>@string/app_ops_summaries_coarse_location</item>
+diff --git a/res/values/cm_strings.xml b/res/values/cm_strings.xml
+index 6fa451c..5dcd87e 100644
+--- a/res/values/cm_strings.xml
++++ b/res/values/cm_strings.xml
+@@ -1432,6 +1432,13 @@ two in order to insert additional control points. \'Remove\' deletes the selecte
+     <string name="wifi_ap_client_ap_disabled">Hotspot is disabled</string>
+     <string name="wifi_ap_client_none_connected">No devices connected</string>
+ 
++    <!-- Wifi connection notifications -->
++    <string name="wifi_notify_changed_networks">Wi\u2011Fi connected notification</string>
++    <string name="notify_changed_networks_default">Off (default)</string>
++    <string name="notify_changed_networks_toast">Toast</string>
++    <string name="notify_changed_networks_notification">Notification</string>
++    <string name="notify_changed_networks_notification_sound">Notification with sound</string>
++
+     <!-- Profiles -->
+     <string name="profile_menu_delete_title">Delete</string>
+     <string name="profile_menu_triggers_title">Modify triggers</string>
+diff --git a/res/xml/wifi_advanced_settings.xml b/res/xml/wifi_advanced_settings.xml
+index d5adf5f..8fb801e 100644
+--- a/res/xml/wifi_advanced_settings.xml
++++ b/res/xml/wifi_advanced_settings.xml
+@@ -25,6 +25,13 @@
+             android:persistent="false" />
+ 
+     <ListPreference
++            android:key="notify_changed_networks"
++            android:title="@string/wifi_notify_changed_networks"
++            android:dialogTitle="@string/wifi_notify_changed_networks"
++            android:entries="@array/notify_changed_networks_entries"
++            android:entryValues="@array/notify_changed_networks_values" />
++
++    <ListPreference
+             android:key="sleep_policy"
+             android:title="@string/wifi_setting_sleep_policy_title"
+             android:persistent="false"
+diff --git a/src/com/android/settings/wifi/AdvancedWifiSettings.java b/src/com/android/settings/wifi/AdvancedWifiSettings.java
+index ac8b54f..cc0975b 100644
+--- a/src/com/android/settings/wifi/AdvancedWifiSettings.java
++++ b/src/com/android/settings/wifi/AdvancedWifiSettings.java
+@@ -46,6 +46,7 @@ public class AdvancedWifiSettings extends SettingsPreferenceFragment
+     private static final String KEY_FREQUENCY_BAND = "frequency_band";
+     private static final String KEY_COUNTRY_CODE = "wifi_countrycode";
+     private static final String KEY_NOTIFY_OPEN_NETWORKS = "notify_open_networks";
++    private static final String KEY_NOTIFY_CHANGED_NETWORKS = "notify_changed_networks";
+     private static final String KEY_SLEEP_POLICY = "sleep_policy";
+     private static final String KEY_POOR_NETWORK_DETECTION = "wifi_poor_network_detection";
+     private static final String KEY_SCAN_ALWAYS_AVAILABLE = "wifi_scan_always_available";
+@@ -54,6 +55,7 @@ public class AdvancedWifiSettings extends SettingsPreferenceFragment
+     private static final String KEY_WIFI_PRIORITY = "wifi_priority";
+ 
+     private WifiManager mWifiManager;
++    private ListPreference mNotifyChangedNetwork;
+ 
+     @Override
+     public void onCreate(Bundle savedInstanceState) {
+@@ -81,6 +83,14 @@ public class AdvancedWifiSettings extends SettingsPreferenceFragment
+                 Settings.Global.WIFI_NETWORKS_AVAILABLE_NOTIFICATION_ON, 0) == 1);
+         notifyOpenNetworks.setEnabled(mWifiManager.isWifiEnabled());
+ 
++        mNotifyChangedNetwork = (ListPreference) findPreference(KEY_NOTIFY_CHANGED_NETWORKS);
++        int notifyValue = Settings.System.getInt(getContentResolver(),
++                    Settings.System.WIFI_NETWORK_NOTIFICATIONS, 0);
++        mNotifyChangedNetwork.setValueIndex(notifyValue);
++        mNotifyChangedNetwork.setSummary(mNotifyChangedNetwork.getEntries()[notifyValue]);
++        mNotifyChangedNetwork.setOnPreferenceChangeListener(this);
++        mNotifyChangedNetwork.setEnabled(mWifiManager.isWifiEnabled());
++
+         CheckBoxPreference poorNetworkDetection =
+             (CheckBoxPreference) findPreference(KEY_POOR_NETWORK_DETECTION);
+         if (poorNetworkDetection != null) {
+@@ -243,6 +253,15 @@ public class AdvancedWifiSettings extends SettingsPreferenceFragment
+             }
+         }
+ 
++        if (KEY_NOTIFY_CHANGED_NETWORKS.equals(key)) {
++            int notifyValue = Integer.valueOf((String) newValue);
++            int index = mNotifyChangedNetwork.findIndexOfValue((String) newValue);
++            Settings.System.putInt(getContentResolver(), Settings.System.WIFI_NETWORK_NOTIFICATIONS,
++                    notifyValue);
++            mNotifyChangedNetwork.setSummary(mNotifyChangedNetwork.getEntries()[index]);
++            getActivity().sendBroadcast(new Intent("cm.UPDATE_WIFI_NOTIFICATION_PREFERENCE"));
++        }
++
+         if (KEY_COUNTRY_CODE.equals(key)) {
+             try {
+                 Settings.Global.putString(getContentResolver(), Settings.Global.WIFI_COUNTRY_CODE,
+-- 
+2.7.4
+

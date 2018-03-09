@@ -1,0 +1,30 @@
+From 58bb86b6e3173250cfa9e24adf6d00565fddf21b Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Mon, 17 Apr 2017 17:24:22 +0200
+Subject: [PATCH 5/5] ICC is only for x86
+
+Change-Id: I52e07b732201020d1ccfa8eb483abd6c9cd3c732
+---
+ core/config.mk | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/core/config.mk b/core/config.mk
+index a4b3f52..de69c3d 100644
+--- a/core/config.mk
++++ b/core/config.mk
+@@ -457,8 +457,10 @@ endif
+ # define llvm tools and global flags
+ include $(BUILD_SYSTEM)/llvm_config.mk
+ 
+-# define icc tools and global flags
+-include $(BUILD_SYSTEM)/icc_config.mk
++ifeq ($(TARGET_ARCH),x86)
++  # define icc tools and global flags
++  include $(BUILD_SYSTEM)/icc_config.mk
++endif
+ 
+ # ###############################################################
+ # Collect a list of the SDK versions that we could compile against
+-- 
+2.7.4
+

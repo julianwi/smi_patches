@@ -1,0 +1,92 @@
+From b382b7249635ced31db73147d7278ad479abdc9e Mon Sep 17 00:00:00 2001
+From: Henrik Smiding <henrik.smiding@intel.com>
+Date: Wed, 15 Jan 2014 17:57:48 +0100
+Subject: [PATCH 14/17] Use libcutils optimized memset16/32
+
+BZ: 146848
+
+Switch to the optimizations in system/core/libcutils for the functions
+sk_memset16 and sk_memset32. They are faster than the intrinsic versions.
+
+Change-Id: I2d90115b97e085b5ade4c72a70309b8511d0e6ce
+Category: aosp improvement
+Domain: AOSP-Others
+Origin: internal
+Upstream-Candidate: yes
+Signed-off-by: Henrik Smiding <henrik.smiding@intel.com>
+---
+ src/opts/SkUtils_opts_SSE2.cpp | 21 +++++++++++++++++++++
+ src/opts/SkUtils_opts_SSE2.h   |  2 ++
+ src/opts/opts_check_x86.cpp    |  4 ++--
+ 3 files changed, 25 insertions(+), 2 deletions(-)
+
+diff --git a/src/opts/SkUtils_opts_SSE2.cpp b/src/opts/SkUtils_opts_SSE2.cpp
+index e22044d..5d307b2 100644
+--- a/src/opts/SkUtils_opts_SSE2.cpp
++++ b/src/opts/SkUtils_opts_SSE2.cpp
+@@ -9,6 +9,27 @@
+ 
+ #include <emmintrin.h>
+ #include "SkUtils_opts_SSE2.h"
++#include "cutils/memory.h"
++
++void sk_memset16_libcutils(uint16_t *dst, uint16_t value, int count)
++{
++    SkASSERT(dst != NULL && count >= 0);
++
++    // dst must be 2-byte aligned.
++    SkASSERT((((size_t) dst) & 0x01) == 0);
++
++    android_memset16(dst, value, count << 1);
++}
++
++void sk_memset32_libcutils(uint32_t *dst, uint32_t value, int count)
++{
++    SkASSERT(dst != NULL && count >= 0);
++
++    // dst must be 4-byte aligned.
++    SkASSERT((((size_t) dst) & 0x03) == 0);
++
++    android_memset32(dst, value, count << 2);
++}
+ 
+ void sk_memset16_SSE2(uint16_t *dst, uint16_t value, int count)
+ {
+diff --git a/src/opts/SkUtils_opts_SSE2.h b/src/opts/SkUtils_opts_SSE2.h
+index d92b1cc..31e60fe 100644
+--- a/src/opts/SkUtils_opts_SSE2.h
++++ b/src/opts/SkUtils_opts_SSE2.h
+@@ -11,6 +11,8 @@
+ 
+ #include "SkTypes.h"
+ 
++void sk_memset16_libcutils(uint16_t *dst, uint16_t value, int count);
++void sk_memset32_libcutils(uint32_t *dst, uint32_t value, int count);
+ void sk_memset16_SSE2(uint16_t *dst, uint16_t value, int count);
+ void sk_memset32_SSE2(uint32_t *dst, uint32_t value, int count);
+ 
+diff --git a/src/opts/opts_check_x86.cpp b/src/opts/opts_check_x86.cpp
+index 1099bb9..8acbe1f 100644
+--- a/src/opts/opts_check_x86.cpp
++++ b/src/opts/opts_check_x86.cpp
+@@ -302,7 +302,7 @@ SkBlitMask::RowProc SkBlitMask::PlatformRowProcs(SkBitmap::Config dstConfig,
+ 
+ SkMemset16Proc SkMemset16GetPlatformProc() {
+     if (getSSELevel() >= SK_CPU_SSE_LEVEL_SSE2) {
+-        return sk_memset16_SSE2;
++        return sk_memset16_libcutils;
+     } else {
+         return NULL;
+     }
+@@ -310,7 +310,7 @@ SkMemset16Proc SkMemset16GetPlatformProc() {
+ 
+ SkMemset32Proc SkMemset32GetPlatformProc() {
+     if (getSSELevel() >= SK_CPU_SSE_LEVEL_SSE2) {
+-        return sk_memset32_SSE2;
++        return sk_memset32_libcutils;
+     } else {
+         return NULL;
+     }
+-- 
+2.7.4
+

@@ -1,0 +1,108 @@
+From 1272217cded3e6f407fb12a9f3ddb8bb962e6f91 Mon Sep 17 00:00:00 2001
+From: Arulselvan M <arulselvan.m@intel.com>
+Date: Fri, 31 May 2013 00:04:22 +0530
+Subject: [PATCH 34/56] Audio files with 64/88.2/96 Khz sample rate can not
+ play.
+
+BZ: 56363
+
+The issue is due to the initial check verifying whether the
+sampling rate is supported by Intel SRC and then playing
+only the Intel SRC supported sampling rates. Putting this
+check only for larger sampling rates > 2*(maximum supported
+sampling rate) will allow the files having sampling rates
+(64/88.2 Khz) <= 2*(maximum supported sampling rate),
+that are not supported by Intel SRC to be played. Putting a
+check for Intel SRC supported sampling rates in AudioTrack
+will allow files having sampling rate of 96 Khz to be
+played. This patch also enables logs for AudioResampler and
+AudioResamplerIA.
+
+Change-Id: I729a82890d4d0a711983e2da96f850fd7e625cf3
+Orig-Change-Id: Ief741aabe7274de729727852a349d27cfa10d740
+Category: feature differentiation
+Domain: AUDIO_MEDIA-Audio Framework
+Origin: internal
+Upstream-Candidate: no, proprietary
+Signed-off-by: Charitardha <satya.charitardha.jayanti@intel.com>
+Signed-off-by: Arulselvan M <arulselvan.m@intel.com>
+---
+ media/libmedia/Android.mk         |  6 ++++++
+ media/libmedia/AudioTrack.cpp     | 13 +++++++++----
+ services/audioflinger/Threads.cpp |  6 +++---
+ 3 files changed, 18 insertions(+), 7 deletions(-)
+
+diff --git a/media/libmedia/Android.mk b/media/libmedia/Android.mk
+index 78f516d..93f3f90 100644
+--- a/media/libmedia/Android.mk
++++ b/media/libmedia/Android.mk
+@@ -124,4 +124,10 @@ LOCAL_C_INCLUDES := \
+     $(call include-path-for, audio-effects) \
+     $(call include-path-for, audio-utils)
+ 
++ifeq ($(USE_INTEL_RSP), true)
++  LOCAL_CFLAGS += -DUSE_INTEL_RSP
++  LOCAL_C_INCLUDES += $(TARGET_OUT_HEADERS)/libaudioresample
++  LOCAL_SHARED_LIBRARIES += libaudioresample
++endif
++
+ include $(BUILD_SHARED_LIBRARY)
+diff --git a/media/libmedia/AudioTrack.cpp b/media/libmedia/AudioTrack.cpp
+index 8b97020..887f5e0 100644
+--- a/media/libmedia/AudioTrack.cpp
++++ b/media/libmedia/AudioTrack.cpp
+@@ -37,6 +37,9 @@
+ #define WAIT_PERIOD_MS                  10
+ #define WAIT_STREAM_END_TIMEOUT_SEC     120
+ 
++#ifdef USE_INTEL_RSP
++#include "iasrc_resampler.h"
++#endif
+ 
+ namespace android {
+ // ---------------------------------------------------------------------------
+@@ -825,12 +828,14 @@ status_t AudioTrack::setSampleRate(uint32_t rate)
+     }
+     // Resampler implementation limits input sampling rate to 2/4 x output sampling rate.
+ #ifdef QTI_RESAMPLER
+-    if (rate == 0 || rate > afSamplingRate * 4) {
++    if ((rate == 0 || rate > afSamplingRate * 4)
+ #else
+-    if (rate == 0 || rate > afSamplingRate * 2) {
++    if ((rate == 0 || rate > afSamplingRate * 2)
++#ifdef USE_INTEL_RSP
++    && !iaresamplib_supported_conversion(rate, afSamplingRate)
+ #endif
+-        return BAD_VALUE;
+-    }
++#endif
++    ) return BAD_VALUE;
+ 
+     AutoMutex lock(mLock);
+     mSampleRate = rate;
+diff --git a/services/audioflinger/Threads.cpp b/services/audioflinger/Threads.cpp
+index d1d90ce..707c63b 100644
+--- a/services/audioflinger/Threads.cpp
++++ b/services/audioflinger/Threads.cpp
+@@ -1394,15 +1394,15 @@ sp<AudioFlinger::PlaybackThread::Track> AudioFlinger::PlaybackThread::createTrac
+         }
+         // Resampler implementation limits input sampling rate to 2/4 x output sampling rate.
+ #ifdef QTI_RESAMPLER
+-        if (sampleRate > mSampleRate * 4) {
++        if ((sampleRate > mSampleRate * 4)
+ #else
+         if ((sampleRate > mSampleRate * 2)
+-#ifdef USE_INTEL_SRC
++#ifdef USE_INTEL_RSP
+         //check if Intel SRC support this conversion
+         && (!AudioResamplerIA::sampleRateSupported(sampleRate, mSampleRate))
+ #endif
+-        ) {
+ #endif
++        ) {
+             ALOGE("Sample rate out of range: %u mSampleRate %u", sampleRate, mSampleRate);
+             lStatus = BAD_VALUE;
+             goto Exit;
+-- 
+2.7.4
+

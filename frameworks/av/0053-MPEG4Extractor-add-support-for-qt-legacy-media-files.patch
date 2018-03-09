@@ -1,0 +1,159 @@
+From 8056338ae46266c594d1f35221a0677a7c11d275 Mon Sep 17 00:00:00 2001
+From: Dan Liang <dan.liang@intel.com>
+Date: Tue, 14 Jan 2014 21:07:17 +0800
+Subject: [PATCH 53/56] MPEG4Extractor: add support for qt legacy media files
+
+BZ: 164599
+
+The test clip has two issues:
+1) the 'udta' Atom in audio/video track is empty and should be skipped.
+2) the audio track's esds is nested in 'wave' Atom which is contained in 'mp4a' Atom.
+
+Besides, when verifyTrack() fails, this track should be removed from track list and
+parsing needs to be continued.
+
+Change-Id: I95727d7e8c450498816288bf12be6b53d0a48289
+Category: aosp improvement
+Domain: Video.Media-container
+Origin: internal
+Upstream-Candidate: no, proprietary
+Signed-off-by: Dan Liang <dan.liang@intel.com>
+---
+ media/libstagefright/MPEG4Extractor.cpp | 77 ++++++++++++++++++++++++++-------
+ 1 file changed, 61 insertions(+), 16 deletions(-)
+
+diff --git a/media/libstagefright/MPEG4Extractor.cpp b/media/libstagefright/MPEG4Extractor.cpp
+index c478dbc..f2d5437 100644
+--- a/media/libstagefright/MPEG4Extractor.cpp
++++ b/media/libstagefright/MPEG4Extractor.cpp
+@@ -833,7 +833,7 @@ status_t MPEG4Extractor::parseUdtaMetaData(off64_t offset, size_t size) {
+ 
+             return ERROR_IO;
+         }
+-        int buffer_off = 0;
++        size_t buffer_off = 0;
+         uint64_t chunk_size;
+         uint32_t chunk_type;
+         while(buffer_off < size) {
+@@ -841,6 +841,12 @@ status_t MPEG4Extractor::parseUdtaMetaData(off64_t offset, size_t size) {
+             chunk_type = U32_AT((uint8_t*)&buffer[buffer_off + 4]);
+ 
+             ALOGV("chunk_size = %d", chunk_size);
++            if (!chunk_size) {
++                ALOGI("Invalid chunk length.");
++                delete[] buffer;
++                buffer = NULL;
++                return ERROR_MALFORMED;
++            }
+ 
+             uint32_t metadataKey = 0;
+             switch (chunk_type) {
+@@ -1032,20 +1038,25 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
+                 track->meta->setCString(kKeyMIMEType, "application/octet-stream");
+             }
+ 
++            off64_t stop_offset = *offset + chunk_size;
++
+             if (chunk_type == FOURCC('u', 'd', 't', 'a')) {
+                 parseUdtaMetaData(data_offset, chunk_data_size);
+-            }
+-
+-            off64_t stop_offset = *offset + chunk_size;
+-            *offset = data_offset;
+-            while (*offset < stop_offset) {
+-                status_t err = parseChunk(offset, depth + 1);
+-                if (err != OK) {
+-                    if (isTrack) {
+-                        mLastTrack->skipTrack = true;
+-                        break;
+-                    }
+-                    return err;
++                *offset += chunk_size;
++            } else {
++                *offset = data_offset;
++                while (*offset < stop_offset) {
++                    status_t err = parseChunk(offset, depth + 1);
++                    if (err != OK) {
++                        if (chunk_type == FOURCC('t', 'r', 'a', 'k')){
++                            // If one 'trak' box contains error, we can skip it to keep parsing,
++                            // which make sure we can parse out following valid 'trak' in the clip
++                            ALOGE("invalid track, skip it and keep parsing");
++                            mLastTrack->skipTrack = true;
++                            *offset = stop_offset;
++                        } else {
++                            return err;
++                        }
+                 }
+             }
+ 
+@@ -1068,6 +1079,10 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
+                 if (mLastTrack->skipTrack) {
+                     Track *cur = mFirstTrack;
+ 
++                    const char *mime;
++                    CHECK(mLastTrack->meta->findCString(kKeyMIMEType, &mime));
++                    ALOGI("%s track is removed", !strncasecmp("video/", mime, 6) ? "video" : "audio");
++
+                     if (cur == mLastTrack) {
+                         delete cur;
+                         mFirstTrack = mLastTrack = NULL;
+@@ -1549,9 +1564,12 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
+                 return ERROR_MALFORMED;
+             }
+             uint8_t buffer[8 + 20];
+-            if (chunk_data_size < (ssize_t)sizeof(buffer)) {
+-                // Basic AudioSampleEntry size.
+-                return ERROR_MALFORMED;
++
++            // Some special clips contains more than one 'mp4a' box and the later one is invalid
++            int32_t num = 0xff;
++            if (mLastTrack->meta->findInt32(kKeyChannelCount, &num) && num <= 2) {
++                *offset += chunk_size;
++                break;
+             }
+ 
+             if (mDataSource->readAt(
+@@ -1588,6 +1606,16 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
+             } else {
+ #endif
+             *offset = data_offset + sizeof(buffer);
++
++            if (chunk_type == FOURCC('m', 'p', '4', 'a')) {
++                int32_t next_chunk;
++                mDataSource->readAt(data_offset + 48, &next_chunk, 4);
++                next_chunk = ntohl(next_chunk);
++                if (next_chunk == FOURCC('w', 'a', 'v', 'e'))
++                    *offset = data_offset + 44;
++                else
++                    *offset = data_offset + 28;
++            }
+ #ifdef QCOM_HARDWARE
+             }
+ #endif
+@@ -2247,6 +2275,23 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
+             return UNKNOWN_ERROR; // stop parsing after sidx
+         }
+ 
++        case FOURCC('w', 'a', 'v', 'e'):
++        {
++            off64_t stop_offset = *offset + chunk_size;
++            *offset = data_offset;
++            while (*offset < stop_offset) {
++                status_t err = parseChunk(offset, depth + 1);
++                if (err != OK) {
++                    return err;
++                }
++            }
++
++            if (*offset != stop_offset) {
++                return ERROR_MALFORMED;
++            }
++            break;
++        }
++
+         default:
+         {
+             *offset += chunk_size;
+-- 
+2.7.4
+

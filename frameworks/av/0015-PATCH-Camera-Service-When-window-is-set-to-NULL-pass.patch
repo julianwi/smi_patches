@@ -1,0 +1,60 @@
+From a32c44626ff198036a7f2f9e5fa52d2d563b4636 Mon Sep 17 00:00:00 2001
+From: Zhang Qingwu <qingwu.zhang@intel.com>
+Date: Thu, 2 Jan 2014 18:01:37 +0800
+Subject: [PATCH 15/56] [PATCH] Camera Service: When window is set to NULL,
+ pass it to Camera HAL
+
+BZ: 157445 154465 161700
+
+When the window is destroyed, application sets mPreviewWindow to NULL
+before stopping the preview. Setting mPreviewWindow to NULL and disconnecting
+the window will release all related Graphic buffer handles. Camera HAL still
+uses those handles to map buffers and to copy frames asynchronously,
+causing a fatal crash.
+
+Solution: Camera service passes the NULL to Camera HAL before setting
+mPreviewWindow to NULL and disconnecting the window.
+
+Change-Id: I1cfa0c577339aa58fbc58c342afe680d26eb27b7
+Category: device enablement
+Domain: Camera-Framework
+Origin: internal
+Upstream-Candidate: no, proprietary
+Signed-off-by: Zhang Qingwu <qingwu.zhang@intel.com>
+---
+ services/camera/libcameraservice/api1/CameraClient.cpp             | 2 ++
+ services/camera/libcameraservice/device1/CameraHardwareInterface.h | 5 +++++
+ 2 files changed, 7 insertions(+)
+
+diff --git a/services/camera/libcameraservice/api1/CameraClient.cpp b/services/camera/libcameraservice/api1/CameraClient.cpp
+index bf765ef..31ec89d 100644
+--- a/services/camera/libcameraservice/api1/CameraClient.cpp
++++ b/services/camera/libcameraservice/api1/CameraClient.cpp
+@@ -303,6 +303,8 @@ status_t CameraClient::setPreviewWindow(const sp<IBinder>& binder,
+                     NATIVE_WINDOW_SCALING_MODE_SCALE_TO_WINDOW);
+             native_window_set_buffers_transform(window.get(), mOrientation);
+             result = mHardware->setPreviewWindow(window);
++        } else {
++            result = mHardware->setPreviewWindow(window);
+         }
+     }
+ 
+diff --git a/services/camera/libcameraservice/device1/CameraHardwareInterface.h b/services/camera/libcameraservice/device1/CameraHardwareInterface.h
+index 7e71c87..ac80c23 100644
+--- a/services/camera/libcameraservice/device1/CameraHardwareInterface.h
++++ b/services/camera/libcameraservice/device1/CameraHardwareInterface.h
+@@ -111,6 +111,11 @@ public:
+         ALOGV("%s(%s) buf %p", __FUNCTION__, mName.string(), buf.get());
+ 
+         if (mDevice->ops->set_preview_window) {
++            if (buf.get() == NULL) {
++                int ret = mDevice->ops->set_preview_window(mDevice, 0);
++                mPreviewWindow = buf;
++                return ret;
++            }
+             mPreviewWindow = buf;
+             mHalPreviewWindow.user = this;
+             ALOGV("%s &mHalPreviewWindow %p mHalPreviewWindow.user %p", __FUNCTION__,
+-- 
+2.7.4
+

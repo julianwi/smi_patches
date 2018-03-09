@@ -1,0 +1,52 @@
+From a4219a2f399463d148b91be64bdd6cdc87ae8245 Mon Sep 17 00:00:00 2001
+From: Lars Greiss <kufikugel@googlemail.com>
+Date: Fri, 2 Dec 2016 01:25:48 +0600
+Subject: [PATCH 03/12] Launch app privacy settings when tapping on PG
+ notification (1/2)
+
+Change-Id: I3a4c9046ff5f3329cd4342cc6d93e6242edeba36
+---
+ core/java/android/provider/Settings.java                    | 13 +++++++++++++
+ .../java/com/android/server/am/ActivityManagerService.java  |  2 +-
+ 2 files changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/core/java/android/provider/Settings.java b/core/java/android/provider/Settings.java
+index 7de32dc..76eecd7 100755
+--- a/core/java/android/provider/Settings.java
++++ b/core/java/android/provider/Settings.java
+@@ -496,6 +496,19 @@ public final class Settings {
+ 
+     /**
+      * @hide
++     * Activity Action: Show the "app ops" details screen.
++     * <p>
++     * Input: The Intent's data URI specifies the application package name
++     * to be shown, with the "package" scheme.  That is "package:com.my.app".
++     * <p>
++     * Output: Nothing.
++     */
++    @SdkConstant(SdkConstantType.ACTIVITY_INTENT_ACTION)
++    public static final String ACTION_APP_OPS_DETAILS_SETTINGS =
++            "android.settings.APP_OPS_DETAILS_SETTINGS";
++
++    /**
++     * @hide
+      * Activity Action: Show the "app ops" settings screen.
+      * <p>
+      * Input: Nothing.
+diff --git a/services/java/com/android/server/am/ActivityManagerService.java b/services/java/com/android/server/am/ActivityManagerService.java
+index 37a909c..b7c40d1 100644
+--- a/services/java/com/android/server/am/ActivityManagerService.java
++++ b/services/java/com/android/server/am/ActivityManagerService.java
+@@ -1711,7 +1711,7 @@ public final class ActivityManagerService extends ActivityManagerNative
+                             context.getApplicationInfo().loadLabel(context.getPackageManager()));
+                     String title = mContext.getString(R.string.privacy_guard_notification);
+ 
+-                    Intent infoIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
++                    Intent infoIntent = new Intent(Settings.ACTION_APP_OPS_DETAILS_SETTINGS,
+                             Uri.fromParts("package", root.packageName, null));
+ 
+                     Notification notification = new Notification();
+-- 
+2.7.4
+

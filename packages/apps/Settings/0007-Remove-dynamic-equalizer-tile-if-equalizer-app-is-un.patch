@@ -1,0 +1,31 @@
+From 1fe3c083c39f597ea0aeaf67fd364cd242b41f04 Mon Sep 17 00:00:00 2001
+From: niks255 <niks255@mail.ru>
+Date: Tue, 29 Nov 2016 01:41:23 +0600
+Subject: [PATCH 07/10] Remove dynamic equalizer tile if equalizer app is
+ uninstalled/disabled
+
+Change-Id: Ie6383d12594ff209781971b93c34620d27bd5f30
+---
+ src/com/android/settings/quicksettings/QuickSettings.java | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/com/android/settings/quicksettings/QuickSettings.java b/src/com/android/settings/quicksettings/QuickSettings.java
+index cf34e6d..9b19ad2 100644
+--- a/src/com/android/settings/quicksettings/QuickSettings.java
++++ b/src/com/android/settings/quicksettings/QuickSettings.java
+@@ -163,6 +163,12 @@ public class QuickSettings extends SettingsPreferenceFragment implements
+                 mDynamicTiles.removePreference(pref);
+             }
+         }
++        if (!Utils.isPackageInstalled(getActivity(), "com.bel.android.dspmanager")) {
++            Preference pref = findPreference(Settings.System.QS_DYNAMIC_EQUALIZER);
++            if (pref != null) {
++                mDynamicTiles.removePreference(pref);
++            }
++        }
+         if (!QSUtils.deviceSupportsWifiDisplay(getActivity())) {
+             Preference pref = findPreference(Settings.System.QS_DYNAMIC_WIFI);
+             if (pref != null) {
+-- 
+2.7.4
+

@@ -1,0 +1,36 @@
+From 852b0f2aadb05a945461e454a15633d532977fc6 Mon Sep 17 00:00:00 2001
+From: Dan Liang <dan.liang@intel.com>
+Date: Fri, 17 Jan 2014 14:07:28 +0800
+Subject: [PATCH 55/56] MPEG4Extractor: fix a regression caused by commit
+ db5dbc6b
+
+BZ: 164599
+
+Only update the offset by adding 44 when the atom 'wave' is found.
+
+Change-Id: I0f4110e6d3dccc073f108934fd20c2df3e2e26b1
+Category: aosp improvement
+Domain: Video.Media-container
+Origin: internal
+Upstream-Candidate: no, proprietary
+Signed-off-by: Dan Liang <dan.liang@intel.com>
+---
+ media/libstagefright/MPEG4Extractor.cpp | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/media/libstagefright/MPEG4Extractor.cpp b/media/libstagefright/MPEG4Extractor.cpp
+index 2d8d662..091a34a 100644
+--- a/media/libstagefright/MPEG4Extractor.cpp
++++ b/media/libstagefright/MPEG4Extractor.cpp
+@@ -1612,8 +1612,6 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
+                 next_chunk = ntohl(next_chunk);
+                 if (next_chunk == FOURCC('w', 'a', 'v', 'e'))
+                     *offset = data_offset + 44;
+-                else
+-                    *offset = data_offset + 28;
+             }
+ #ifdef QCOM_HARDWARE
+             }
+-- 
+2.7.4
+

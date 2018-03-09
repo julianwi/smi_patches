@@ -1,0 +1,43 @@
+From 0b0a7d4fdfb9a65ef27f1603acac9d91f676b8bc Mon Sep 17 00:00:00 2001
+From: "SUN,Jing" <jing.a.sun@intel.com>
+Date: Sat, 11 Aug 2012 13:37:56 +0800
+Subject: [PATCH 01/17] Modify skjpeg_destination_mgr to make it work with both
+ optimized and orignial  Libjpeg's SW JPEG encoders
+
+BZ: 51639
+
+Issue:
+"dest->free_in_buffer" is always 0 when sk_empty_output_buffer is called in
+orignial Libjpeg's SW JPEG encoder, but it tends not to 0 when
+sk_empty_output_buffer is called after optimization, for we probably need to
+ flush encoded data before the buffer is 100% full when using IPP.
+
+Solution:
+Change the size to be copies from "skjpeg_destination_mgr::kBufferSize" to
+"skjpeg_destination_mgr::kBufferSize - dest->free_in_buffer".
+
+Signed-off-by: SUN,Jing <jing.a.sun@intel.com>
+
+Change-Id: Ib9fe18f176644adb5434afea64d1c8f58534d878
+---
+ src/images/SkJpegUtility.cpp | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/src/images/SkJpegUtility.cpp b/src/images/SkJpegUtility.cpp
+index e17b55b..3924744 100644
+--- a/src/images/SkJpegUtility.cpp
++++ b/src/images/SkJpegUtility.cpp
+@@ -126,9 +126,7 @@ static void sk_init_destination(j_compress_ptr cinfo) {
+ static boolean sk_empty_output_buffer(j_compress_ptr cinfo) {
+     skjpeg_destination_mgr* dest = (skjpeg_destination_mgr*)cinfo->dest;
+ 
+-//  if (!dest->fStream->write(dest->fBuffer, skjpeg_destination_mgr::kBufferSize - dest->free_in_buffer))
+-    if (!dest->fStream->write(dest->fBuffer,
+-            skjpeg_destination_mgr::kBufferSize)) {
++    if (!dest->fStream->write(dest->fBuffer, skjpeg_destination_mgr::kBufferSize - dest->free_in_buffer)){
+         ERREXIT(cinfo, JERR_FILE_WRITE);
+         return false;
+     }
+-- 
+2.7.4
+

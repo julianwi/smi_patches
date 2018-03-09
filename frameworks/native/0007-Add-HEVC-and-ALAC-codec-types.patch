@@ -1,0 +1,141 @@
+From 364deb55b639eead90f064481d9af0cb74491a3e Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Tue, 14 Feb 2017 01:43:47 +0100
+Subject: [PATCH 7/8] Add HEVC and ALAC codec types
+
+Change-Id: I8984e10eaf90ca4e32d3e2360614e9fe154b10ec
+---
+ include/media/openmax/OMX_Audio.h    | 14 +++++++++
+ include/media/openmax/OMX_Index.h    |  1 +
+ include/media/openmax/OMX_IndexExt.h |  2 ++
+ include/media/openmax/OMX_VideoExt.h | 57 ++++++++++++++++++++++++++++++++++++
+ 4 files changed, 74 insertions(+)
+
+diff --git a/include/media/openmax/OMX_Audio.h b/include/media/openmax/OMX_Audio.h
+index 2aa6c95..45a77a5 100644
+--- a/include/media/openmax/OMX_Audio.h
++++ b/include/media/openmax/OMX_Audio.h
+@@ -135,6 +135,7 @@ typedef enum OMX_AUDIO_CODINGTYPE {
+     OMX_AUDIO_CodingAC3,         /**< Any variant of AC3 encoded data */
+     OMX_AUDIO_CodingAPE,         /**< Any variant of APE encoded data */
+     OMX_AUDIO_CodingDTS,         /**< Any variant of DTS encoded data */
++    OMX_AUDIO_CodingALAC,        /**< Any variant of ALAC encoded data */
+     OMX_AUDIO_CodingFFMPEG,      /**< Any variant of FFMPEG encoded data */
+     OMX_AUDIO_CodingMax = 0x7FFFFFFF
+ } OMX_AUDIO_CODINGTYPE;
+@@ -425,6 +426,19 @@ typedef struct OMX_AUDIO_PARAM_APETYPE {
+     OMX_AUDIO_CHANNELMODETYPE eChannelMode;   /**< Channel mode enumeration */
+ } OMX_AUDIO_PARAM_APETYPE;
+ 
++/** ALAC params */
++typedef struct OMX_AUDIO_PARAM_ALACTYPE {
++    OMX_U32 nSize;                /**< size of the structure in bytes */
++    OMX_VERSIONTYPE nVersion;     /**< OMX specification version information */
++    OMX_U32 nPortIndex;           /**< port that this structure applies to */
++    OMX_U32 nChannels;            /**< Number of channels */
++    OMX_U32 nBitRate;             /**< Bit rate of the input data.  Use 0 for variable
++                                       rate or unknown bit rates */
++    OMX_U32 nSamplingRate;        /**< Sampling rate of the source data.  Use 0 for
++                                       variable or unknown sampling rate. */
++    OMX_U32 nBitsPerSample;       /**< Number of bits in each sample */
++    OMX_AUDIO_CHANNELMODETYPE eChannelMode;   /**< Channel mode enumeration */
++} OMX_AUDIO_PARAM_ALACTYPE;
+ 
+ /** DTS params */
+ typedef struct OMX_AUDIO_PARAM_DTSTYPE {
+diff --git a/include/media/openmax/OMX_Index.h b/include/media/openmax/OMX_Index.h
+index ab3f55e..86b793a 100644
+--- a/include/media/openmax/OMX_Index.h
++++ b/include/media/openmax/OMX_Index.h
+@@ -291,6 +291,7 @@ typedef enum OMX_INDEXTYPE {
+     OMX_IndexParamAudioApe,                 /**< reference: OMX_AUDIO_PARAM_APETYPE */
+ #endif
+     OMX_IndexParamAudioDts,                 /**< reference: OMX_AUDIO_PARAM_DTSTYPE */
++    OMX_IndexParamAudioAlac,                /**< reference: OMX_AUDIO_PARAM_ALACTYPE */
+     OMX_IndexParamVideoFFmpeg,              /**< reference: OMX_VIDEO_PARAM_FFMPEGTYPE */
+     OMX_IndexParamAudioFFmpeg,              /**< reference: OMX_AUDIO_PARAM_FFMPEGTYPE */
+ 
+diff --git a/include/media/openmax/OMX_IndexExt.h b/include/media/openmax/OMX_IndexExt.h
+index 1f5aab0..9dfe2c3 100644
+--- a/include/media/openmax/OMX_IndexExt.h
++++ b/include/media/openmax/OMX_IndexExt.h
+@@ -71,6 +71,8 @@ typedef enum OMX_INDEXEXTTYPE {
+ #endif
+     OMX_IndexConfigVideoVp8ReferenceFrame,          /**< reference: OMX_VIDEO_VP8REFERENCEFRAMETYPE */
+     OMX_IndexConfigVideoVp8ReferenceFrameType,      /**< reference: OMX_VIDEO_VP8REFERENCEFRAMEINFOTYPE */
++    OMX_IndexParamVideoHevc,                        /**< reference: OMX_VIDEO_PARAM_HEVCTYPE */
++    OMX_IndexParamSliceSegments,                    /**< reference: OMX_VIDEO_SLICESEGMENTSTYPE */
+ 
+     /* Image & Video common configurations */
+     OMX_IndexExtCommonStartUnused = OMX_IndexKhronosExtensions + 0x00700000,
+diff --git a/include/media/openmax/OMX_VideoExt.h b/include/media/openmax/OMX_VideoExt.h
+index fa24168..6f07cf0 100644
+--- a/include/media/openmax/OMX_VideoExt.h
++++ b/include/media/openmax/OMX_VideoExt.h
+@@ -108,6 +108,63 @@ typedef struct OMX_VIDEO_VP8REFERENCEFRAMEINFOTYPE {
+     OMX_BOOL bIsGoldenOrAlternateFrame;
+ } OMX_VIDEO_VP8REFERENCEFRAMEINFOTYPE;
+ 
++/** HEVC Profile enum type */
++typedef enum OMX_VIDEO_HEVCPROFILETYPE {
++    OMX_VIDEO_HEVCProfileUnknown = 0x0,
++    OMX_VIDEO_HEVCProfileMain    = 0x1,
++    OMX_VIDEO_HEVCProfileMain10  = 0x2,
++    OMX_VIDEO_HEVCProfileMax     = 0x7FFFFFFF
++} OMX_VIDEO_HEVCPROFILETYPE;
++
++/** HEVC Level enum type */
++typedef enum OMX_VIDEO_HEVCLEVELTYPE {
++    OMX_VIDEO_HEVCLevelUnknown    = 0x0,
++    OMX_VIDEO_HEVCMainTierLevel1  = 0x1,
++    OMX_VIDEO_HEVCHighTierLevel1  = 0x2,
++    OMX_VIDEO_HEVCMainTierLevel2  = 0x4,
++    OMX_VIDEO_HEVCHighTierLevel2  = 0x8,
++    OMX_VIDEO_HEVCMainTierLevel21 = 0x10,
++    OMX_VIDEO_HEVCHighTierLevel21 = 0x20,
++    OMX_VIDEO_HEVCMainTierLevel3  = 0x40,
++    OMX_VIDEO_HEVCHighTierLevel3  = 0x80,
++    OMX_VIDEO_HEVCMainTierLevel31 = 0x100,
++    OMX_VIDEO_HEVCHighTierLevel31 = 0x200,
++    OMX_VIDEO_HEVCMainTierLevel4  = 0x400,
++    OMX_VIDEO_HEVCHighTierLevel4  = 0x800,
++    OMX_VIDEO_HEVCMainTierLevel41 = 0x1000,
++    OMX_VIDEO_HEVCHighTierLevel41 = 0x2000,
++    OMX_VIDEO_HEVCMainTierLevel5  = 0x4000,
++    OMX_VIDEO_HEVCHighTierLevel5  = 0x8000,
++    OMX_VIDEO_HEVCMainTierLevel51 = 0x10000,
++    OMX_VIDEO_HEVCHighTierLevel51 = 0x20000,
++    OMX_VIDEO_HEVCMainTierLevel52 = 0x40000,
++    OMX_VIDEO_HEVCHighTierLevel52 = 0x80000,
++    OMX_VIDEO_HEVCMainTierLevel6  = 0x100000,
++    OMX_VIDEO_HEVCHighTierLevel6  = 0x200000,
++    OMX_VIDEO_HEVCMainTierLevel61 = 0x400000,
++    OMX_VIDEO_HEVCHighTierLevel61 = 0x800000,
++    OMX_VIDEO_HEVCMainTierLevel62 = 0x1000000,
++    OMX_VIDEO_HEVCHighTierLevel62 = 0x2000000,
++    OMX_VIDEO_HEVCHighTiermax     = 0x7FFFFFFF
++} OMX_VIDEO_HEVCLEVELTYPE;
++
++/** Structure for controlling HEVC video encoding and decoding */
++typedef struct OMX_VIDEO_PARAM_HEVCTYPE {
++    OMX_U32 nSize;
++    OMX_VERSIONTYPE nVersion;
++    OMX_U32 nPortIndex;
++    OMX_VIDEO_HEVCPROFILETYPE eProfile;
++    OMX_VIDEO_HEVCLEVELTYPE eLevel;
++} OMX_VIDEO_PARAM_HEVCTYPE;
++
++/** Structure to define if dependent slice segments should be used */
++typedef struct OMX_VIDEO_SLICESEGMENTSTYPE {
++    OMX_U32 nSize;
++    OMX_VERSIONTYPE nVersion;
++    OMX_U32 nPortIndex;
++    OMX_BOOL bDepedentSegments;
++    OMX_BOOL bEnableLoopFilterAcrossSlices;
++} OMX_VIDEO_SLICESEGMENTSTYPE;
+ 
+ #ifdef __cplusplus
+ }
+-- 
+2.7.4
+

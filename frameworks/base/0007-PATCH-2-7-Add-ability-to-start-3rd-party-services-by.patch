@@ -1,0 +1,113 @@
+From 17681f79b3f1942f4a60e42cd06d64e21d687280 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Tue, 29 Mar 2016 01:23:03 +0200
+Subject: [PATCH 07/12] [PATCH 2/7] Add ability to start 3rd party services by
+ servicemanager
+
+Change-Id: I311adf1acc265b8f03e8672cd47cf48c9124adc3
+---
+ core/res/res/values/arrays.xml                     |  5 +++
+ core/res/res/values/symbols.xml                    |  1 +
+ services/java/com/android/server/SystemServer.java | 39 ++++++++++++++++++++++
+ 3 files changed, 45 insertions(+)
+
+diff --git a/core/res/res/values/arrays.xml b/core/res/res/values/arrays.xml
+index 91af50a..2ac61bd 100644
+--- a/core/res/res/values/arrays.xml
++++ b/core/res/res/values/arrays.xml
+@@ -346,4 +346,9 @@
+         <item>中文 (繁體)</item>
+     </string-array>
+ 
++    <!-- Contains a list of vendor specific services to start via ServiceManager.
++         Format for each item is: <path_to_service_jar_file>:<service_class_name> -->
++    <string-array name="config_vendorServices">
++    </string-array>
++
+ </resources>
+diff --git a/core/res/res/values/symbols.xml b/core/res/res/values/symbols.xml
+index e294559..5d996d4 100644
+--- a/core/res/res/values/symbols.xml
++++ b/core/res/res/values/symbols.xml
+@@ -1016,6 +1016,7 @@
+   <java-symbol type="array" name="config_operatorConsideredNonRoaming" />
+   <java-symbol type="array" name="config_sameNamedOperatorConsideredRoaming" />
+   <java-symbol type="array" name="config_callBarringMMI" />
++  <java-symbol type="array" name="config_vendorServices" />
+ 
+   <java-symbol type="drawable" name="default_wallpaper" />
+   <java-symbol type="drawable" name="indicator_input_error" />
+diff --git a/services/java/com/android/server/SystemServer.java b/services/java/com/android/server/SystemServer.java
+index 2cdf9fb..47a77b0 100644
+--- a/services/java/com/android/server/SystemServer.java
++++ b/services/java/com/android/server/SystemServer.java
+@@ -23,6 +23,7 @@ import android.app.ActivityManagerNative;
+ import android.bluetooth.BluetoothAdapter;
+ import android.content.ComponentName;
+ import android.content.ContentResolver;
++import android.content.ContextWrapper;
+ import android.content.Context;
+ import android.content.Intent;
+ import android.content.IntentFilter;
+@@ -40,6 +41,7 @@ import android.net.INetworkStatsService;
+ import android.os.Handler;
+ import android.os.HandlerThread;
+ import android.os.Looper;
++import android.os.IBinder;
+ import android.os.INetworkManagementService;
+ import android.os.RemoteException;
+ import android.os.ServiceManager;
+@@ -84,6 +86,7 @@ import com.android.server.usb.UsbService;
+ import com.android.server.wifi.WifiService;
+ import com.android.server.wm.WindowManagerService;
+ 
++import dalvik.system.DexClassLoader;
+ import dalvik.system.VMRuntime;
+ import dalvik.system.Zygote;
+ 
+@@ -864,6 +867,42 @@ class ServerThread {
+                 }
+             }
+ 
++            String[] vendorServices = context.getResources().getStringArray(R.array.config_vendorServices);
++
++            if (vendorServices != null && vendorServices.length > 0) {
++
++                String cachePath = new ContextWrapper(context).getCacheDir().getAbsolutePath();
++                ClassLoader parentLoader = ClassLoader.getSystemClassLoader();
++
++                for (String service : vendorServices) {
++                    String[] parts = service.split(":");
++                    if (parts.length != 2) {
++                        Slog.e(TAG, "Found invalid vendor service " + service);
++                        continue;
++                    }
++
++                    String jarPath = parts[0];
++                    String className = parts[1];
++
++                    try {
++                        /* Intentionally skipping all null checks in this block, as we also want an
++                           error message if class loading or ctor resolution failed. The catch block
++                           conveniently provides that for us also for NullPointerException */
++
++                        DexClassLoader loader = new DexClassLoader(jarPath, cachePath, null, parentLoader);
++                        Class<?> klass = loader.loadClass(className);
++                        Constructor<?> ctor = klass.getDeclaredConstructors()[0];
++                        Object instance = ctor.newInstance(context);
++
++                        ServiceManager.addService(klass.getSimpleName(), (IBinder) instance);
++                        Slog.i(TAG, "Vendor service " + className + " started.");
++                    } catch (Exception e) {
++                        Slog.e(TAG, "Starting vendor service " + className + " failed.", e);
++                    }
++                }
++            }
++
++
+             if (!disableNetwork) {
+                 try {
+                     Slog.i(TAG, "CertBlacklister");
+-- 
+2.7.4
+

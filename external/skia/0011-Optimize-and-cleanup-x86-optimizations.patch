@@ -1,0 +1,838 @@
+From 87cc839071c6d71cf15086c4f66ed6f5f302d35e Mon Sep 17 00:00:00 2001
+From: Henrik Smiding <henrik.smiding@intel.com>
+Date: Wed, 18 Jun 2014 17:32:54 +0200
+Subject: [PATCH 11/17] Optimize and cleanup x86 optimizations
+
+BZ: 146848
+
+Optimizes opt_check file for x86 architecture. Faster runtime checks.
+Prepared for 64-bit and refactoring for all SIMD extensions.
+Also enables nofilter-optimizations for SSE2+.
+
+Change-Id: Ic46858479a82e5f55640c4646eee252293367f92
+Category: aosp improvement
+Domain: AOSP-Others
+Origin: internal
+Upstream-Candidate: yes
+Signed-off-by: Henrik Smiding <henrik.smiding@intel.com>
+---
+ Android.mk                              |   2 +-
+ include/core/SkPreConfig.h              |   8 +-
+ src/opts/SkBitmapProcState_opts_SSE2.h  |   4 +
+ src/opts/SkBitmapProcState_opts_SSSE3.h |   5 +
+ src/opts/SkBlitRow_opts_SSE2.h          |   4 +
+ src/opts/SkUtils_opts_SSE2.h            |   4 +
+ src/opts/opts_check_SSE2.cpp            | 334 -------------------------------
+ src/opts/opts_check_x86.cpp             | 343 ++++++++++++++++++++++++++++++++
+ 8 files changed, 368 insertions(+), 336 deletions(-)
+ delete mode 100644 src/opts/opts_check_SSE2.cpp
+ create mode 100644 src/opts/opts_check_x86.cpp
+
+diff --git a/Android.mk b/Android.mk
+index 68e9687..a969c66 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -559,13 +559,13 @@ else
+ ifeq ($(TARGET_ARCH),x86)
+ 
+ LOCAL_SRC_FILES += \
++    src/opts/opts_check_x86.cpp \
+     src/opts/SkBitmapFilter_opts_SSE2.cpp \
+     src/opts/SkBlitRow_opts_SSE2.cpp \
+     src/opts/SkBitmapProcState_opts_SSE2.cpp \
+     src/opts/SkBitmapProcState_opts_SSE2_asm.S \
+     src/opts/SkBitmapProcState_opts_SSSE3.cpp \
+     src/opts/SkBlitRect_opts_SSE2.cpp \
+-    src/opts/opts_check_SSE2.cpp \
+     src/opts/SkUtils_opts_SSE2.cpp \
+     src/opts/SkXfermode_opts_none.cpp \
+     src/opts/SkMorphology_opts_SSE2.cpp \
+diff --git a/include/core/SkPreConfig.h b/include/core/SkPreConfig.h
+index 1fe8afa..ef53048 100644
+--- a/include/core/SkPreConfig.h
++++ b/include/core/SkPreConfig.h
+@@ -119,10 +119,16 @@
+ #define SK_CPU_SSE_LEVEL_SSE2     20
+ #define SK_CPU_SSE_LEVEL_SSE3     30
+ #define SK_CPU_SSE_LEVEL_SSSE3    31
++#define SK_CPU_SSE_LEVEL_SSE41    41
++#define SK_CPU_SSE_LEVEL_SSE42    42
+ 
+ // Are we in GCC?
+ #ifndef SK_CPU_SSE_LEVEL
+-    #if defined(__SSSE3__)
++    #if defined(__SSE4_2__) || defined(__SSE4__)
++        #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSE42
++    #elif defined(__SSE4_1__)
++        #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSE41
++    #elif defined(__SSSE3__)
+         #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSSE3
+     #elif defined(__SSE3__)
+         #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSE3
+diff --git a/src/opts/SkBitmapProcState_opts_SSE2.h b/src/opts/SkBitmapProcState_opts_SSE2.h
+index d8fb9b8..ce89034 100644
+--- a/src/opts/SkBitmapProcState_opts_SSE2.h
++++ b/src/opts/SkBitmapProcState_opts_SSE2.h
+@@ -6,6 +6,8 @@
+  * found in the LICENSE file.
+  */
+ 
++#ifndef SkBitmapProcState_opts_SSE2_DEFINED
++#define SkBitmapProcState_opts_SSE2_DEFINED
+ 
+ #include "SkBitmapProcState.h"
+ 
+@@ -44,3 +46,5 @@ void ClampX_ClampY_nofilter_affine_SSE2(const SkBitmapProcState& s,
+ void S32_D16_filter_DX_SSE2(const SkBitmapProcState& s,
+                                   const uint32_t* xy,
+                                   int count, uint16_t* colors);
++
++#endif
+diff --git a/src/opts/SkBitmapProcState_opts_SSSE3.h b/src/opts/SkBitmapProcState_opts_SSSE3.h
+index 176f2bf..9fd074a 100644
+--- a/src/opts/SkBitmapProcState_opts_SSSE3.h
++++ b/src/opts/SkBitmapProcState_opts_SSSE3.h
+@@ -5,6 +5,9 @@
+  * found in the LICENSE file.
+  */
+ 
++#ifndef SkBitmapProcState_opts_SSSE3_DEFINED
++#define SkBitmapProcState_opts_SSSE3_DEFINED
++
+ #include "SkBitmapProcState.h"
+ 
+ void S32_opaque_D32_filter_DX_SSSE3(const SkBitmapProcState& s,
+@@ -19,3 +22,5 @@ void S32_opaque_D32_filter_DXDY_SSSE3(const SkBitmapProcState& s,
+ void S32_alpha_D32_filter_DXDY_SSSE3(const SkBitmapProcState& s,
+                                    const uint32_t* xy,
+                                    int count, uint32_t* colors);
++
++#endif
+diff --git a/src/opts/SkBlitRow_opts_SSE2.h b/src/opts/SkBlitRow_opts_SSE2.h
+index 83fd2a5..628fbae 100644
+--- a/src/opts/SkBlitRow_opts_SSE2.h
++++ b/src/opts/SkBlitRow_opts_SSE2.h
+@@ -6,6 +6,8 @@
+  * found in the LICENSE file.
+  */
+ 
++#ifndef SkBlitRow_opts_SSE2_DEFINED
++#define SkBlitRow_opts_SSE2_DEFINED
+ 
+ #include "SkBlitRow.h"
+ 
+@@ -48,3 +50,5 @@ void S32_D565_Opaque_Dither_SSE2(uint16_t* __restrict__ dst,
+ 
+ void S32_D565_Blend_Dither_SSE2(uint16_t* __restrict__ dst,
+         const SkPMColor* __restrict__ src, int count, U8CPU alpha, int x, int y);
++
++#endif
+diff --git a/src/opts/SkUtils_opts_SSE2.h b/src/opts/SkUtils_opts_SSE2.h
+index ed24c1f..d92b1cc 100644
+--- a/src/opts/SkUtils_opts_SSE2.h
++++ b/src/opts/SkUtils_opts_SSE2.h
+@@ -6,8 +6,12 @@
+  * found in the LICENSE file.
+  */
+ 
++#ifndef SkUtils_opts_SSE2_DEFINED
++#define SkUtils_opts_SSE2_DEFINED
+ 
+ #include "SkTypes.h"
+ 
+ void sk_memset16_SSE2(uint16_t *dst, uint16_t value, int count);
+ void sk_memset32_SSE2(uint32_t *dst, uint32_t value, int count);
++
++#endif
+diff --git a/src/opts/opts_check_SSE2.cpp b/src/opts/opts_check_SSE2.cpp
+deleted file mode 100644
+index f42453a..0000000
+--- a/src/opts/opts_check_SSE2.cpp
++++ /dev/null
+@@ -1,334 +0,0 @@
+-/*
+- * Copyright 2009 The Android Open Source Project
+- *
+- * Use of this source code is governed by a BSD-style license that can be
+- * found in the LICENSE file.
+- */
+-
+-#include "SkBitmapProcState_opts_SSE2.h"
+-#include "SkBitmapProcState_opts_SSSE3.h"
+-#include "SkBitmapFilter_opts_SSE2.h"
+-#include "SkBlitMask.h"
+-#include "SkBlitRow.h"
+-#include "SkBlitRect_opts_SSE2.h"
+-#include "SkBlitRow_opts_SSE2.h"
+-#include "SkBlurImage_opts_SSE2.h"
+-#include "SkUtils_opts_SSE2.h"
+-#include "SkUtils.h"
+-#include "SkMorphology_opts.h"
+-#include "SkMorphology_opts_SSE2.h"
+-
+-#include "SkRTConf.h"
+-
+-#if defined(_MSC_VER) && defined(_WIN64)
+-#include <intrin.h>
+-#endif
+-
+-#include "SkShader.h"
+-extern void Repeate_S32_Opaque_D32_filter_DX_shaderproc_opt(
+-                                       const SkBitmapProcState& s,
+-                                       int x, int y, uint32_t* colors,
+-                                       int count);
+-/* This file must *not* be compiled with -msse or -msse2, otherwise
+-   gcc may generate sse2 even for scalar ops (and thus give an invalid
+-   instruction on Pentium3 on the code below).  Only files named *_SSE2.cpp
+-   in this directory should be compiled with -msse2. */
+-
+-
+-#ifdef _MSC_VER
+-static inline void getcpuid(int info_type, int info[4]) {
+-#if defined(_WIN64)
+-    __cpuid(info, info_type);
+-#else
+-    __asm {
+-        mov    eax, [info_type]
+-        cpuid
+-        mov    edi, [info]
+-        mov    [edi], eax
+-        mov    [edi+4], ebx
+-        mov    [edi+8], ecx
+-        mov    [edi+12], edx
+-    }
+-#endif
+-}
+-#else
+-#if defined(__x86_64__)
+-static inline void getcpuid(int info_type, int info[4]) {
+-    asm volatile (
+-        "cpuid \n\t"
+-        : "=a"(info[0]), "=b"(info[1]), "=c"(info[2]), "=d"(info[3])
+-        : "a"(info_type)
+-    );
+-}
+-#else
+-static inline void getcpuid(int info_type, int info[4]) {
+-    // We save and restore ebx, so this code can be compatible with -fPIC
+-    asm volatile (
+-        "pushl %%ebx      \n\t"
+-        "cpuid            \n\t"
+-        "movl %%ebx, %1   \n\t"
+-        "popl %%ebx       \n\t"
+-        : "=a"(info[0]), "=r"(info[1]), "=c"(info[2]), "=d"(info[3])
+-        : "a"(info_type)
+-    );
+-}
+-#endif
+-#endif
+-
+-#if defined(__x86_64__) || defined(_WIN64) || SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE2
+-/* All x86_64 machines have SSE2, or we know it's supported at compile time,  so don't even bother checking. */
+-static inline bool hasSSE2() {
+-    return true;
+-}
+-#else
+-
+-static inline bool hasSSE2() {
+-    int cpu_info[4] = { 0 };
+-    getcpuid(1, cpu_info);
+-    return (cpu_info[3] & (1<<26)) != 0;
+-}
+-#endif
+-
+-#if SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSSE3
+-/* If we know SSSE3 is supported at compile time, don't even bother checking. */
+-static inline bool hasSSSE3() {
+-    return true;
+-}
+-#else
+-
+-static inline bool hasSSSE3() {
+-    int cpu_info[4] = { 0 };
+-    getcpuid(1, cpu_info);
+-    return (cpu_info[2] & 0x200) != 0;
+-}
+-#endif
+-
+-static bool cachedHasSSE2() {
+-    static bool gHasSSE2 = hasSSE2();
+-    return gHasSSE2;
+-}
+-
+-static bool cachedHasSSSE3() {
+-    static bool gHasSSSE3 = hasSSSE3();
+-    return gHasSSSE3;
+-}
+-
+-SK_CONF_DECLARE( bool, c_hqfilter_sse, "bitmap.filter.highQualitySSE", false, "Use SSE optimized version of high quality image filters");
+-
+-void SkBitmapProcState::platformConvolutionProcs(SkConvolutionProcs* procs) {
+-    if (cachedHasSSE2()) {
+-        procs->fExtraHorizontalReads = 3;
+-        procs->fConvolveVertically = &convolveVertically_SSE2;
+-        procs->fConvolve4RowsHorizontally = &convolve4RowsHorizontally_SSE2;
+-        procs->fConvolveHorizontally = &convolveHorizontally_SSE2;
+-        procs->fApplySIMDPadding = &applySIMDPadding_SSE2;
+-    }
+-}
+-
+-void SkBitmapProcState::platformProcs() {
+-    if (cachedHasSSSE3()) {
+-        if (fSampleProc32 == S32_opaque_D32_filter_DX) {
+-            fSampleProc32 = S32_opaque_D32_filter_DX_SSSE3;
+-
+-            bool repeatXY = SkShader::kRepeat_TileMode == fTileModeX &&
+-                            SkShader::kRepeat_TileMode == fTileModeY;
+-            const unsigned max = fBitmap->width() ;
+-            // SSSE3 opted only if more than 4 pixels, dx=non-zero
+-            if ((fInvSx > 0) && repeatXY && (max > 4) && ((fInvSx & 0xFFFF) != 0))
+-            {
+-                fShaderProc32 = Repeate_S32_Opaque_D32_filter_DX_shaderproc_opt;
+-            }
+-        } else if (fSampleProc32 == S32_alpha_D32_filter_DX) {
+-            fSampleProc32 = S32_alpha_D32_filter_DX_SSSE3;
+-        }
+-
+-        if (fSampleProc32 == S32_opaque_D32_filter_DXDY) {
+-            fSampleProc32 = S32_opaque_D32_filter_DXDY_SSSE3;
+-        } else if (fSampleProc32 == S32_alpha_D32_filter_DXDY) {
+-            fSampleProc32 = S32_alpha_D32_filter_DXDY_SSSE3;
+-        }
+-    } else if (cachedHasSSE2()) {
+-        if (fSampleProc32 == S32_opaque_D32_filter_DX) {
+-            fSampleProc32 = S32_opaque_D32_filter_DX_SSE2;
+-        } else if (fSampleProc32 == S32_alpha_D32_filter_DX) {
+-            fSampleProc32 = S32_alpha_D32_filter_DX_SSE2;
+-        } else if (fSampleProc32 == S32_opaque_D32_nofilter_DX) {
+-            fSampleProc32 = S32_opaque_D32_nofilter_DX_SSE2;
+-        } else if (fSampleProc32 == S32_opaque_D32_filter_DXDY) {
+-            fSampleProc32 = S32_opaque_D32_filter_DXDY_SSE2_asm;
+-        } else if (fSampleProc32 == S32_alpha_D32_filter_DXDY) {
+-            fSampleProc32 = S32_alpha_D32_filter_DXDY_SSE2_asm;
+-        }
+-
+-        if (fSampleProc16 == S32_D16_filter_DX) {
+-            fSampleProc16 = S32_D16_filter_DX_SSE2;
+-        }
+-    }
+-
+-    if (cachedHasSSSE3() || cachedHasSSE2()) {
+-        if (fMatrixProc == ClampX_ClampY_filter_scale) {
+-            fMatrixProc = ClampX_ClampY_filter_scale_SSE2;
+-        } else if (fMatrixProc == ClampX_ClampY_nofilter_scale) {
+-            fMatrixProc = ClampX_ClampY_nofilter_scale_SSE2;
+-        }
+-
+-        if (fMatrixProc == ClampX_ClampY_filter_affine) {
+-            fMatrixProc = ClampX_ClampY_filter_affine_SSE2;
+-        } else if (fMatrixProc == ClampX_ClampY_nofilter_affine) {
+-            fMatrixProc = ClampX_ClampY_nofilter_affine_SSE2;
+-        }
+-        if (c_hqfilter_sse) {
+-            if (fShaderProc32 == highQualityFilter32) {
+-                fShaderProc32 = highQualityFilter_SSE2;
+-            }
+-        }
+-    }
+-}
+-
+-static SkBlitRow::Proc32 platform_32_procs[] = {
+-    NULL,                               // S32_Opaque,
+-    S32_Blend_BlitRow32_SSE2,           // S32_Blend,
+-    S32A_Opaque_BlitRow32_SSE2,         // S32A_Opaque
+-    S32A_Blend_BlitRow32_SSE2,          // S32A_Blend,
+-};
+-
+-static SkBlitRow::Proc platform_565_procs[] = {
+-    // no dither
+-    S32_D565_Opaque_SSE2,               // S32_D565_Opaque,
+-    S32_D565_Blend_SSE2,                // S32_D565_Blend,
+-
+-    S32A_D565_Opaque_SSE2,              // S32A_D565_Opaque
+-    S32A_D565_Blend_SSE2,               // S32A_D565_Blend
+-
+-    // dither
+-    S32_D565_Opaque_Dither_SSE2,        // S32_D565_Opaque_Dither,
+-    S32_D565_Blend_Dither_SSE2,         // S32_D565_Blend_Dither,
+-
+-    S32A_D565_Opaque_Dither_SSE2,       // S32A_D565_Opaque_Dither
+-    NULL                                // S32A_D565_Blend_Dither
+-};
+-
+-SkBlitRow::Proc SkBlitRow::PlatformProcs565(unsigned flags) {
+-    if (hasSSE2()) {
+-        return platform_565_procs[flags];
+-    } else {
+-        return NULL;
+-    }
+-}
+-
+-SkBlitRow::ColorProc SkBlitRow::PlatformColorProc() {
+-    if (cachedHasSSE2()) {
+-        return Color32_SSE2;
+-    } else {
+-        return NULL;
+-    }
+-}
+-
+-SkBlitRow::Proc32 SkBlitRow::PlatformProcs32(unsigned flags) {
+-    if (cachedHasSSE2()) {
+-        return platform_32_procs[flags];
+-    } else {
+-        return NULL;
+-    }
+-}
+-
+-
+-SkBlitMask::ColorProc SkBlitMask::PlatformColorProcs(SkBitmap::Config dstConfig,
+-                                                     SkMask::Format maskFormat,
+-                                                     SkColor color) {
+-    if (SkMask::kA8_Format != maskFormat) {
+-        return NULL;
+-    }
+-
+-    ColorProc proc = NULL;
+-    if (cachedHasSSE2()) {
+-        switch (dstConfig) {
+-            case SkBitmap::kARGB_8888_Config:
+-                // The SSE2 version is not (yet) faster for black, so we check
+-                // for that.
+-                if (SK_ColorBLACK != color) {
+-                    proc = SkARGB32_A8_BlitMask_SSE2;
+-                }
+-                break;
+-            default:
+-                break;
+-        }
+-    }
+-    return proc;
+-}
+-
+-SkBlitMask::BlitLCD16RowProc SkBlitMask::PlatformBlitRowProcs16(bool isOpaque) {
+-    if (cachedHasSSE2()) {
+-        if (isOpaque) {
+-            return SkBlitLCD16OpaqueRow_SSE2;
+-        } else {
+-            return SkBlitLCD16Row_SSE2;
+-        }
+-    } else {
+-        return NULL;
+-    }
+-
+-}
+-SkBlitMask::RowProc SkBlitMask::PlatformRowProcs(SkBitmap::Config dstConfig,
+-                                                 SkMask::Format maskFormat,
+-                                                 RowFlags flags) {
+-    return NULL;
+-}
+-
+-SkMemset16Proc SkMemset16GetPlatformProc() {
+-    if (cachedHasSSE2()) {
+-        return sk_memset16_SSE2;
+-    } else {
+-        return NULL;
+-    }
+-}
+-
+-SkMemset32Proc SkMemset32GetPlatformProc() {
+-    if (cachedHasSSE2()) {
+-        return sk_memset32_SSE2;
+-    } else {
+-        return NULL;
+-    }
+-}
+-
+-SkMorphologyProc SkMorphologyGetPlatformProc(SkMorphologyProcType type) {
+-    if (!cachedHasSSE2()) {
+-        return NULL;
+-    }
+-    switch (type) {
+-        case kDilateX_SkMorphologyProcType:
+-            return SkDilateX_SSE2;
+-        case kDilateY_SkMorphologyProcType:
+-            return SkDilateY_SSE2;
+-        case kErodeX_SkMorphologyProcType:
+-            return SkErodeX_SSE2;
+-        case kErodeY_SkMorphologyProcType:
+-            return SkErodeY_SSE2;
+-        default:
+-            return NULL;
+-    }
+-}
+-
+-bool SkBoxBlurGetPlatformProcs(SkBoxBlurProc* boxBlurX,
+-                               SkBoxBlurProc* boxBlurY,
+-                               SkBoxBlurProc* boxBlurXY,
+-                               SkBoxBlurProc* boxBlurYX) {
+-#ifdef SK_DISABLE_BLUR_DIVISION_OPTIMIZATION
+-    return false;
+-#else
+-    if (!cachedHasSSE2()) {
+-        return false;
+-    }
+-    return SkBoxBlurGetPlatformProcs_SSE2(boxBlurX, boxBlurY, boxBlurXY, boxBlurYX);
+-#endif
+-}
+-
+-SkBlitRow::ColorRectProc PlatformColorRectProcFactory(); // suppress warning
+-
+-SkBlitRow::ColorRectProc PlatformColorRectProcFactory() {
+-    if (cachedHasSSE2()) {
+-        return ColorRect32_SSE2;
+-    } else {
+-        return NULL;
+-    }
+-}
+diff --git a/src/opts/opts_check_x86.cpp b/src/opts/opts_check_x86.cpp
+new file mode 100644
+index 0000000..ad09363
+--- /dev/null
++++ b/src/opts/opts_check_x86.cpp
+@@ -0,0 +1,343 @@
++/*
++ * Copyright 2009 The Android Open Source Project
++ *
++ * Use of this source code is governed by a BSD-style license that can be
++ * found in the LICENSE file.
++ */
++
++#include "SkBitmapProcState_opts_SSE2.h"
++#include "SkBitmapProcState_opts_SSSE3.h"
++#include "SkBitmapFilter_opts_SSE2.h"
++#include "SkBlitMask.h"
++#include "SkBlitRow.h"
++#include "SkBlitRect_opts_SSE2.h"
++#include "SkBlitRow_opts_SSE2.h"
++#include "SkBlurImage_opts_SSE2.h"
++#include "SkUtils_opts_SSE2.h"
++#include "SkUtils.h"
++#include "SkMorphology_opts.h"
++#include "SkMorphology_opts_SSE2.h"
++
++#include "SkRTConf.h"
++
++#if defined(_MSC_VER) && defined(_WIN64)
++#include <intrin.h>
++#endif
++
++#include "SkShader.h"
++extern void Repeate_S32_Opaque_D32_filter_DX_shaderproc_opt(
++                                       const SkBitmapProcState& s,
++                                       int x, int y, uint32_t* colors,
++                                       int count);
++/* This file must *not* be compiled with -msse or -msse2, otherwise
++   gcc may generate sse2 even for scalar ops (and thus give an invalid
++   instruction on Pentium3 on the code below).  Only files named *_SSE2.cpp
++   in this directory should be compiled with -msse2. */
++
++
++#ifdef _MSC_VER
++static inline void getcpuid(int info_type, int info[4]) {
++#if defined(_WIN64)
++    __cpuid(info, info_type);
++#else
++    __asm {
++        mov    eax, [info_type]
++        cpuid
++        mov    edi, [info]
++        mov    [edi], eax
++        mov    [edi+4], ebx
++        mov    [edi+8], ecx
++        mov    [edi+12], edx
++    }
++#endif
++}
++#else
++#if defined(__x86_64__)
++static inline void getcpuid(int info_type, int info[4]) {
++    asm volatile (
++        "cpuid \n\t"
++        : "=a"(info[0]), "=b"(info[1]), "=c"(info[2]), "=d"(info[3])
++        : "a"(info_type)
++    );
++}
++#else
++static inline void getcpuid(int info_type, int info[4]) {
++    // We save and restore ebx, so this code can be compatible with -fPIC
++    asm volatile (
++        "pushl %%ebx      \n\t"
++        "cpuid            \n\t"
++        "movl %%ebx, %1   \n\t"
++        "popl %%ebx       \n\t"
++        : "=a"(info[0]), "=r"(info[1]), "=c"(info[2]), "=d"(info[3])
++        : "a"(info_type)
++    );
++}
++#endif
++#endif
++
++// If the code is built for an architecture that has SSE4+,
++// then we shouldn't have to check during run-time.
++#if SK_CPU_SSE_LEVEL >= SK_CPU_SSE_LEVEL_SSE42
++static inline int getSSELevel() {
++    return SK_CPU_SSE_LEVEL_SSE42;
++}
++#else
++
++static int checkSSELevel() {
++    int cpu_info[4] = { 0 };
++
++    getcpuid(1, cpu_info);
++    if ((cpu_info[2] & (1<<20)) != 0)
++        return SK_CPU_SSE_LEVEL_SSE42;
++    else if ((cpu_info[2] & (1<<9)) != 0)
++        return SK_CPU_SSE_LEVEL_SSSE3;
++    else if ((cpu_info[3] & (1<<26)) != 0)
++        return SK_CPU_SSE_LEVEL_SSE2;
++    else
++        return 0;
++}
++
++static inline int getSSELevel() {
++    static int gSSELevel = checkSSELevel();
++    return gSSELevel;
++}
++#endif
++
++SK_CONF_DECLARE( bool, c_hqfilter_sse, "bitmap.filter.highQualitySSE", false, "Use SSE optimized version of high quality image filters");
++
++void SkBitmapProcState::platformConvolutionProcs(SkConvolutionProcs* procs) {
++    if (getSSELevel() >= SK_CPU_SSE_LEVEL_SSE2) {
++        procs->fExtraHorizontalReads = 3;
++        procs->fConvolveVertically = &convolveVertically_SSE2;
++        procs->fConvolve4RowsHorizontally = &convolve4RowsHorizontally_SSE2;
++        procs->fConvolveHorizontally = &convolveHorizontally_SSE2;
++        procs->fApplySIMDPadding = &applySIMDPadding_SSE2;
++    }
++}
++
++void SkBitmapProcState::platformProcs() {
++    const int SSELevel = getSSELevel();
++
++    // Check fSampleProc32
++    if (fSampleProc32 == S32_opaque_D32_filter_DX) {
++        if (SSELevel >= SK_CPU_SSE_LEVEL_SSSE3) {
++            fSampleProc32 = S32_opaque_D32_filter_DX_SSSE3;
++#if !defined(__x86_64__)
++            bool repeatXY = SkShader::kRepeat_TileMode == fTileModeX &&
++                            SkShader::kRepeat_TileMode == fTileModeY;
++            const unsigned max = fBitmap->width();
++            // SSSE3 opted only if more than 4 pixels, dx=non-zero
++            if ((fInvSx > 0) && repeatXY && (max > 4) && ((fInvSx & 0xFFFF) != 0)) {
++                fShaderProc32 = Repeate_S32_Opaque_D32_filter_DX_shaderproc_opt;    // Not 64-bit compatible
++            }
++#endif
++        } else if (SSELevel >= SK_CPU_SSE_LEVEL_SSE2) {
++            fSampleProc32 = S32_opaque_D32_filter_DX_SSE2;
++        }
++    } else if (fSampleProc32 == S32_opaque_D32_nofilter_DX) {
++#if !defined(__x86_64__)
++        if (SSELevel >= SK_CPU_SSE_LEVEL_SSE2) {
++            fSampleProc32 = S32_opaque_D32_nofilter_DX_SSE2;        // Not 64-bit compatible
++        }
++#endif
++    } else if (fSampleProc32 == S32_opaque_D32_filter_DXDY) {
++        if (SSELevel >= SK_CPU_SSE_LEVEL_SSSE3) {
++            fSampleProc32 = S32_opaque_D32_filter_DXDY_SSSE3;
++        } else if (SSELevel >= SK_CPU_SSE_LEVEL_SSE2) {
++#if !defined(__x86_64__)
++            fSampleProc32 = S32_opaque_D32_filter_DXDY_SSE2_asm;    // Not 64-bit compatible
++#else
++            fSampleProc32 = S32_opaque_D32_filter_DXDY_SSE2;
++#endif
++        }
++    } else if (fSampleProc32 == S32_alpha_D32_filter_DX) {
++        if (SSELevel >= SK_CPU_SSE_LEVEL_SSSE3) {
++            fSampleProc32 = S32_alpha_D32_filter_DX_SSSE3;
++        } else if (SSELevel >= SK_CPU_SSE_LEVEL_SSE2) {
++            fSampleProc32 = S32_alpha_D32_filter_DX_SSE2;
++        }
++    } else if (fSampleProc32 == S32_alpha_D32_filter_DXDY) {
++        if (SSELevel >= SK_CPU_SSE_LEVEL_SSSE3) {
++            fSampleProc32 = S32_alpha_D32_filter_DXDY_SSSE3;
++        } else if (SSELevel >= SK_CPU_SSE_LEVEL_SSE2) {
++#if !defined(__x86_64__)
++            fSampleProc32 = S32_alpha_D32_filter_DXDY_SSE2_asm;    // Not 64-bit compatible
++#else
++            fSampleProc32 = S32_alpha_D32_filter_DXDY_SSE2;
++#endif
++        }
++    }
++
++    if (SSELevel >= SK_CPU_SSE_LEVEL_SSE2) {
++        if (fSampleProc16 == S32_D16_filter_DX) {
++            fSampleProc16 = S32_D16_filter_DX_SSE2;
++        }
++
++        if (fMatrixProc == ClampX_ClampY_filter_scale) {
++            fMatrixProc = ClampX_ClampY_filter_scale_SSE2;
++        } else if (fMatrixProc == ClampX_ClampY_nofilter_scale) {
++            fMatrixProc = ClampX_ClampY_nofilter_scale_SSE2;
++        }
++
++        if (fMatrixProc == ClampX_ClampY_filter_affine) {
++            fMatrixProc = ClampX_ClampY_filter_affine_SSE2;
++        } else if (fMatrixProc == ClampX_ClampY_nofilter_affine) {
++            fMatrixProc = ClampX_ClampY_nofilter_affine_SSE2;
++        }
++
++        if (c_hqfilter_sse) {
++            if (fShaderProc32 == highQualityFilter32) {
++                fShaderProc32 = highQualityFilter_SSE2;
++            }
++        }
++    }
++}
++
++static SkBlitRow::Proc platform_565_procs[] = {
++    // no dither
++    S32_D565_Opaque_SSE2,               // S32_D565_Opaque,
++    S32_D565_Blend_SSE2,                // S32_D565_Blend,
++
++    S32A_D565_Opaque_SSE2,              // S32A_D565_Opaque
++    S32A_D565_Blend_SSE2,               // S32A_D565_Blend
++
++    // dither
++    S32_D565_Opaque_Dither_SSE2,        // S32_D565_Opaque_Dither,
++    S32_D565_Blend_Dither_SSE2,         // S32_D565_Blend_Dither,
++
++    S32A_D565_Opaque_Dither_SSE2,       // S32A_D565_Opaque_Dither
++    NULL                                // S32A_D565_Blend_Dither
++};
++
++SkBlitRow::Proc SkBlitRow::PlatformProcs565(unsigned flags) {
++    if (getSSELevel() >= SK_CPU_SSE_LEVEL_SSE2) {
++        return platform_565_procs[flags];
++    } else {
++        return NULL;
++    }
++}
++
++SkBlitRow::ColorProc SkBlitRow::PlatformColorProc() {
++    if (getSSELevel() >= SK_CPU_SSE_LEVEL_SSE2) {
++        return Color32_SSE2;
++    } else {
++        return NULL;
++    }
++}
++
++static SkBlitRow::Proc32 platform_32_procs_SSE2[] = {
++    NULL,                               // S32_Opaque,
++    S32_Blend_BlitRow32_SSE2,           // S32_Blend,
++    S32A_Opaque_BlitRow32_SSE2,         // S32A_Opaque
++    S32A_Blend_BlitRow32_SSE2,          // S32A_Blend,
++};
++
++SkBlitRow::Proc32 SkBlitRow::PlatformProcs32(unsigned flags) {
++    if (getSSELevel() >= SK_CPU_SSE_LEVEL_SSE2) {
++        return platform_32_procs_SSE2[flags];
++    } else {
++        return NULL;
++    }
++}
++
++
++SkBlitMask::ColorProc SkBlitMask::PlatformColorProcs(SkBitmap::Config dstConfig,
++                                                     SkMask::Format maskFormat,
++                                                     SkColor color) {
++    if (SkMask::kA8_Format != maskFormat) {
++        return NULL;
++    }
++
++    ColorProc proc = NULL;
++    if (getSSELevel() >= SK_CPU_SSE_LEVEL_SSE2) {
++        switch (dstConfig) {
++            case SkBitmap::kARGB_8888_Config:
++                // The SSE2 version is not (yet) faster for black, so we check
++                // for that.
++                if (SK_ColorBLACK != color) {
++                    proc = SkARGB32_A8_BlitMask_SSE2;
++                }
++                break;
++            default:
++                break;
++        }
++    }
++    return proc;
++}
++
++SkBlitMask::BlitLCD16RowProc SkBlitMask::PlatformBlitRowProcs16(bool isOpaque) {
++    if (getSSELevel() >= SK_CPU_SSE_LEVEL_SSE2) {
++        if (isOpaque) {
++            return SkBlitLCD16OpaqueRow_SSE2;
++        } else {
++            return SkBlitLCD16Row_SSE2;
++        }
++    } else {
++        return NULL;
++    }
++
++}
++
++SkBlitMask::RowProc SkBlitMask::PlatformRowProcs(SkBitmap::Config dstConfig,
++                                                 SkMask::Format maskFormat,
++                                                 RowFlags flags) {
++    return NULL;
++}
++
++SkMemset16Proc SkMemset16GetPlatformProc() {
++    if (getSSELevel() >= SK_CPU_SSE_LEVEL_SSE2) {
++        return sk_memset16_SSE2;
++    } else {
++        return NULL;
++    }
++}
++
++SkMemset32Proc SkMemset32GetPlatformProc() {
++    if (getSSELevel() >= SK_CPU_SSE_LEVEL_SSE2) {
++        return sk_memset32_SSE2;
++    } else {
++        return NULL;
++    }
++}
++
++SkMorphologyProc SkMorphologyGetPlatformProc(SkMorphologyProcType type) {
++    if (!(getSSELevel() >= SK_CPU_SSE_LEVEL_SSE2)) {
++        return NULL;
++    }
++    switch (type) {
++        case kDilateX_SkMorphologyProcType:
++            return SkDilateX_SSE2;
++        case kDilateY_SkMorphologyProcType:
++            return SkDilateY_SSE2;
++        case kErodeX_SkMorphologyProcType:
++            return SkErodeX_SSE2;
++        case kErodeY_SkMorphologyProcType:
++            return SkErodeY_SSE2;
++        default:
++            return NULL;
++    }
++}
++
++bool SkBoxBlurGetPlatformProcs(SkBoxBlurProc* boxBlurX,
++                               SkBoxBlurProc* boxBlurY,
++                               SkBoxBlurProc* boxBlurXY,
++                               SkBoxBlurProc* boxBlurYX) {
++#ifdef SK_DISABLE_BLUR_DIVISION_OPTIMIZATION
++    return false;
++#else
++    if (!(getSSELevel() >= SK_CPU_SSE_LEVEL_SSE2)) {
++        return false;
++    }
++    return SkBoxBlurGetPlatformProcs_SSE2(boxBlurX, boxBlurY, boxBlurXY, boxBlurYX);
++#endif
++}
++
++SkBlitRow::ColorRectProc PlatformColorRectProcFactory(); // suppress warning
++
++SkBlitRow::ColorRectProc PlatformColorRectProcFactory() {
++    if (getSSELevel() >= SK_CPU_SSE_LEVEL_SSE2) {
++        return ColorRect32_SSE2;
++    } else {
++        return NULL;
++    }
++}
+-- 
+2.7.4
+

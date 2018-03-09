@@ -1,0 +1,66 @@
+From 3e9cce0dfa5ed535ab772e28ea54313cb1d3b4d6 Mon Sep 17 00:00:00 2001
+From: Jason Hu <jason.hu@intel.com>
+Date: Thu, 26 Jul 2012 17:25:57 -0400
+Subject: [PATCH 05/56] [PATCH] [PORT FROM MAIN] To fix video flicking issue
+ when rendering through overlay.
+
+Currently, hw overlay need always hold an output buffer until flip
+to another buffer. So we should hold two more buffers in surface
+texture back end to avoid blocking on dequeue buffer by decoder.
+
+Change-Id: I07a6b40b7664a37e9549e43146969946ca3006e0
+Category: feature differentiation
+Domain: Video.Rendering-HDMI
+Origin: internal
+Signed-off-by: Jason Hu <jason.hu@intel.com>
+Signed-off-by: Dan Liang <dan.liang@intel.com>.
+---
+ include/media/stagefright/OMXCodec.h |  1 +
+ media/libstagefright/OMXCodec.cpp    | 12 ++++++++++++
+ 2 files changed, 13 insertions(+)
+
+diff --git a/include/media/stagefright/OMXCodec.h b/include/media/stagefright/OMXCodec.h
+index 5dd99eb..b96f514 100644
+--- a/include/media/stagefright/OMXCodec.h
++++ b/include/media/stagefright/OMXCodec.h
+@@ -110,6 +110,7 @@ struct OMXCodec : public MediaSource,
+ #ifdef MTK_HARDWARE
+         kAvoidMemcopyInputRecordingFrames     = 8192,
+ #endif
++        kRequiresHoldExtraBuffers             = 65536,
+ #if defined(OMAP_ENHANCEMENT)
+         kAvoidMemcopyInputRecordingFrames     = 0x20000000,
+ #endif
+diff --git a/media/libstagefright/OMXCodec.cpp b/media/libstagefright/OMXCodec.cpp
+index 551807e..a99cfc8 100644
+--- a/media/libstagefright/OMXCodec.cpp
++++ b/media/libstagefright/OMXCodec.cpp
+@@ -406,6 +406,10 @@ uint32_t OMXCodec::getComponentQuirks(
+                 index, "defers-output-buffer-allocation")) {
+         quirks |= kDefersOutputBufferAllocation;
+     }
++    if (list->codecHasQuirk(
++                index, "requires-hold-extra-buffers")) {
++        quirks |= kRequiresHoldExtraBuffers;
++    }
+ #ifdef DOLBY_UDC
+     if (list->codecHasQuirk(
+                 index, "needs-flush-before-disable")) {
+@@ -2534,6 +2538,14 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
+     ALOGI("NOTE: Overriding minUndequeuedBufs to %d",minUndequeuedBufs);
+ #endif
+ 
++    // XXX: should hold extra two buffers in surface texture back end.
++    // Currently, intel hw overlay need always hold output buffer until
++    // flip to another buffer. So we should hold more buffers to avoid
++    // buffer overwrite by decoder.
++    if (mQuirks & kRequiresHoldExtraBuffers) {
++        minUndequeuedBufs += 2;
++    }
++
+     // XXX: Is this the right logic to use?  It's not clear to me what the OMX
+     // buffer counts refer to - how do they account for the renderer holding on
+     // to buffers?
+-- 
+2.7.4
+

@@ -1,0 +1,276 @@
+From a4e6dbdfded9b1ab031eccbc437f13e49243b91c Mon Sep 17 00:00:00 2001
+From: Lars Greiss <kufikugel@googlemail.com>
+Date: Fri, 2 Dec 2016 00:26:57 +0600
+Subject: [PATCH 09/10] Add link to Privacy Guard from app info screen
+
+Change-Id: Ib38ccac2be79eaeb2d3d98f0fd387f0321f4cade
+---
+ res/layout/installed_app_details.xml               | 110 ++++++++++++++-------
+ res/values-ru/cm_strings.xml                       |   1 +
+ res/values/cm_colors.xml                           |   3 +
+ res/values/cm_strings.xml                          |   2 +
+ .../settings/applications/InstalledAppDetails.java |  28 +++++-
+ 5 files changed, 107 insertions(+), 37 deletions(-)
+
+diff --git a/res/layout/installed_app_details.xml b/res/layout/installed_app_details.xml
+index 0b0d19b..eb30dff 100644
+--- a/res/layout/installed_app_details.xml
++++ b/res/layout/installed_app_details.xml
+@@ -417,55 +417,93 @@
+         </LinearLayout>
+ 
+         <!-- Permissions section -->
+-        <LinearLayout
++        <RelativeLayout
+             android:id="@+id/permissions_section"
+             android:layout_width="match_parent"
+-            android:layout_height="match_parent"
+-            android:orientation="vertical">
++            android:layout_height="wrap_content"
++            android:layout_gravity="center_vertical">
+             <TextView
+                 style="?android:attr/listSeparatorTextViewStyle"
+-                android:layout_marginTop="8dip"
+-                android:text="@string/permissions_label" />
+-            <TextView android:id="@+id/security_settings_billing_desc"
+-                android:text="@string/security_settings_billing_desc"
+-                android:textColor="#ffffb060"
++                android:id="@+id/permissions_label"
++                android:text="@string/permissions_label"
+                 android:textAppearance="?android:attr/textAppearanceSmall"
+-                android:paddingTop="6dip"
+-                android:paddingBottom="6dip"
+-                android:paddingStart="?android:attr/listPreferredItemPaddingStart"
+-                android:paddingEnd="?android:attr/listPreferredItemPaddingEnd"
++                android:layout_alignParentStart="true"
+                 android:layout_width="match_parent"
+-                android:layout_height="wrap_content" />
++                android:layout_height="wrap_content"
++                android:paddingTop="6dip" />
+             <LinearLayout
+-                android:id="@+id/security_settings_billing_list"
++                android:id="@+id/permissions_button"
+                 android:layout_width="match_parent"
+-                android:layout_height="match_parent"
+-                android:orientation="vertical">
+-                <TextView
+-                    android:layout_width="wrap_content"
+-                    android:layout_height="wrap_content"
+-                    android:text="@string/security_settings_premium_sms_desc" />
+-                <Spinner
+-                    android:id="@+id/security_settings_premium_sms_list"
+-                    android:layout_width="fill_parent"
+-                    android:layout_height="wrap_content"
+-                    android:spinnerMode="dropdown" />
+-            </LinearLayout>
+-            <TextView android:id="@+id/security_settings_desc"
+-                android:text="@string/security_settings_desc"
+-                android:textAppearance="?android:attr/textAppearanceSmall"
+-                android:paddingTop="6dip"
+-                android:paddingBottom="6dip"
++                android:layout_height="wrap_content"
++                android:layout_below="@id/permissions_label"
+                 android:paddingStart="?android:attr/listPreferredItemPaddingStart"
+                 android:paddingEnd="?android:attr/listPreferredItemPaddingEnd"
+-                android:layout_width="match_parent"
+-                android:layout_height="wrap_content" />
++                android:paddingTop="4dip"
++                android:orientation="horizontal">
++                <View
++                    android:layout_width="120dip"
++                    android:layout_height="0dip"
++                    android:layout_weight="0.4" />
++                <View
++                    android:layout_width="0dip"
++                    android:layout_height="0dip"
++                    android:visibility="invisible"
++                    android:layout_weight="0.2" />
++                <Button
++                    android:id="@+id/app_ops_button"
++                    android:layout_width="120dip"
++                    android:layout_height="wrap_content"
++                    android:layout_weight="0.4"
++                    android:text="@string/app_ops_btn_text" />
++            </LinearLayout>
+             <LinearLayout
+-                android:id="@+id/security_settings_list"
++                android:id="@+id/permissions_detail_section"
++                android:layout_below="@id/permissions_button"
+                 android:layout_width="match_parent"
+                 android:layout_height="match_parent"
+-                android:orientation="vertical"/>
+-        </LinearLayout>
++                android:orientation="vertical">
++                <TextView android:id="@+id/security_settings_billing_desc"
++                    android:text="@string/security_settings_billing_desc"
++                    android:textColor="@color/security_settings_billing_desc_color"
++                    android:textAppearance="?android:attr/textAppearanceSmall"
++                    android:paddingTop="6dip"
++                    android:paddingBottom="6dip"
++                    android:paddingStart="?android:attr/listPreferredItemPaddingStart"
++                    android:paddingEnd="?android:attr/listPreferredItemPaddingEnd"
++                    android:layout_width="match_parent"
++                    android:layout_height="wrap_content" />
++                <LinearLayout
++                    android:id="@+id/security_settings_billing_list"
++                    android:layout_below="@id/security_settings_billing_desc"
++                    android:layout_width="match_parent"
++                    android:layout_height="match_parent"
++                    android:orientation="vertical">
++                    <TextView
++                        android:layout_width="wrap_content"
++                        android:layout_height="wrap_content"
++                        android:text="@string/security_settings_premium_sms_desc" />
++                    <Spinner
++                        android:id="@+id/security_settings_premium_sms_list"
++                        android:layout_width="fill_parent"
++                        android:layout_height="wrap_content"
++                        android:spinnerMode="dropdown" />
++                </LinearLayout>
++                <TextView android:id="@+id/security_settings_desc"
++                    android:text="@string/security_settings_desc"
++                    android:textAppearance="?android:attr/textAppearanceSmall"
++                    android:paddingTop="6dip"
++                    android:paddingBottom="6dip"
++                    android:paddingStart="?android:attr/listPreferredItemPaddingStart"
++                    android:paddingEnd="?android:attr/listPreferredItemPaddingEnd"
++                    android:layout_width="match_parent"
++                    android:layout_height="wrap_content" />
++                <LinearLayout
++                    android:id="@+id/security_settings_list"
++                    android:layout_width="match_parent"
++                    android:layout_height="match_parent"
++                    android:orientation="vertical"/>
++            </LinearLayout>
++        </RelativeLayout>
+     </LinearLayout>
+ </ScrollView>
+ 
+diff --git a/res/values-ru/cm_strings.xml b/res/values-ru/cm_strings.xml
+index 00b3127..f38aa74 100644
+--- a/res/values-ru/cm_strings.xml
++++ b/res/values-ru/cm_strings.xml
+@@ -467,6 +467,7 @@
+   <string name="privacy_guard_manager_show_system_apps">Системные приложения</string>
+   <string name="privacy_guard_advanced_settings_title">Дополнительные функции</string>
+   <string name="privacy_guard_notification_title">Показывать уведомления</string>
++  <string name="app_ops_btn_text">Изменить</string>
+   <string name="blacklist_title">Чёрный список</string>
+   <string name="blacklist_edit_dialog_title">Редактировать чёрный список</string>
+   <string name="blacklist_prefs">Настройки</string>
+diff --git a/res/values/cm_colors.xml b/res/values/cm_colors.xml
+index b04bcc8..225ed16 100644
+--- a/res/values/cm_colors.xml
++++ b/res/values/cm_colors.xml
+@@ -31,6 +31,9 @@
+     <color name="data_usage_sweep_warning_label_color">#f7931d</color>
+     <color name="data_usage_sweep_limit_label_color">#c01a2c</color>
+ 
++    <!-- Installed app details -->
++    <color name="security_settings_billing_desc_color">#ffffb060</color>
++
+     <!-- Password Entry Field Text Color -->
+     <color name="password_field_text_color">#ffffffff</color>
+ 
+diff --git a/res/values/cm_strings.xml b/res/values/cm_strings.xml
+index 839bc89..6fa451c 100644
+--- a/res/values/cm_strings.xml
++++ b/res/values/cm_strings.xml
+@@ -680,6 +680,8 @@ two in order to insert additional control points. \'Remove\' deletes the selecte
+     <string name="privacy_guard_advanced_settings_title">Advanced</string>
+     <string name="privacy_guard_notification_title">Show notification</string>
+ 
++    <string name="app_ops_btn_text">Modify</string>
++
+     <!-- Blacklist preferences -->
+     <string name="blacklist_title">Blacklist</string>
+     <string name="blacklist_edit_dialog_title">Edit blacklist entry</string>
+diff --git a/src/com/android/settings/applications/InstalledAppDetails.java b/src/com/android/settings/applications/InstalledAppDetails.java
+index 9365677..1d47af0 100644
+--- a/src/com/android/settings/applications/InstalledAppDetails.java
++++ b/src/com/android/settings/applications/InstalledAppDetails.java
+@@ -84,6 +84,7 @@ import android.widget.CheckBox;
+ import android.widget.CompoundButton;
+ import android.widget.ImageView;
+ import android.widget.LinearLayout;
++import android.widget.RelativeLayout;
+ import android.widget.Spinner;
+ import android.widget.TextView;
+ import com.android.settings.cyanogenmod.ProtectedAppsReceiver;
+@@ -144,6 +145,7 @@ public class InstalledAppDetails extends Fragment
+     private Button mMoveAppButton;
+     private CompoundButton mNotificationSwitch;
+     private CompoundButton mPrivacyGuardSwitch;
++    private Button mAppOpsButton;
+ 
+     private PackageMoveObserver mPackageMoveObserver;
+     private AppOpsManager mAppOps;
+@@ -451,6 +453,19 @@ public class InstalledAppDetails extends Fragment
+         mPrivacyGuardSwitch.setOnCheckedChangeListener(this);
+     }
+ 
++    private void initAppOpsButton() {
++        boolean enabled = true;
++        if (isThisASystemPackage()) {
++            enabled = false;
++        }
++
++        mAppOpsButton.setEnabled(enabled);
++        if (enabled) {
++            // Register listener
++            mAppOpsButton.setOnClickListener(this);
++        }
++    }
++
+     /** Called when the activity is first created. */
+     @Override
+     public void onCreate(Bundle icicle) {
+@@ -529,6 +544,9 @@ public class InstalledAppDetails extends Fragment
+         mNotificationSwitch = (CompoundButton) view.findViewById(R.id.notification_switch);
+         mPrivacyGuardSwitch = (CompoundButton) view.findViewById(R.id.privacy_guard_switch);
+ 
++        mAppOps = (AppOpsManager) getActivity().getSystemService(Context.APP_OPS_SERVICE);
++        mAppOpsButton = (Button) view.findViewById(R.id.app_ops_button);
++        
+         return view;
+     }
+ 
+@@ -872,7 +890,8 @@ public class InstalledAppDetails extends Fragment
+         }
+ 
+         // Security permissions section
+-        LinearLayout permsView = (LinearLayout) mRootView.findViewById(R.id.permissions_section);
++        RelativeLayout permsView = (RelativeLayout) mRootView.findViewById(
++                R.id.permissions_section);
+         AppSecurityPermissions asp = new AppSecurityPermissions(getActivity(), packageName);
+         int premiumSmsPermission = getPremiumSmsPermission(packageName);
+         // Premium SMS permission implies the app also has SEND_SMS permission, so the original
+@@ -1130,11 +1149,13 @@ public class InstalledAppDetails extends Fragment
+             initDataButtons();
+             initMoveButton();
+             initNotificationButton();
++            initAppOpsButton();
+         } else {
+             mMoveAppButton.setText(R.string.moving);
+             mMoveAppButton.setEnabled(false);
+             mUninstallButton.setEnabled(false);
+             mSpecialDisableButton.setEnabled(false);
++            mAppOpsButton.setEnabled(false);
+         }
+     }
+ 
+@@ -1544,6 +1565,11 @@ public class InstalledAppDetails extends Fragment
+             mMoveInProgress = true;
+             refreshButtons();
+             mPm.movePackage(mAppEntry.info.packageName, mPackageMoveObserver, moveFlags);
++        } else if (v == mAppOpsButton) {
++            Intent intent = new Intent(
++                    android.provider.Settings.ACTION_APP_OPS_DETAILS_SETTINGS,
++                    Uri.parse("package:" + mAppEntry.info.packageName));
++            startActivity(intent);
+         }
+     }
+ 
+-- 
+2.7.4
+

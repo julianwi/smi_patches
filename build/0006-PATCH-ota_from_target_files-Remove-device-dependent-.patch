@@ -1,7 +1,8 @@
-From d82eccd3bfff48761f30e9109d6e5ca652c29e1c Mon Sep 17 00:00:00 2001
+From 06e1fa1d6d54686eeda868d7ae367d8ad76b76cd Mon Sep 17 00:00:00 2001
 From: Gabriele M <moto.falcon.git@gmail.com>
 Date: Tue, 10 Jan 2017 23:14:12 +0100
-Subject: [PATCH] ota_from_target_files: Remove device dependent arguments
+Subject: [PATCH 2/5] [PATCH] ota_from_target_files: Remove device dependent
+ arguments
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -22,7 +23,7 @@ Signed-off-by: Andreas Blaesius <skate4life@gmx.de>
  2 files changed, 29 insertions(+), 49 deletions(-)
 
 diff --git a/core/Makefile b/core/Makefile
-index f2429d9e4..87e3199ac 100644
+index c96aa8e..b1593d5 100644
 --- a/core/Makefile
 +++ b/core/Makefile
 @@ -1411,21 +1411,16 @@ endif
@@ -104,7 +105,7 @@ index f2429d9e4..87e3199ac 100644
  
  CM_TARGET_PACKAGE := $(PRODUCT_OUT)/lineage-$(LINEAGE_VERSION).zip
 diff --git a/tools/releasetools/ota_from_target_files b/tools/releasetools/ota_from_target_files
-index 01f75383c..4feceef4d 100755
+index 01f7538..4feceef 100755
 --- a/tools/releasetools/ota_from_target_files
 +++ b/tools/releasetools/ota_from_target_files
 @@ -57,21 +57,6 @@ Usage:  ota_from_target_files [flags] input_target_files output_ota_package
@@ -174,3 +175,6 @@ index 01f75383c..4feceef4d 100755
    # If this image was originally labelled with SELinux contexts, make sure we
    # also apply the labels in our new image. During building, the "file_contexts"
    # is in the out/ directory tree, but for repacking from target-files.zip it's
+-- 
+2.7.4
+

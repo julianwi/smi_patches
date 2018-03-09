@@ -1,0 +1,46 @@
+From 8a9cc48333289da0610f4aca487bed71c6eea15e Mon Sep 17 00:00:00 2001
+From: Dan Liang <dan.liang@intel.com>
+Date: Tue, 30 Apr 2013 13:50:23 +0800
+Subject: [PATCH 43/56] MPEG4Extractor: Ignore invalid 'stts' chunk when
+ playing H263 clips for MPEG4Extrator
+
+BZ: 48862
+
+Original patch:
+32395 (BZ: 16520)
+
+The sample clips with amr_wb audio track can't be played, because the audio track(amr_wb) contains
+more than one `stts` chunks, and the first one is valid with version 0 and flag 0, others are invalid
+with error version number and flag. MPEG4Extractor will iterate all the `stts` chunks, once met the
+invalid `stts` chunk, the extractor will return error and exist. And return error is too much here, throw
+out a warning is just enough.
+
+Change-Id: I893ef8d95023b46e94724e4fa67b6818e0d298c5
+Orig-Change-Id: I6d039fa72d904da0c8fc8d62ffec59f649de49ec
+Category: aosp improvement
+Domain: Video.Media-container
+Origin:
+Upstream-Candidate: yes
+Signed-off-by: Weian Chen <weian.chen@intel.com>
+Signed-off-by: Dan Liang <dan.liang@intel.com>
+---
+ media/libstagefright/SampleTable.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/SampleTable.cpp b/media/libstagefright/SampleTable.cpp
+index ca47d2e..958224e 100644
+--- a/media/libstagefright/SampleTable.cpp
++++ b/media/libstagefright/SampleTable.cpp
+@@ -377,7 +377,8 @@ status_t SampleTable::setTimeToSampleParams(
+ 
+     if (U32_AT(header) != 0) {
+         // Expected version = 0, flags = 0.
+-        return ERROR_MALFORMED;
++        ALOGW("Expected version = 0, flags = 0");
++        return OK;
+     }
+ 
+     mTimeToSampleCount = U32_AT(&header[4]);
+-- 
+2.7.4
+

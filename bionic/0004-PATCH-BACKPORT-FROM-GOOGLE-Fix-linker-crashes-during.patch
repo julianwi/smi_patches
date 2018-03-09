@@ -1,0 +1,72 @@
+From 13c6eb494e1e19e0f05f2dd00753339923b5641e Mon Sep 17 00:00:00 2001
+From: Sergey Melnikov <sergey.melnikov@intel.com>
+Date: Thu, 31 Oct 2013 18:02:12 +0400
+Subject: [PATCH 4/5] [PATCH] [BACKPORT FROM GOOGLE] Fix linker crashes during
+ unknown symbol lookup
+
+Fix linker crashes during unknown symbol lookup
+
+Integration of kernel VDSO into internal bionic data structures using
+common functions.
+Fix for dl_iterate_phdr function: the function provides incorrect
+address of object in case of nonzero virtual and base addresses.
+Location in address space of a particular program header should be
+calculated using the formula:  addr = base_addr + virtual_addr.
+
+[HazouPH] Razr I: Fix VLC symbol lookup crash
+
+Change-Id: I6a1693fd7d1254d3a3c0b5f7fb38721fe89b3d57
+Category: google backport
+Domain: AOSP-bionic
+Origin: internal
+Signed-off-by: Sergey Melnikov <sergey.melnikov@intel.com>
+Orig-Google-Change-Id: Ie2ab4257fd456242aab8afed0bd5bd6b29e81d6d
+---
+ linker/linker.cpp | 17 +++++++++--------
+ 1 file changed, 9 insertions(+), 8 deletions(-)
+
+diff --git a/linker/linker.cpp b/linker/linker.cpp
+index d776bdf..02aa853 100644
+--- a/linker/linker.cpp
++++ b/linker/linker.cpp
+@@ -73,6 +73,7 @@
+  */
+ 
+ static bool soinfo_link_image(soinfo* si);
++static Elf32_Addr get_elf_exec_load_bias(const Elf32_Ehdr* elf);
+ 
+ // We can't use malloc(3) in the dynamic linker. We use a linked list of anonymous
+ // maps, each a single page in size. The pages are broken up into as many struct soinfo
+@@ -181,7 +182,7 @@ static pthread_mutex_t gDebugMutex = PTHREAD_MUTEX_INITIALIZER;
+ static void insert_soinfo_into_debug_map(soinfo * info) {
+     // Copy the necessary fields into the debug structure.
+     link_map_t* map = &(info->link_map);
+-    map->l_addr = info->base;
++    map->l_addr = info->load_bias;
+     map->l_name = (char*) info->name;
+     map->l_ld = (uintptr_t)info->dynamic;
+ 
+@@ -1595,13 +1596,13 @@ static void add_vdso(KernelArgumentBlock& args UNUSED) {
+     soinfo* si = soinfo_alloc("[vdso]");
+     si->phdr = reinterpret_cast<Elf32_Phdr*>(reinterpret_cast<char*>(ehdr_vdso) + ehdr_vdso->e_phoff);
+     si->phnum = ehdr_vdso->e_phnum;
+-    si->link_map.l_name = si->name;
+-    for (size_t i = 0; i < si->phnum; ++i) {
+-        if (si->phdr[i].p_type == PT_LOAD) {
+-            si->link_map.l_addr = reinterpret_cast<Elf32_Addr>(ehdr_vdso) - si->phdr[i].p_vaddr;
+-            break;
+-        }
+-    }
++    si->base = reinterpret_cast<Elf32_Addr>(ehdr_vdso);
++    si->size = phdr_table_get_load_size(si->phdr, si->phnum);
++    si->flags = 0;
++    si->load_bias = get_elf_exec_load_bias(ehdr_vdso);
++
++    soinfo_link_image(si);
++    insert_soinfo_into_debug_map(si);
+ #endif
+ }
+ 
+-- 
+2.7.4
+

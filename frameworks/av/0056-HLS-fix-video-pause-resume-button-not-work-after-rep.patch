@@ -1,0 +1,40 @@
+From 2f76847ab5c72955082a70417ab1769ea35d52f5 Mon Sep 17 00:00:00 2001
+From: "Gu, Wangyi" <wangyi.gu@intel.com>
+Date: Mon, 6 Jan 2014 11:28:37 +0800
+Subject: [PATCH 56/56] HLS: fix video pause/resume button not work after
+ replay hls on full screen
+
+BZ:161874
+
+In this case, when video starts in NuPlayer with RUNNING state, the EOS flag is
+not clear, which will cause the mediaplayer finds the mismatch internal/external
+state when app calls MediaPlayer::isPlaying.
+
+Category: aosp improvement
+Domain: Video.Media-streaming
+Origin: internal
+Upstream-Candidate: yes
+Change-Id: I4dc1bdb9382315581e8200a7dc6d314349126779
+Signed-off-by: Gu, Wangyi <wangyi.gu@intel.com>
+---
+ media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp b/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
+index 5d38f30..0037b05 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
+@@ -225,7 +225,10 @@ status_t NuPlayerDriver::start() {
+         }
+ 
+         case STATE_RUNNING:
++        {
++            mAtEOS = false;
+             break;
++        }
+ 
+         case STATE_PAUSED:
+         {
+-- 
+2.7.4
+

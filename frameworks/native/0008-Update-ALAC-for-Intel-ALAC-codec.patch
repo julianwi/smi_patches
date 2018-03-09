@@ -1,0 +1,50 @@
+From 58dd7a0abdbb3b686b13a442cd673a0016b5329a Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Thu, 16 Feb 2017 17:32:11 +0100
+Subject: [PATCH 8/8] Update ALAC for Intel ALAC codec
+
+Change-Id: Ibd4176569c873e28f104150f67d097e79350ebc6
+---
+ include/media/openmax/OMX_Audio.h | 26 ++++++++++++++++----------
+ 1 file changed, 16 insertions(+), 10 deletions(-)
+
+diff --git a/include/media/openmax/OMX_Audio.h b/include/media/openmax/OMX_Audio.h
+index 45a77a5..e6771a6 100644
+--- a/include/media/openmax/OMX_Audio.h
++++ b/include/media/openmax/OMX_Audio.h
+@@ -428,16 +428,22 @@ typedef struct OMX_AUDIO_PARAM_APETYPE {
+ 
+ /** ALAC params */
+ typedef struct OMX_AUDIO_PARAM_ALACTYPE {
+-    OMX_U32 nSize;                /**< size of the structure in bytes */
+-    OMX_VERSIONTYPE nVersion;     /**< OMX specification version information */
+-    OMX_U32 nPortIndex;           /**< port that this structure applies to */
+-    OMX_U32 nChannels;            /**< Number of channels */
+-    OMX_U32 nBitRate;             /**< Bit rate of the input data.  Use 0 for variable
+-                                       rate or unknown bit rates */
+-    OMX_U32 nSamplingRate;        /**< Sampling rate of the source data.  Use 0 for
+-                                       variable or unknown sampling rate. */
+-    OMX_U32 nBitsPerSample;       /**< Number of bits in each sample */
+-    OMX_AUDIO_CHANNELMODETYPE eChannelMode;   /**< Channel mode enumeration */
++    OMX_U32 nSize;                 /**< Size of this structure, in Bytes */
++    OMX_VERSIONTYPE nVersion;      /**< OMX specification version information */
++    OMX_U32 nPortIndex;            /**< Port that this structure applies to */
++    OMX_U32 nChannels;             /**< Number of channels */
++    OMX_U32 nSampleRate;           /**< Sampling rate of the source data.  Use 0 for
++                                        variable or unknown sampling rate. */
++    OMX_U32 nFrameLength;          /**< Frame length (in audio samples per channel) of the codec.
++                                        ALAC-encoded streams typically use 4096. */
++    OMX_U8 nCompatibleVersion;
++    OMX_U8 nBitDepth;              /**< Bits per decoded sample, any of these are valid: 16, 20, 24, or 32 */
++    OMX_U8 nPb;                    /**< 0 <= pb <= 255 */
++    OMX_U8 nMb;
++    OMX_U8 nKb;
++    OMX_U16 nMaxRun;
++    OMX_U32 nMaxFrameBytes;
++    OMX_U32 nAvgBitRate;
+ } OMX_AUDIO_PARAM_ALACTYPE;
+ 
+ /** DTS params */
+-- 
+2.7.4
+

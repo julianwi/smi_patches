@@ -1,0 +1,53 @@
+From ada88ca83a59cb47e1ebd2fb566410c475da0620 Mon Sep 17 00:00:00 2001
+From: niks255 <niks255@mail.ru>
+Date: Fri, 6 Jan 2017 02:00:28 +0600
+Subject: [PATCH 01/12] Revert "lowmemorykiller: Overwrite LMK parameters for
+ low-tier devices"
+
+This reverts commit f1f92ced077e0d97472773dc4108fa383f00442b.
+
+Change-Id: Ibb77a23f526ba49cec3919ac6b988b3333d8aff0
+---
+ services/java/com/android/server/am/ProcessList.java | 18 +++---------------
+ 1 file changed, 3 insertions(+), 15 deletions(-)
+
+diff --git a/services/java/com/android/server/am/ProcessList.java b/services/java/com/android/server/am/ProcessList.java
+index 7e9e004..78558e8 100644
+--- a/services/java/com/android/server/am/ProcessList.java
++++ b/services/java/com/android/server/am/ProcessList.java
+@@ -162,11 +162,6 @@ final class ProcessList {
+     };
+     // The actual OOM killer memory levels we are using.
+     private final long[] mOomMinFree = new long[mOomAdj.length];
+-    // Optimal OOM killer memory levels for Low-Tier devices.
+-    private final long[] mOomMinFreeLowRam = new long[] {
+-            8192, 13652, 21844,
+-            27308, 32768, 38228
+-    };
+ 
+     private final long mTotalMemMb;
+ 
+@@ -221,17 +216,10 @@ final class ProcessList {
+             Slog.i("XXXXXX", "minfree_adj=" + minfree_adj + " minfree_abs=" + minfree_abs);
+         }
+ 
+-        // Overwrite calculated LMK parameters with the low-tier tested/validated values
+-        boolean is_lowram = SystemProperties.getBoolean("ro.config.low_ram",false);
+         for (int i=0; i<mOomAdj.length; i++) {
+-            if (is_lowram) {
+-                mOomMinFree[i] = mOomMinFreeLowRam[i];
+-            }
+-            else {
+-                long low = mOomMinFreeLow[i];
+-                long high = mOomMinFreeHigh[i];
+-                mOomMinFree[i] = (long)(low + ((high-low)*scale));
+-            }
++            long low = mOomMinFreeLow[i];
++            long high = mOomMinFreeHigh[i];
++            mOomMinFree[i] = (long)(low + ((high-low)*scale));
+         }
+ 
+         if (minfree_abs >= 0) {
+-- 
+2.7.4
+

@@ -1,0 +1,61 @@
+From 2be1af0fcd05048f276a104b693f817721c36b89 Mon Sep 17 00:00:00 2001
+From: Chirayu Desai <cdesai@cyanogenmod.org>
+Date: Sat, 26 Nov 2016 19:45:40 +0600
+Subject: [PATCH 05/10] Allow disabling the privacy guard notification (1/2)
+
+Change-Id: If5cd4b2e753ed769cfbea54cb1b30452e07f5df0
+---
+ res/values-ru/cm_strings.xml    | 1 +
+ res/values/cm_strings.xml       | 2 ++
+ res/xml/privacy_guard_prefs.xml | 5 +++++
+ 3 files changed, 8 insertions(+)
+
+diff --git a/res/values-ru/cm_strings.xml b/res/values-ru/cm_strings.xml
+index 549984d..00b3127 100644
+--- a/res/values-ru/cm_strings.xml
++++ b/res/values-ru/cm_strings.xml
+@@ -466,6 +466,7 @@
+   <string name="privacy_guard_help_text">В этом разделе вы можете выбрать приложения, которые будут работать в защищённом режиме, нажав на них. Такие приложения не будут иметь доступа к персональным данным, таким как контакты, сообщения или журнал вызовов. Долгое нажатие откроет подробные сведения о разрешениях данного приложения.\n\nПо умолчанию системные приложения скрыты. Для их отображения или для перехода к расширенным настройкам выберите соответствующий пункт в меню.</string>
+   <string name="privacy_guard_manager_show_system_apps">Системные приложения</string>
+   <string name="privacy_guard_advanced_settings_title">Дополнительные функции</string>
++  <string name="privacy_guard_notification_title">Показывать уведомления</string>
+   <string name="blacklist_title">Чёрный список</string>
+   <string name="blacklist_edit_dialog_title">Редактировать чёрный список</string>
+   <string name="blacklist_prefs">Настройки</string>
+diff --git a/res/values/cm_strings.xml b/res/values/cm_strings.xml
+index 2169f2c..839bc89 100644
+--- a/res/values/cm_strings.xml
++++ b/res/values/cm_strings.xml
+@@ -678,6 +678,7 @@ two in order to insert additional control points. \'Remove\' deletes the selecte
+     <string name="privacy_guard_help_text">In this screen you can choose which apps Privacy Guard should be active for by simply tapping on them. Selected apps will not be able to access your personal data such as contacts, messages or call logs. Long pressing an app\'s entry opens its app details screen.\n\nBuilt-in apps are not shown by default but can be revealed by selecting the respective menu option.</string>
+     <string name="privacy_guard_manager_show_system_apps">Show built-in apps</string>
+     <string name="privacy_guard_advanced_settings_title">Advanced</string>
++    <string name="privacy_guard_notification_title">Show notification</string>
+ 
+     <!-- Blacklist preferences -->
+     <string name="blacklist_title">Blacklist</string>
+@@ -1458,6 +1459,7 @@ two in order to insert additional control points. \'Remove\' deletes the selecte
+     <string name="no_triggers_configured_nfc">Tap to setup a new NFC trigger.</string>
+ 
+     <string name="sound_ringtone_multisim_options">Change default ringtones</string>
++    
+ 
+     <string name="lock_to_cyanogen_title">Device Protection</string>
+     <string name="lock_to_cyanogen_summary">Require your Cyanogen OS account password even after a factory reset</string>
+diff --git a/res/xml/privacy_guard_prefs.xml b/res/xml/privacy_guard_prefs.xml
+index 2cc82c1..b61c8dd 100644
+--- a/res/xml/privacy_guard_prefs.xml
++++ b/res/xml/privacy_guard_prefs.xml
+@@ -23,4 +23,9 @@
+         android:summary="@string/privacy_guard_default_summary"
+         android:persistent="false" />
+ 
++    <com.android.settings.cyanogenmod.SecureSettingCheckBoxPreference
++        android:key="privacy_guard_notification"
++        android:title="@string/privacy_guard_notification_title"
++        android:defaultValue="true" />
++        
+ </PreferenceScreen>
+-- 
+2.7.4
+

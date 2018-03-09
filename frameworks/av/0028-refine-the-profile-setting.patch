@@ -1,0 +1,38 @@
+From 212929435b8a2457530f110e1bbe6be320e8a4c2 Mon Sep 17 00:00:00 2001
+From: Guoliang Ji <guoliang.ji@intel.com>
+Date: Thu, 4 Jul 2013 10:26:16 +0800
+Subject: [PATCH 28/56] refine the profile setting
+
+BZ:101039
+
+Refine the profile setting to enable the high profile encoding.
+
+Change-Id: Id5e638c8e69848e4ec9680ea6975c4ee8df01bc7
+Orig-Change-Id: I8badca7325e7b2863a3fdc6949e5424080ec163e
+Category: feature differentiation
+Domain: Video.Media-video recording
+Origin: internal
+Upstream-Candidate: no
+Signed-off-by: jiguoliang <guoliang.ji@intel.com>
+Signed-off-by: ywan171 <yi.a.wang@intel.com>
+Signed-off-by: Dan Liang <dan.liang@intel.com>
+---
+ media/libstagefright/OMXCodec.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/OMXCodec.cpp b/media/libstagefright/OMXCodec.cpp
+index c417fba..2a60b2e 100644
+--- a/media/libstagefright/OMXCodec.cpp
++++ b/media/libstagefright/OMXCodec.cpp
+@@ -1692,7 +1692,7 @@ status_t OMXCodec::setupAVCEncoderParameters(const sp<MetaData>& meta) {
+     h264type.eLevel = static_cast<OMX_VIDEO_AVCLEVELTYPE>(profileLevel.mLevel);
+ 
+     // XXX
+-#ifndef MTK_HARDWARE
++#if !defined (MTK_HARDWARE) || !defined (USE_INTEL_MDP)
+ #ifdef USE_TI_DUCATI_H264_PROFILE
+     if ((strncmp(mComponentName, "OMX.TI.DUCATI1", 14) != 0)
+             && (h264type.eProfile != OMX_VIDEO_AVCProfileBaseline)) {
+-- 
+2.7.4
+

@@ -1,0 +1,35 @@
+From 994994fd91050981ba7b61d8176480dbba9c4440 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Tue, 29 Mar 2016 00:59:55 +0200
+Subject: [PATCH 17/56] [PATCH] Fix type in Quirk and set BOARD_USES_MRST_OMX
+
+Change-Id: I5d05c6b0c83b8cd7190bea8a4b02d52a452532a3
+---
+ media/libstagefright/OMXCodec.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/media/libstagefright/OMXCodec.cpp b/media/libstagefright/OMXCodec.cpp
+index e6c4196..bb9a8cf 100644
+--- a/media/libstagefright/OMXCodec.cpp
++++ b/media/libstagefright/OMXCodec.cpp
+@@ -395,7 +395,7 @@ uint32_t OMXCodec::getComponentQuirks(
+         quirks |= kOutputBuffersAreUnreadable;
+     }
+     if (list->codecHasQuirk(
+-                index, "requies-loaded-to-idle-after-allocation")) {
++                index, "requires-loaded-to-idle-after-allocation")) {
+         quirks |= kRequiresLoadedToIdleAfterAllocation;
+     }
+     if (list->codecHasQuirk(
+@@ -3602,7 +3602,7 @@ status_t OMXCodec::freeBuffersOnPort(
+     for (size_t i = buffers->size(); i-- > 0;) {
+         BufferInfo *info = &buffers->editItemAt(i);
+ 
+-#ifdef MTK_HARDWARE
++#if defined(BOARD_USES_MRST_OMX) || defined(MTK_HARDWARE)
+         if (onlyThoseWeOwn && (info->mStatus == OWNED_BY_COMPONENT || info->mStatus == OWNED_BY_CLIENT)) {
+ #else
+         if (onlyThoseWeOwn && info->mStatus == OWNED_BY_COMPONENT) {
+-- 
+2.7.4
+

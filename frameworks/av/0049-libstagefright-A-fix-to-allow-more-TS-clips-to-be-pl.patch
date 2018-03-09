@@ -1,0 +1,38 @@
+From 790f97130e4209e17aec407e4db7ea81915dc2bd Mon Sep 17 00:00:00 2001
+From: Tianmi Chen <tianmi.chen@intel.com>
+Date: Thu, 16 Jan 2014 13:19:15 +0800
+Subject: [PATCH 49/56] libstagefright: A fix to allow more TS clips to be
+ played
+
+BZ: 164054
+
+Ignore seek operation for TS clips, then playback can be
+continued.
+
+Change-Id: Ib0c5f30e2ea28129a59bec686a482c1b8827a534
+Category: aosp improvement
+Domain: Video.Media-container
+Origin: internal
+Upstream-Candidate: no, proprietary
+Signed-off-by: Tianmi Chen <tianmi.chen@intel.com>
+---
+ media/libstagefright/mpeg2ts/MPEG2TSExtractor.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/mpeg2ts/MPEG2TSExtractor.cpp b/media/libstagefright/mpeg2ts/MPEG2TSExtractor.cpp
+index d449c34..9b6ef8d 100644
+--- a/media/libstagefright/mpeg2ts/MPEG2TSExtractor.cpp
++++ b/media/libstagefright/mpeg2ts/MPEG2TSExtractor.cpp
+@@ -88,7 +88,8 @@ status_t MPEG2TSSource::read(
+     int64_t seekTimeUs;
+     ReadOptions::SeekMode seekMode;
+     if (mSeekable && options && options->getSeekTo(&seekTimeUs, &seekMode)) {
+-        return ERROR_UNSUPPORTED;
++        ALOGW("Seek may not be supported here!");
++        //return ERROR_UNSUPPORTED;
+     }
+ 
+     status_t finalResult;
+-- 
+2.7.4
+

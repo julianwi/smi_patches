@@ -1,0 +1,74 @@
+From 52d686f8ae2ce9ea16ff8ecdda19a54494ae41a4 Mon Sep 17 00:00:00 2001
+From: Chirayu Desai <cdesai@cyanogenmod.org>
+Date: Sat, 26 Nov 2016 19:51:23 +0600
+Subject: [PATCH 02/12] Allow disabling the privacy guard notification (2/2)
+
+Change-Id: Iaead7997d4c51a4d8659afb38d412478b3dff80c
+---
+ core/java/android/provider/Settings.java               | 11 +++++++++--
+ services/java/com/android/server/am/ActivityStack.java |  5 ++++-
+ 2 files changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/core/java/android/provider/Settings.java b/core/java/android/provider/Settings.java
+index 97d7460..7de32dc 100755
+--- a/core/java/android/provider/Settings.java
++++ b/core/java/android/provider/Settings.java
+@@ -5881,9 +5881,15 @@ public final class Settings {
+          * Whether newly installed apps should run with privacy guard by default
+          * @hide
+          */
+-         public static final String PRIVACY_GUARD_DEFAULT = "privacy_guard_default";
++        public static final String PRIVACY_GUARD_DEFAULT = "privacy_guard_default";
+ 
+         /**
++         * Whether a notification should be shown if privacy guard is enabled
++         * @hide
++         */
++        public static final String PRIVACY_GUARD_NOTIFICATION = "privacy_guard_notification"; 
++         
++        /**
+          * Default theme to use.  If empty, use holo.
+          * @hide
+          */
+@@ -5981,7 +5987,8 @@ public final class Settings {
+             UI_NIGHT_MODE,
+             ADVANCED_REBOOT,
+             PRIVACY_GUARD_DEFAULT,
+-            DEVELOPMENT_SHORTCUT
++            DEVELOPMENT_SHORTCUT,
++            PRIVACY_GUARD_NOTIFICATION
+         };
+ 
+         /**
+diff --git a/services/java/com/android/server/am/ActivityStack.java b/services/java/com/android/server/am/ActivityStack.java
+index 4969375..cc96d2a 100644
+--- a/services/java/com/android/server/am/ActivityStack.java
++++ b/services/java/com/android/server/am/ActivityStack.java
+@@ -73,6 +73,7 @@ import android.os.RemoteException;
+ import android.os.SystemClock;
+ import android.os.Trace;
+ import android.os.UserHandle;
++import android.provider.Settings;
+ import android.util.EventLog;
+ import android.util.Slog;
+ import android.view.Display;
+@@ -1711,13 +1712,15 @@ final class ActivityStack {
+ 
+         boolean privacy = mService.mAppOpsService.getPrivacyGuardSettingForPackage(
+                 next.app.uid, next.packageName);
++        boolean privacyNotification = (Settings.Secure.getInt(mService.mContext.getContentResolver(),
++                Settings.Secure.PRIVACY_GUARD_NOTIFICATION, 1) == 1);
+ 
+         if (privacyGuardPackageName != null && !privacy) {
+             Message msg = mService.mHandler.obtainMessage(
+                     ActivityManagerService.CANCEL_PRIVACY_NOTIFICATION_MSG, next.userId);
+             msg.sendToTarget();
+             mStackSupervisor.mPrivacyGuardPackageName = null;
+-        } else if (privacy) {
++        } else if (privacy && privacyNotification) {
+             Message msg = mService.mHandler.obtainMessage(
+                     ActivityManagerService.POST_PRIVACY_NOTIFICATION_MSG, next);
+             msg.sendToTarget();
+-- 
+2.7.4
+

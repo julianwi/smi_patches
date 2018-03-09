@@ -1,0 +1,30 @@
+From 83207ab4793130fee5dc2b5929ed136d17d320ca Mon Sep 17 00:00:00 2001
+From: "sadiqX, choudhari" <sadiqx.choudhari@intel.com>
+Date: Sun, 14 Jul 2013 16:13:01 +0530
+Subject: [PATCH 22/56] Audio-MW: Enable OMX MP3 and AAC decoder support
+
+This patch will log the OMX plugin name that is created successfully.
+
+Signed-off-by: sadiqX, choudhari <sadiqx.choudhari@intel.com>
+
+Change-Id: I9e17a4c116db4f0be942d50c8f733a062f4a6082
+---
+ media/libstagefright/omx/SoftOMXPlugin.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/media/libstagefright/omx/SoftOMXPlugin.cpp b/media/libstagefright/omx/SoftOMXPlugin.cpp
+index b258f75..863d50b 100644
+--- a/media/libstagefright/omx/SoftOMXPlugin.cpp
++++ b/media/libstagefright/omx/SoftOMXPlugin.cpp
+@@ -154,6 +154,8 @@ OMX_ERRORTYPE SoftOMXPlugin::makeComponentInstance(
+         codec->incStrong(this);
+         codec->setLibHandle(libHandle);
+ 
++        ALOGI("Created OMXPlugin : %s", kComponents[i].mName);
++
+         return OMX_ErrorNone;
+     }
+ 
+-- 
+2.7.4
+

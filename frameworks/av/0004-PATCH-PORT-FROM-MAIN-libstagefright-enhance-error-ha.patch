@@ -1,0 +1,37 @@
+From f3e6e044bdcfadb61aadfc5aa98e597fb8488bce Mon Sep 17 00:00:00 2001
+From: ywan171 <yi.a.wang@intel.com>
+Date: Sat, 15 Dec 2012 21:55:50 +0800
+Subject: [PATCH 04/56] [PATCH] [PORT FROM MAIN]libstagefright: enhance error
+ handle for NuCachedSource2
+
+enhance error handle for NuCachedSource2.When invalid offset(<0) resulted from a asf clip without
+simple index object is passed to readAt,return error.
+
+Change-Id: I38a13a62bc35683c099d14e0c27dbe66f2684ab5
+Category: aosp improvement
+Domain: Video.Media-streaming
+Origin: internal
+Signed-off-by: ywan171 <yi.a.wang@intel.com>
+Signed-off-by: chuzhoux <chux.zhou@intel.com>
+---
+ media/libstagefright/NuCachedSource2.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/media/libstagefright/NuCachedSource2.cpp b/media/libstagefright/NuCachedSource2.cpp
+index e36532d..7dc37af 100644
+--- a/media/libstagefright/NuCachedSource2.cpp
++++ b/media/libstagefright/NuCachedSource2.cpp
+@@ -509,6 +509,10 @@ ssize_t NuCachedSource2::readAtInternal(off64_t offset, void *data, size_t size,
+ 
+     Mutex::Autolock autoLock(mLock);
+ 
++    if (offset < 0) {
++        return ERROR_OUT_OF_RANGE;
++    }
++
+     // If the request can be completely satisfied from the cache, do so.
+ 
+     if (offset >= mCacheOffset
+-- 
+2.7.4
+

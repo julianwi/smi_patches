@@ -1,0 +1,46 @@
+From 097366504da3ab210e66e0b12a69e2d21078e0c6 Mon Sep 17 00:00:00 2001
+From: wfeng6 <wei.feng@intel.com>
+Date: Fri, 26 Jul 2013 17:01:37 +0800
+Subject: [PATCH 08/56] [PATCH] [PORT FROM MAIN] Update the crop information
+ before dequeue buffers from NativeWindow
+
+In video editor application, if the 1st item is a clip and the 3rd
+item is an image, the crop information will not be updated. This
+causes the picture is stretched in the preview window.
+
+In this patch, the crop information will be updated before dequeue
+buffers from NativeWindow.
+
+Change-Id: I796c8f7ffde981450f7221d0c0e33369bf5a2ac4
+Category: aosp improvement
+Domain: Video.Media-video editor
+Origin: internal
+Signed-off-by: wfeng6 <wei.feng@intel.com>
+Signed-off-by: Dan Liang <dan.liang@intel.com>
+Signed-off-by: chuzhoux <chux.zhou@intel.com>
+---
+ libvideoeditor/lvpp/NativeWindowRenderer.cpp | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/libvideoeditor/lvpp/NativeWindowRenderer.cpp b/libvideoeditor/lvpp/NativeWindowRenderer.cpp
+index a893340..c36c6fd 100755
+--- a/libvideoeditor/lvpp/NativeWindowRenderer.cpp
++++ b/libvideoeditor/lvpp/NativeWindowRenderer.cpp
+@@ -401,6 +401,14 @@ void NativeWindowRenderer::queueExternalBuffer(ANativeWindow* anw,
+     MediaBuffer* buffer, int width, int height) {
+     native_window_set_buffers_geometry(anw, width, height,
+             HAL_PIXEL_FORMAT_YV12);
++
++    android_native_rect_t crop;
++    crop.left = 0;
++    crop.top = 0;
++    crop.right = width - 1;
++    crop.bottom = height - 1;
++    native_window_set_crop(anw, &crop);
++
+     native_window_set_usage(anw, GRALLOC_USAGE_SW_WRITE_OFTEN);
+ 
+     ANativeWindowBuffer* anb;
+-- 
+2.7.4
+

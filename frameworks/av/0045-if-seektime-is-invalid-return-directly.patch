@@ -1,0 +1,42 @@
+From dce0f59072cc98c9555b99103a15867e6786b83f Mon Sep 17 00:00:00 2001
+From: ywan171 <yi.a.wang@intel.com>
+Date: Wed, 13 Nov 2013 20:29:37 +0800
+Subject: [PATCH 45/56] if seektime is invalid, return directly
+
+BZ: 150730
+
+The duration of live streaming is set to be -1ms, so when seek, the seektime will be -1ms
+if the seektime < 0, the hls will be blocked in seeking, causeing ANR
+
+Change-Id: Ib2038580eebbb85394154e2cbe24fa04c50d5be9
+Orig-Change-Id: I92c85e70191f66f75b2bff3dcf62b6c63992c0e5
+Category: aosp improvement
+Domain: Video.Media-streaming
+Origin: internal
+Upstream-Candidate: no, proprietary
+Signed-off-by: ywan171 <yi.a.wang@intel.com>
+Signed-off-by: Dan Liang <dan.liang@intel.com>
+---
+ media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp b/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
+index 3fe5a94..b678a49 100644
+--- a/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
++++ b/media/libmediaplayerservice/nuplayer/NuPlayerDriver.cpp
+@@ -277,6 +277,12 @@ status_t NuPlayerDriver::seekTo(int msec) {
+ 
+     int64_t seekTimeUs = msec * 1000ll;
+ 
++    if (seekTimeUs < 0) {
++        ALOGI("seek time is invalid, return directly");
++        notifyListener(MEDIA_SEEK_COMPLETE);
++        return OK;
++    }
++
+     switch (mState) {
+         case STATE_PREPARED:
+         {
+-- 
+2.7.4
+

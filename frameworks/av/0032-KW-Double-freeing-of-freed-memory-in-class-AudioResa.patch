@@ -1,0 +1,104 @@
+From 90068603b835764a6dfe57a1d4081a9403d621c6 Mon Sep 17 00:00:00 2001
+From: Mazhar <mazharx.sameullah@intel.com>
+Date: Tue, 16 Oct 2012 19:00:10 +0530
+Subject: [PATCH 32/56] KW: Double freeing of freed memory in class
+ 'AudioResamplerIA'
+
+BZ: 61975
+
+The AudioResamplerIA class is derived from AudioResampler class and when multiple
+objects of AudioResamplerIA class is created, the memory allocated for mContext
+in the constructor may get freed more than once in the destructor. The changes will
+ensure that copying of constructor does not happen.
+
+Change-Id: I18dc151ee2cd12d172c8653ae18e3ce358c61a60
+Orig-Change-Id: I56918e349530a143bf3548f94c06a4864b134f20
+Category: feature differentiation
+Domain: AUDIO_MEDIA-Audio Framework
+Origin: internal
+Upstream-Candidate: no, proprietary
+Signed-off-by: Mazhar <mazharx.sameullah@intel.com>
+Signed-off-by: Arulselvan M <arulselvan.m@intel.com>
+---
+ services/audioflinger/AudioResamplerIA.h | 61 +++++++++++++++++---------------
+ 1 file changed, 33 insertions(+), 28 deletions(-)
+
+diff --git a/services/audioflinger/AudioResamplerIA.h b/services/audioflinger/AudioResamplerIA.h
+index b48254d..0778503 100644
+--- a/services/audioflinger/AudioResamplerIA.h
++++ b/services/audioflinger/AudioResamplerIA.h
+@@ -28,38 +28,43 @@ namespace android {
+ #define AUDRESAMPLEIA_SAMPLINGRATE_DEFAULT 44100
+ /* -------------------------------------------------------------------------*/
+ 
+-        class AudioResamplerIA : public AudioResampler {
+-public:
+-                AudioResamplerIA(int bitDepth, int inChannelCount,
+-                                 int32_t sampleRate);
+-                ~AudioResamplerIA();
+-                virtual void resample(int32_t *out, size_t outFrameCount,
+-                                      AudioBufferProvider *provider);
+-                virtual void setSampleRate(int32_t inSampleRate);
+-                static int sampleRateSupported(int inputRate, int outputRate);
++    class AudioResamplerIA : public AudioResampler {
++ public:
++        AudioResamplerIA(int bitDepth, int inChannelCount,
++                 int32_t sampleRate);
++        ~AudioResamplerIA();
+ 
+-private:
+-                void init();
+-                template < int CHANNELS >
+-                    void resample(int32_t *out, size_t outFrameCount,
+-                                  AudioBufferProvider *provider);
+-                void *mContext;
++        virtual void resample(int32_t *out, size_t outFrameCount,
++                      AudioBufferProvider *provider);
++        virtual void setSampleRate(int32_t inSampleRate);
++        static int sampleRateSupported(int inputRate, int outputRate);
+ 
+-                static const int16_t mMaxInputBufferSize = 2048;
+-                float *mFloatInpUnaligned;
+-                float *mFloatInp;
+-                float *mFloatOut;
++ private:
++        void init();
++        template < int CHANNELS >
++            void resample(int32_t *out, size_t outFrameCount,
++                  AudioBufferProvider *provider);
++        void *mContext;
+ 
+-                /* remaining number of output frames that cannot
+-                 * fit in the current output buffer
+-                 */
+-                int mRemainingOutFrames;
+-                float mOutFrameBuffer[40] __attribute__ ((aligned(16)));
+-                int32_t mReinitNeeded;/* Flag for reiniting the SRC. */
+-        };
++        static const int16_t mMaxInputBufferSize = 2048;
++        float *mFloatInpUnaligned;
++        float *mFloatInp;
++        float *mFloatOut;
++
++        /* remaining number of output frames that cannot
++         * fit in the current output buffer
++         */
++        int mRemainingOutFrames;
++        float mOutFrameBuffer[40] __attribute__ ((aligned(16)));
++        int32_t mReinitNeeded;  /* Flag for reiniting the SRC. */
++
++        // prevent copying
++        AudioResamplerIA(const AudioResamplerIA&);
++        AudioResamplerIA& operator=(const AudioResamplerIA&);
++    };
+ 
+ /* --------------------------------------------------------------------------*/
+ 
+-};/* namespace android */
++};                  /* namespace android */
+ 
+-#endif /*ANDROID_AUDIO_RESAMPLER_IA_H */
++#endif              /*ANDROID_AUDIO_RESAMPLER_IA_H */
+-- 
+2.7.4
+

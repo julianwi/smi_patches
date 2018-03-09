@@ -1,0 +1,70 @@
+From 97370f9adc2ec1ea9d9009b2ae3c0676d0c4f055 Mon Sep 17 00:00:00 2001
+From: gbhakteX <gurudattax.bhakte@intel.com>
+Date: Fri, 18 Jan 2013 14:31:37 +0530
+Subject: [PATCH 09/56] [PATCH] [PORT FROM MAIN]Klocwork Fix required in
+ Stagefright engine.
+
+Klocwork issue #2817: Resource acquired to 'new(sizeof(FileSource))->mBuffer.mLock.mMutex'
+at line 147 may be lost here. Also there are 3 similar errors on line(s) 193, 196.
+Fix: 'source' is cleared before returning NULL, to avoid resource leak.
+[DataSource.cpp | CreateFromURI() | line 193].
+
+Klocwork issue #5255: Resource acquired to 'new(sizeof(FileSource))->mBuffer.mLock.mMutex'
+at line 222 may be lost here. Also there is one similar error on line 310.
+Fix: 'source' (only if it is FileSource) is cleared before returning from function
+fetchFile(), to avoid resource leak.
+[LiveSession.cpp | fetchFile() | line 298, 313].
+
+Change-Id: I899a1f309bcca4f1afdcf36737969a33c33368a3
+Category: aosp improvement
+Domain: AUDIO_MEDIA-Audio Framework
+Origin: internal
+Signed-off-by: gbhakteX <gurudattax.bhakte@intel.com>
+Signed-off-by: Arulselvan M <arulselvan.m@intel.com>
+---
+ media/libstagefright/DataSource.cpp           | 3 +++
+ media/libstagefright/httplive/LiveSession.cpp | 7 +++++++
+ 2 files changed, 10 insertions(+)
+
+diff --git a/media/libstagefright/DataSource.cpp b/media/libstagefright/DataSource.cpp
+index d3e02ad..d822756 100755
+--- a/media/libstagefright/DataSource.cpp
++++ b/media/libstagefright/DataSource.cpp
+@@ -307,6 +307,9 @@ sp<DataSource> DataSource::CreateFromURI(
+     }
+ 
+     if (source == NULL || source->initCheck() != OK) {
++        if (source != NULL) {
++            source.clear();
++        }
+         return NULL;
+     }
+ 
+diff --git a/media/libstagefright/httplive/LiveSession.cpp b/media/libstagefright/httplive/LiveSession.cpp
+index ad01dde..c98f15c 100644
+--- a/media/libstagefright/httplive/LiveSession.cpp
++++ b/media/libstagefright/httplive/LiveSession.cpp
+@@ -725,6 +725,9 @@ ssize_t LiveSession::fetchFile(
+                 maxBytesToRead);
+ 
+         if (n < 0) {
++            if ((!strncasecmp(url, "file://", 7)) && (source != NULL)) {
++                source->clear();
++            }
+             return n;
+         }
+ 
+@@ -744,6 +747,10 @@ ssize_t LiveSession::fetchFile(
+         }
+     }
+ 
++    if ((!strncasecmp(url, "file://", 7)) && (source != NULL)) {
++        source->clear();
++    }
++
+     return bytesRead;
+ }
+ 
+-- 
+2.7.4
+

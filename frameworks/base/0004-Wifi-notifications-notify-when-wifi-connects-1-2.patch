@@ -1,0 +1,487 @@
+From 1fff234a1e73d26306692fdf2ec9279f27163505 Mon Sep 17 00:00:00 2001
+From: PrimeDirective <activethrasher00@gmail.com>
+Date: Fri, 10 Oct 2014 03:17:29 -0400
+Subject: [PATCH 04/12] Wifi notifications: notify when wifi connects [1/2]
+
+Options:
+  off (default)
+  a dry white toast
+  a notification
+  a notification with a sound
+
+For those of us that survive on wifi islands in small college towns this is
+pretty nice to have
+
+Any notification within 30 seconds of broadcast intent ACTION_BOOT_COMPLETED
+will be canceled to prevent startup notification spamming. 8 (default) of the
+previous connections are remembered and it will update the notification's content
+accordingly if you've restored a connection.
+
+PS2: fix string WiFi -> Wi\u2011Fi for translations
+PS3: strings compatibility for Japanese & wrap at 100 chars per line
+
+Change-Id: I50f00aabad692d2547f4c74bdaaae84947ba84eb
+---
+ core/java/android/provider/Settings.java           |  10 +++
+ .../SystemUI/res/drawable-hdpi/wifi_notify.png     | Bin 0 -> 1467 bytes
+ .../SystemUI/res/drawable-mdpi/wifi_notify.png     | Bin 0 -> 1087 bytes
+ .../SystemUI/res/drawable-xhdpi/wifi_notify.png    | Bin 0 -> 2283 bytes
+ .../SystemUI/res/drawable-xxhdpi/wifi_notify.png   | Bin 0 -> 2976 bytes
+ packages/SystemUI/res/values-ru/cm_strings.xml     |   4 +
+ packages/SystemUI/res/values/cm_strings.xml        |   6 ++
+ packages/SystemUI/res/values/config.xml            |   3 +
+ .../statusbar/policy/MSimNetworkController.java    |   4 +
+ .../statusbar/policy/NetworkController.java        |  89 ++++++++++++++++++++-
+ 10 files changed, 115 insertions(+), 1 deletion(-)
+ create mode 100644 packages/SystemUI/res/drawable-hdpi/wifi_notify.png
+ create mode 100644 packages/SystemUI/res/drawable-mdpi/wifi_notify.png
+ create mode 100644 packages/SystemUI/res/drawable-xhdpi/wifi_notify.png
+ create mode 100644 packages/SystemUI/res/drawable-xxhdpi/wifi_notify.png
+
+diff --git a/core/java/android/provider/Settings.java b/core/java/android/provider/Settings.java
+index 76eecd7..520474f 100755
+--- a/core/java/android/provider/Settings.java
++++ b/core/java/android/provider/Settings.java
+@@ -2720,6 +2720,16 @@ public final class Settings {
+         public static final String DOCK_SOUNDS_ENABLED = Global.DOCK_SOUNDS_ENABLED;
+ 
+         /**
++         * Displays a notification when wifi network has changed
++         * 0 - default (off)
++         * 1 - toast
++         * 2 - notification
++         * 3 - notification with sound
++         * @hide
++         */
++        public static final String WIFI_NETWORK_NOTIFICATIONS = "wifi_network_notifications";
++
++        /**
+          * Whether to play sounds when the keyguard is shown and dismissed.
+          * @hide
+          */
+diff --git a/packages/SystemUI/res/drawable-hdpi/wifi_notify.png b/packages/SystemUI/res/drawable-hdpi/wifi_notify.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..47992872adb540868b7be0888ea4e9c2324f21f3
+GIT binary patch
+literal 1467
+zcmV;s1w{IZP)<h;3K|Lk000e1NJLTq001xm001lq1^@s6BNjVn00006VoOIv0RI60
+z0RN!9r;`8x010qNS#tmY3ljhU3ljkVnw%H_000McNliru-U<u{E*=oUQY-)f1xQIm
+zK~!ko?U-wCR8<s)pLM1;sFh1wZc@;269r-d-a-s&V$`4F|L~jt!XIIXenFB7hD)Kg
+zv<d~KV5OF(NL$)6Gp}FXLrx}Vrl->ZG3iQ9rky!^@Aa<ByVlyUAsezTiB@bPDFG7i
+zmt>xjU#S4fd{%*KL{$G10Fp{Tho7xLuRmY$)9$^MIVT0M0L%lAfQP^=uneq3MESV^
+zu$8-kSAo620MKtsr&cBNSx-_=Mdtij;68BIe=imV69p9Sva-8@J;1h%qN=epIsX^c
+zAqDmiFy&`5A|5vdKvF00CUC&v(Urz-0j0hIHrD{@0=@<A6<FT}Jaw2&0>1zY5uv;n
+z^DKS<c*}~nTj{mL=V1e=m9B#8%l1f`TW<h2C5=VId@cYd=4-%7U`P7(8Wm6Dy1L5m
+zMM5l1dVn75bx6`x;7&v=KLa4?Rp110)YMm9gThHB6qkXO2J06c8l4#+)dGOzrw8~L
+z7?3m+5i@O)_5vRQeFb7Xn{bI0dSE)71D*g&29YN}1J@m1TY&ArPAgUfObX;6&@bs)
+znk?M~7H2K?2XGshF|V%}P@C&OQfH5nf&S%vI)F_E@;b2J-?54=6`xaX1EztC!0AlF
+z)*f0hBisURTIp2TL$+d{EgRk^Pf|}W+iTON%Lg{fCMWD+({)Eq4yI9X6}Z)AY8sc+
+z4V=nJxH(&UI3k`%+Gct^2<)=8s~PV!sx2jhYj;6B;P<D22~*}MFy=Fk+B;c~B*3r0
+zP()O-G&<zuI+01po4`m!%t_iM>6G2P)t0HvnYFYg*|oj);(|Rf5fLMjZUM)EBlb2n
+z=Eby9KLZdERZ~>AY4lt~+?TXj(r2#1DUYwTxT&mq&kl#=eo3>yg^0K$X#)7jzyA~w
+zi@Aj?B9<hbw<i`P9dTIo6zp?Y<9m55gB9Had?{%Z7zVy~2re|N#4Zral1{pKBn1_E
+z)=Eoy7!g}?syq=<DoB?VC-r+a;Q5HC<aLJiWZJyGnxuWdobZ#tZ*_{;@9s9sHeOP|
+zBTJ@T)oYsa%^5K%X%IMLmntV&E5P4AV8#IEB^`-~FKV`&k#sg99+?ETo5glyXjeIW
+zKNJyTjk>-@a>t2#CexRs0H%P;z^v&tF~=XSQwPcsvCnjQHzICJ>TpGV$NV1|API28
+zohVHKhzLm<H#41d?9Q1TCMC54+a<kk1-d*cZmpBp$Ib5*N%zh7QxWllq&^qAoi@Oo
+zEL}G1fs|gaWxC8^pepI83(?M;5Lk2_>C9|3pZUEF*yqV^R?=-?9Qe)vdx0xOrn0so
+z+!hf}C0#a{etToU>nk}dwPb~pOvo){hWhNR-0wWt2V9ScQAtVBfq%_Iy`)cpV^*@2
+z(rE@e8xe)~PMSDq*c4l8;Y~*ZJa#*?{35PZ27u2q{9n80*O}fWJ5GM%jy6w+L0~j*
+z?rpUPh=@txTurN6a!x#QQg_un_{Jfr$-OWgkF8bt!bx05CT!(*t?-P)>t2Iq?}EF@
+zV<v&JxqhhGTe_wJxJHb4@OT1@m}&YN?Av32f4W892V7du72|q5Ktz<?y<#9AxS-XW
+z$WEJbhdj94Xy!U`-8oPLqT+o{0B<{{I~y$7?-spty~?-jcG}F;>no34?&TxLSPz^l
+zKSspem*#ps17bJuN#>fQ_N+267!l*GIx}e{fQXp#-OoymandW9s~*UCDFGP71aKv1
+z*dGI~HN*8U6o5et18E0aa`hc-westx(N$!~cRxLzAFBM{MA9Z-m~F_0Y{+wxe*uT|
+V1mV;eoIn5o002ovPDHLkV1mT|l$`(o
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-mdpi/wifi_notify.png b/packages/SystemUI/res/drawable-mdpi/wifi_notify.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..1eb3915d85ff88f4480d023f2e6b6091657d1ad5
+GIT binary patch
+literal 1087
+zcmV-F1i<@=P)<h;3K|Lk000e1NJLTq001Na001Ef1^@s6vCRo900006VoOIv0RI60
+z0RN!9r;`8x010qNS#tmY3ljhU3ljkVnw%H_000McNliru-U<u{E;c1}`qlsd1I$T8
+zK~z}7?U>zfR8<tke{1GW#kL?N9n-1=qJ-iH)~JaeL5)6WO!R;7ui?M&*#}=tjK1)p
+z;lqm7wxSlW5G|on#a4;bLYcYS2iGOXn>%GX_2WTKGMUM}=iIaQ+Iy{i?!cX~{?KL?
+zM??*%0d-$$133_q;vWMP5p|#+7zBoadx0TfE6@Pa&2!*4;41KwKi7a2pnW@_S_g!H
+zCNK(&7|4(rX&FRb0#l5-pIv-k1+D;#z-8cyq*m8}B4Ri2m;v>rw@On7fVUE0{lNRc
+zT!($aX<Y)&Njg*BJ1f=0Fz__6)Aw2(7$`;`@ObIk@v0b0?2Q5=5wQ>W3|N%Zz6B^E
+zwgKb7m^WzwH#;y|ciQp}42Pdv%xPBy)%N!Y@Fs8}BBmrQWf8FpIN$=!4W^3j0_Xzp
+zqw8X81)wS5D6rirzYo~r0P_yO9t1`sVlwl^{))*3kegP?8Q>zY>gewR_Ei9CxJE9T
+znLglt;1Pq&{Ol;P+7CqLh))5}C!jK54Y&Zz0>3!gqR_WH>Y)li<7V=@SzH3<fe&mO
+zV-93Xl8rhr1Dwt53#TJu0C>ub%>$p>PsV_kN}Csw&no~Gb<;5TrU4WzPXS+=fQJlb
+z4w#e_w^Sx+A|mcKh)L)E^`y3Xao%*zAn=SCoB$33mw>&%k-w-c0d+JY27#B&Oj>y5
+zQHzMWq_vV)DN$G%T-&wx3a|$_0h~?UyVgP4qw9dloQ@m74{i;qsV=zi8|8pYDIEqH
+z<yO+ksfU3#TzGjhchw@82bS|ZN76fzUiF-{h&Ui=&Na8wpTUGB8PH)#-*<HCQtEz=
+zh(o|@2DJiwW5osV0Pv`!rli4SY0JVGuvbl6!Fz%IR%aVHUInHjAcI<nh!ggZQ=a=I
+zu-h9J>AsOHyDsS-t7^>BU$CUVHP{vZ-qi79kKKGAZ7C5UNl&<+)$BVT8VDs%o0K$j
+zyS=h5<=b=}td&>{r)7GbwJoQ;=>X#I0Q80PzpEtY9l*gvjT!K^J9w((%fQKQPLZ{)
+zj+K9U&Bty7h0la#F9RupTQn;*-&+AblJt8wd)2zNTuH0IA-90@z`MZ7imB&(?`s$Q
+z5lPG4?vrh#4@mkoBHnY_9tK{lnD!j-os~5s>Dos2$Tr%XB(3-i^{g2_ot!Ki?uFyP
+zvZUF6?KLPO_5&}J8fZ~p)4+tJe522;^$JMRSHR~<&ubgdEbvJ$U^WFPv4isoJC}fC
+zy}l&&R6`|}@`yNQ)9kmrTmSj{ctmWAh#hzSnfPChKLB_hPNzZ>gKPi*002ovPDHLk
+FV1mRT^>P3J
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-xhdpi/wifi_notify.png b/packages/SystemUI/res/drawable-xhdpi/wifi_notify.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..acb7f72f0c6a7cfcecfcf7a74ec5d5374c68a208
+GIT binary patch
+literal 2283
+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
+FV1mnMPDcO$
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-xxhdpi/wifi_notify.png b/packages/SystemUI/res/drawable-xxhdpi/wifi_notify.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..9c225c75a394e933ce95218df80043bfc39dc35f
+GIT binary patch
+literal 2976
+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
+WllDCzush8F0000<MNUMnLSTa9wuKb{
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/values-ru/cm_strings.xml b/packages/SystemUI/res/values-ru/cm_strings.xml
+index 1eb75fd..a69d56f 100644
+--- a/packages/SystemUI/res/values-ru/cm_strings.xml
++++ b/packages/SystemUI/res/values-ru/cm_strings.xml
+@@ -81,4 +81,8 @@
+   <string name="status_bar_notification_spam_item_title">Скрыть подобные сообщения</string>
+   <string name="protected_app_notification_title">Уведомление от заблок.приложения</string>
+   <string name="protected_app_notification_summary">Нажмите, чтобы открыть уведомление</string>
++  <string name="wifi_status_changed">Новое соединение</string>
++  <string name="wifi_restored">Соединение восстановлено</string>
++  <string name="wifi_address_changed">Wi\u2011Fi SSID изменился на <xliff:g id="name">%s</xliff:g></string>
++  <string name="wifi_changed_ticker">Wi\u2011Fi SSID: <xliff:g id="name">%s</xliff:g></string>
+ </resources>
+diff --git a/packages/SystemUI/res/values/cm_strings.xml b/packages/SystemUI/res/values/cm_strings.xml
+index 4afded0..385f702 100644
+--- a/packages/SystemUI/res/values/cm_strings.xml
++++ b/packages/SystemUI/res/values/cm_strings.xml
+@@ -106,6 +106,12 @@
+     <!-- Content description for the add quick settings tile button. [CHAR LIMIT=NONE] -->
+     <string name="accessibility_desc_add_quick_settings">Add Quick settings.</string>
+ 
++    <!-- Notify changed wifi network -->
++    <string name="wifi_status_changed">New connection</string>
++    <string name="wifi_restored">Connection restored</string>
++    <string name="wifi_address_changed">Wi\u2011Fi SSID changed to <xliff:g id="name">%s</xliff:g></string>
++    <string name="wifi_changed_ticker">Wi\u2011Fi SSID: <xliff:g id="name">%s</xliff:g></string>
++
+     <!-- Sim Slot number -->
+     <string name="sim_slot" translatable="false">1</string>
+     <string name="sim_slot_2" translatable="false">2</string>
+diff --git a/packages/SystemUI/res/values/config.xml b/packages/SystemUI/res/values/config.xml
+index 7735499..c76a4cb 100644
+--- a/packages/SystemUI/res/values/config.xml
++++ b/packages/SystemUI/res/values/config.xml
+@@ -111,5 +111,8 @@
+ 
+     <!-- milliseconds before the heads up notification accepts touches. -->
+     <integer name="heads_up_sensitivity_delay">700</integer>
++
++    <!-- number of saved networks | can be increased with an overlay for wifi only devices -->
++    <integer name="wifi_notifications_remembered_connections">8</integer>
+ </resources>
+ 
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/policy/MSimNetworkController.java b/packages/SystemUI/src/com/android/systemui/statusbar/policy/MSimNetworkController.java
+index f3a40c5..bb22b76 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/policy/MSimNetworkController.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/policy/MSimNetworkController.java
+@@ -31,6 +31,7 @@ import android.net.wimax.WimaxManagerConstants;
+ import android.os.Handler;
+ import android.os.Message;
+ import android.os.SystemProperties;
++import android.provider.Settings;
+ import android.telephony.MSimTelephonyManager;
+ import android.telephony.PhoneStateListener;
+ import android.telephony.ServiceState;
+@@ -340,6 +341,9 @@ public class MSimNetworkController extends NetworkController {
+                 action.equals(WimaxManagerConstants.WIMAX_NETWORK_STATE_CHANGED_ACTION)) {
+             updateWimaxState(intent);
+             refreshViews(mDefaultSubscription);
++        } else if (action.equals("cm.UPDATE_WIFI_NOTIFICATION_PREFERENCE")) {
++            mWifiNotifications = Settings.System.getInt(mContext.getContentResolver(),
++                    Settings.System.WIFI_NETWORK_NOTIFICATIONS, 0);
+         }
+     }
+ 
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/policy/NetworkController.java b/packages/SystemUI/src/com/android/systemui/statusbar/policy/NetworkController.java
+index cd2543b..3098e96 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/policy/NetworkController.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/policy/NetworkController.java
+@@ -18,13 +18,18 @@
+ 
+ package com.android.systemui.statusbar.policy;
+ 
++import android.app.Notification;
++import android.app.NotificationManager;
++import android.app.PendingIntent;
+ import android.content.BroadcastReceiver;
+ import android.content.Context;
+ import android.content.Intent;
+ import android.content.IntentFilter;
+ import android.content.res.Resources;
++import android.media.RingtoneManager;
+ import android.net.ConnectivityManager;
+ import android.net.NetworkInfo;
++import android.net.Uri;
+ import android.net.wifi.WifiConfiguration;
+ import android.net.wifi.WifiInfo;
+ import android.net.wifi.WifiManager;
+@@ -43,6 +48,7 @@ import android.util.Log;
+ import android.view.View;
+ import android.widget.ImageView;
+ import android.widget.TextView;
++import android.widget.Toast;
+ 
+ import com.android.internal.telephony.IccCardConstants;
+ import com.android.internal.telephony.TelephonyIntents;
+@@ -54,6 +60,7 @@ import com.android.systemui.R;
+ import java.io.FileDescriptor;
+ import java.io.PrintWriter;
+ import java.util.ArrayList;
++import java.util.LinkedList;
+ import java.util.List;
+ import java.util.Locale;
+ 
+@@ -108,11 +115,17 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
+     protected AsyncChannel mWifiChannel;
+     boolean mWifiEnabled, mWifiConnected;
+     int mWifiRssi, mWifiLevel;
+-    String mWifiSsid;
++    static String mWifiSsid;
+     int mWifiIconId = 0;
+     int mQSWifiIconId = 0;
+     int mWifiActivityIconId = 0; // overlay arrows for wifi direction
+     int mWifiActivity = WifiManager.DATA_ACTIVITY_NONE;
++    static String oldWifiSsid = "";
++    static boolean mConnectionAtBoot = true;
++    int mWifiNotifications = 0;
++    NotificationManager nm;
++    private int mStoredSSIDs;
++    LinkedList mConnectionsList = new LinkedList();
+ 
+     // bluetooth
+     protected boolean mBluetoothTethered = false;
+@@ -245,9 +258,12 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
+         if (wifiMessenger != null) {
+             mWifiChannel.connect(mContext, handler, wifiMessenger);
+         }
++        mStoredSSIDs = res.getInteger(R.integer.wifi_notifications_remembered_connections);
+ 
+         // broadcasts
+         IntentFilter filter = new IntentFilter();
++        filter.addAction("cm.UPDATE_WIFI_NOTIFICATION_PREFERENCE");
++        filter.addAction(Intent.ACTION_BOOT_COMPLETED);
+         filter.addAction(WifiManager.RSSI_CHANGED_ACTION);
+         filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+         filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+@@ -271,6 +287,9 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
+ 
+         mLastLocale = mContext.getResources().getConfiguration().locale;
+         initNetworkState();
++
++        mWifiNotifications = Settings.System.getInt(mContext.getContentResolver(),
++                Settings.System.WIFI_NETWORK_NOTIFICATIONS, 0);
+     }
+ 
+     protected void initNetworkState() {
+@@ -481,6 +500,17 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
+                  action.equals(ConnectivityManager.INET_CONDITION_ACTION)) {
+             updateConnectivity(intent);
+             refreshViews();
++        } else if (action.equals(Intent.ACTION_BOOT_COMPLETED)) {
++            Handler handler = new Handler();
++            handler.postDelayed(new Runnable() {
++                public void run() {
++                    // Delay wifi connection notifications by at least
++                    // 30 seconds immediately after boot
++                    mConnectionAtBoot = false;
++            }}, 30000);
++        } else if (action.equals("cm.UPDATE_WIFI_NOTIFICATION_PREFERENCE")) {
++            mWifiNotifications = Settings.System.getInt(mContext.getContentResolver(),
++                    Settings.System.WIFI_NETWORK_NOTIFICATIONS, 0);
+         } else if (action.equals(Intent.ACTION_CONFIGURATION_CHANGED)) {
+             refreshLocale();
+             refreshViews();
+@@ -1032,11 +1062,68 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
+                 }
+                 if (info != null) {
+                     mWifiSsid = huntForSsid(info);
++                    if (mWifiNotifications > 0) {
++                        boolean restoredConnection = mConnectionsList.contains(mWifiSsid);
++
++                        if (!mConnectionAtBoot && (mWifiSsid != oldWifiSsid)) {
++                            String contentText = mContext.getString(R.string.wifi_status_changed);
++                            if (restoredConnection) {
++                                contentText = mContext.getString(R.string.wifi_restored);
++                            }
++
++                            switch (mWifiNotifications) {
++                                case 0: // off
++                                    break;
++                                case 1: // toast
++                                    final String cheese = (contentText + ": " + mWifiSsid);
++                                    Toast.makeText(mContext, cheese, Toast.LENGTH_SHORT).show();
++                                    break;
++                                case 2: // notification
++                                case 3: // notification with sound
++                                    Intent i = new Intent();
++                                    i.setClassName("com.android.settings",
++                                             "com.android.settings.Settings$WifiSettingsActivity");
++                                    PendingIntent contentIntent = PendingIntent.getActivity(
++                                             mContext, 0, i, PendingIntent.FLAG_ONE_SHOT);
++
++                                    nm = (NotificationManager) mContext.getSystemService(
++                                             Context.NOTIFICATION_SERVICE);
++                                    Notification.Builder network =
++                                            new Notification.Builder(mContext)
++                                            .setSmallIcon(R.drawable.wifi_notify)
++                                            .setWhen(System.currentTimeMillis())
++                                            .setTicker(mContext.getString(
++                                                     R.string.wifi_changed_ticker, mWifiSsid))
++                                            .setContentTitle(contentText)
++                                            .setContentText(mContext.getString(
++                                                     R.string.wifi_address_changed, mWifiSsid))
++                                            .setContentIntent(contentIntent)
++                                            .setAutoCancel(true);
++
++                                    if (mWifiNotifications == 3) {
++                                        Uri soundUri = RingtoneManager.getDefaultUri(
++                                                RingtoneManager.TYPE_NOTIFICATION);
++                                        network.setSound(soundUri);
++                                    }
++
++                                    nm.cancel(R.string.wifi_address_changed);
++                                    nm.notify(R.string.wifi_address_changed, network.build());
++                                    break;
++                            }
++                        }
++                        oldWifiSsid = mWifiSsid;
++                        if (mConnectionsList.size() == mStoredSSIDs) {
++                            mConnectionsList.remove(0);
++                        }
++                        if (!restoredConnection) mConnectionsList.add(mWifiSsid);
++                    }
++                    mConnectionAtBoot = false;
+                 } else {
+                     mWifiSsid = null;
+                 }
+             } else if (!mWifiConnected) {
+                 mWifiSsid = null;
++                if (nm != null) nm.cancel(R.string.wifi_address_changed);
+             }
+         } else if (action.equals(WifiManager.RSSI_CHANGED_ACTION)) {
+             mWifiRssi = intent.getIntExtra(WifiManager.EXTRA_NEW_RSSI, -200);
+-- 
+2.7.4
+

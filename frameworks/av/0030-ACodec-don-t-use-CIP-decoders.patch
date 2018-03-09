@@ -1,0 +1,45 @@
+From 03f6e2e307b6f2a675838586eeb2826eb6c4013e Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Sat, 11 Feb 2017 21:46:46 +0100
+Subject: [PATCH 30/56] ACodec: don't use CIP decoders
+
+When using ACodec for codec allocation, CIP decoders don't work here.
+ACodec users only use the OMX "node" to allocate decoders.
+So most streaming players will use google decoders instead.
+
+Change-Id: Ifa9cf58c8e534b5aea425f39169a3d1942588077
+---
+ media/libstagefright/ACodec.cpp | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index 87f4d14..f913bf9 100755
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -3879,10 +3879,22 @@ bool ACodec::UninitializedState::onAllocateComponent(const sp<AMessage> &msg) {
+     AString componentName;
+     uint32_t quirks = 0;
+     if (msg->findString("componentName", &componentName)) {
++#ifdef USE_INTEL_MDP
++        if (strncmp(componentName.c_str(), "CIP", 3) == 0) {
++            AString cipCodec = componentName;
++            if (strncmp(componentName.c_str(), "CIPVorbis", 9) == 0) {
++                componentName = "OMX.google.vorbis.decoder";
++            } else if (strncmp(componentName.c_str(), "CIPAMRWB", 8) == 0) {
++                componentName = "OMX.google.amrwb.decoder";
++            } else if (strncmp(componentName.c_str(), "CIPAMRNB", 8) == 0) {
++                componentName = "OMX.google.amrnb.decoder";
++            }
++            ALOGI("Change non-working %s codec to %s", cipCodec.c_str(),componentName.c_str());
++        }
++#endif
+         ssize_t index = matchingCodecs.add();
+         OMXCodec::CodecNameAndQuirks *entry = &matchingCodecs.editItemAt(index);
+         entry->mName = String8(componentName.c_str());
+-
+         AString tmp = componentName;
+         if (tmp.endsWith(".secure")) {
+             size_t rm = strlen(".secure");
+-- 
+2.7.4
+

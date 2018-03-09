@@ -1,0 +1,38 @@
+From 08acd311906b4b9a5e26942b959088cce1c7f35b Mon Sep 17 00:00:00 2001
+From: Henrik Smiding <henrik.smiding@intel.com>
+Date: Fri, 11 Jul 2014 11:46:03 +0200
+Subject: [PATCH 16/17] Set SK_SOFTWARE_FLOAT flag for x86.
+
+BZ: 206895
+
+Sets the SK_SOFTWARE_FLOAT for x86 platform, to avoid calls to math lib.
+Skia will now use an internal function for some math functions, which
+has proven to still be faster than calling math lib.
+Affects Smartbench 2012 benchmark.
+
+Change-Id: I371001c52b0aa7855050afc1d5b39c17820d5d41
+Category: aosp improvement
+Domain: AOSP-Others
+Origin: internal
+Upstream-Candidate: no, not-aosp
+Signed-off-by: Henrik Smiding <henrik.smiding@intel.com>
+---
+ Android.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Android.mk b/Android.mk
+index c90bfc4..60305bc 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -42,6 +42,8 @@ endif
+ 
+ ifeq ($(TARGET_ARCH),x86)
+ 	LOCAL_CFLAGS += -DANDROID_LARGE_MEMORY_DEVICE
++    # Using Skia's own function, instead of math lib's, has proven to be faster.
++    LOCAL_CFLAGS += -DSK_SOFTWARE_FLOAT
+ endif
+ 
+ ifeq ($(ARCH_ARM_HAVE_NEON),true)
+-- 
+2.7.4
+

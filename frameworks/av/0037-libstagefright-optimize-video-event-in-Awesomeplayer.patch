@@ -1,0 +1,105 @@
+From 4e43fd6a791c7949425904f9d4891b16956da595 Mon Sep 17 00:00:00 2001
+From: Tianmi Chen <tianmi.chen@intel.com>
+Date: Thu, 2 May 2013 16:36:02 +0800
+Subject: [PATCH 37/56] libstagefright: optimize video event in Awesomeplayer
+ to avoid frame drop issue
+
+BZ: 77315
+
+enhancement for media data reading from file and priority
+improvement for video event thread
+
+BZ: 84042
+
+Some file types are not supported for media data prefetching, which should
+be excluded in our optimization.
+
+BZ: 81360
+
+Fix a klocwork issue that WHILE statement may fall into
+infinite loop.
+
+Change-Id: I7a3f93bb70432eb9dec6f15430c7373b3ec27640
+Orig-Change-Id: Id4ce341e96d10e56a56b93a59ba1a4454804a080
+Category: aosp improvement
+Domain: Video.Media-local playback
+Origin: internal
+Upstream-Candidate: no
+Orig-Change-Id: Iac068383f56b53dcbe6b944bc0aa61650b72384b
+Signed-off-by: Tianmi Chen <tianmi.chen@intel.com>
+Signed-off-by: Dan Liang <dan.liang@intel.com>
+---
+ include/media/stagefright/MediaSource.h |  4 ++++
+ media/libstagefright/AwesomePlayer.cpp  | 14 +++++++++++++-
+ media/libstagefright/MPEG4Extractor.cpp |  4 +++-
+ 3 files changed, 20 insertions(+), 2 deletions(-)
+
+diff --git a/include/media/stagefright/MediaSource.h b/include/media/stagefright/MediaSource.h
+index 694be23..d0ff475 100644
+--- a/include/media/stagefright/MediaSource.h
++++ b/include/media/stagefright/MediaSource.h
+@@ -97,6 +97,10 @@ struct MediaSource : public virtual RefBase {
+         int64_t mLatenessUs;
+     };
+ 
++    enum {
++        kMaxMediaBufferSize = 20,
++    };
++
+     // Causes this source to suspend pulling data from its upstream source
+     // until a subsequent read-with-seek. Currently only supported by
+     // OMXCodec.
+diff --git a/media/libstagefright/AwesomePlayer.cpp b/media/libstagefright/AwesomePlayer.cpp
+index d169512..1a61689 100644
+--- a/media/libstagefright/AwesomePlayer.cpp
++++ b/media/libstagefright/AwesomePlayer.cpp
+@@ -33,6 +33,7 @@
+ #include "include/ThrottledSource.h"
+ #include "include/MPEG2TSExtractor.h"
+ #include "include/WVMExtractor.h"
++#include "include/ThreadedSource.h"
+ 
+ #ifdef ENABLE_AV_ENHANCEMENTS
+ #include <QCMediaDefs.h>
+@@ -2105,11 +2106,22 @@ status_t AwesomePlayer::initVideoDecoder(uint32_t flags) {
+         }
+     }
+ 
++    sp<MetaData> meta = mExtractor->getMetaData();
++    const char *mime;
++    CHECK(meta->findCString(kKeyMIMEType, &mime));
++    bool isPrefetchSupported = false;
++    if (!strcasecmp(mime, MEDIA_MIMETYPE_CONTAINER_MPEG4)
++        || !strcasecmp(mime, MEDIA_MIMETYPE_CONTAINER_MATROSKA)
++        || !strcasecmp(mime, MEDIA_MIMETYPE_CONTAINER_AVI)
++    ) {
++        isPrefetchSupported = true;
++    }
++
+     ALOGV("initVideoDecoder flags=0x%x", flags);
+     mVideoSource = OMXCodec::Create(
+             mClient.interface(), mVideoTrack->getFormat(),
+             false, // createEncoder
+-            mVideoTrack,
++            isPrefetchSupported ? new ThreadedSource(mVideoTrack, MediaSource::kMaxMediaBufferSize) : mVideoTrack,
+             NULL, flags, USE_SURFACE_ALLOC ? mNativeWindow : NULL);
+ 
+     if (mVideoSource != NULL) {
+diff --git a/media/libstagefright/MPEG4Extractor.cpp b/media/libstagefright/MPEG4Extractor.cpp
+index ff12295..6c1887c 100644
+--- a/media/libstagefright/MPEG4Extractor.cpp
++++ b/media/libstagefright/MPEG4Extractor.cpp
+@@ -2801,7 +2801,9 @@ status_t MPEG4Source::start(MetaData *params) {
+         return ERROR_MALFORMED;
+     }
+     mGroup = new MediaBufferGroup;
+-    mGroup->add_buffer(new MediaBuffer(max_size));
++    for (int i = 0; i < kMaxMediaBufferSize; i++) {
++        mGroup->add_buffer(new MediaBuffer(max_size));
++    }
+ 
+     mSrcBuffer = new (std::nothrow) uint8_t[max_size];
+     if (mSrcBuffer == NULL) {
+-- 
+2.7.4
+

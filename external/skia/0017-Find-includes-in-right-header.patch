@@ -1,0 +1,26 @@
+From 39fc0d2b8afd7315531aad1d0e3950f7c0aa0a53 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Thu, 16 Feb 2017 23:37:35 +0100
+Subject: [PATCH 17/17] Find includes in right header
+
+Change-Id: Ifbc99790ac00e24ffd6488a02658e1137df6e7fa
+---
+ Android.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Android.mk b/Android.mk
+index 60305bc..f1a2ce6 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -651,7 +651,7 @@ LOCAL_C_INCLUDES := \
+ 
+ ifeq ($(USE_LIBJPEG_TURBO),true)
+ LOCAL_C_INCLUDES += \
+-	$(TARGET_OUT_HEADERS)
++	$(TARGET_OUT_HEADERS)/jpeg-turbo
+ else
+ LOCAL_C_INCLUDES += \
+ 	external/jpeg
+-- 
+2.7.4
+

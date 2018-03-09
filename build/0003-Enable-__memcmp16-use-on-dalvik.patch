@@ -1,0 +1,37 @@
+From d0a390e02e5fc7ed52fa8802b0da3c5185aa5678 Mon Sep 17 00:00:00 2001
+From: Sebastien MICHEL <sebastien.michel@intel.com>
+Date: Mon, 1 Jul 2013 16:21:01 +0200
+Subject: [PATCH 3/5] Enable __memcmp16 use on dalvik
+
+BZ: 157356
+
+Use the ssse3 optimized __memcmp16 on Dalvik vm.
+
+Change-Id: Ibb7f6d55c3cf731e3bd53268b00e978843d227fb
+Orig-Change-Id: I02367c21e263c13e1e675c870751a2f9759a41e4
+Category: device enablement
+Domain: AOSP.Dalvik-Compiler-CG
+Origin: internal
+Upstream-Candidate: no, need rework
+Signed-off-by: Sebastien MICHEL <sebastien.michel@intel.com>
+Signed-off-by: Vitaly Provodin <vitaly.a.provodin@intel.com>
+---
+ core/combo/include/arch/target_linux-x86/AndroidConfig.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/combo/include/arch/target_linux-x86/AndroidConfig.h b/core/combo/include/arch/target_linux-x86/AndroidConfig.h
+index aaaf0c9..62fc8aa 100644
+--- a/core/combo/include/arch/target_linux-x86/AndroidConfig.h
++++ b/core/combo/include/arch/target_linux-x86/AndroidConfig.h
+@@ -261,7 +261,7 @@
+ /*
+  * Do we have __memcmp16()?
+  */
+-/* #define HAVE__MEMCMP16  1 */
++#define HAVE__MEMCMP16  1
+ 
+ /*
+  * type for the third argument to mincore().
+-- 
+2.7.4
+

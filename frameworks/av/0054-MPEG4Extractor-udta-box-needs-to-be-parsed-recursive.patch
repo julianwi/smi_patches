@@ -1,0 +1,68 @@
+From c9cba1472b8583b7eb8c58def9505f0e837ab572 Mon Sep 17 00:00:00 2001
+From: Dan Liang <dan.liang@intel.com>
+Date: Tue, 21 Jan 2014 22:19:58 +0800
+Subject: [PATCH 54/56] MPEG4Extractor: udta box needs to be parsed recursively
+
+BZ: 165318
+
+The Geo data is stored in udta box, and should not be skipped.
+
+Change-Id: Ib2471eeddb9a9a8a66f12c8744152f9685ba33a8
+Category: aosp improvement
+Domain: Video.Media-container
+Origin: internal
+Upstream-Candidate: no, proprietary
+Signed-off-by: Dan Liang <dan.liang@intel.com>
+---
+ media/libstagefright/MPEG4Extractor.cpp | 33 ++++++++++++++++-----------------
+ 1 file changed, 16 insertions(+), 17 deletions(-)
+
+diff --git a/media/libstagefright/MPEG4Extractor.cpp b/media/libstagefright/MPEG4Extractor.cpp
+index f2d5437..2d8d662 100644
+--- a/media/libstagefright/MPEG4Extractor.cpp
++++ b/media/libstagefright/MPEG4Extractor.cpp
+@@ -1038,25 +1038,24 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
+                 track->meta->setCString(kKeyMIMEType, "application/octet-stream");
+             }
+ 
+-            off64_t stop_offset = *offset + chunk_size;
+-
+             if (chunk_type == FOURCC('u', 'd', 't', 'a')) {
+                 parseUdtaMetaData(data_offset, chunk_data_size);
+-                *offset += chunk_size;
+-            } else {
+-                *offset = data_offset;
+-                while (*offset < stop_offset) {
+-                    status_t err = parseChunk(offset, depth + 1);
+-                    if (err != OK) {
+-                        if (chunk_type == FOURCC('t', 'r', 'a', 'k')){
+-                            // If one 'trak' box contains error, we can skip it to keep parsing,
+-                            // which make sure we can parse out following valid 'trak' in the clip
+-                            ALOGE("invalid track, skip it and keep parsing");
+-                            mLastTrack->skipTrack = true;
+-                            *offset = stop_offset;
+-                        } else {
+-                            return err;
+-                        }
++            }
++
++            off64_t stop_offset = *offset + chunk_size;
++            *offset = data_offset;
++            while (*offset < stop_offset) {
++                status_t err = parseChunk(offset, depth + 1);
++                if (err != OK) {
++                    if (chunk_type == FOURCC('t', 'r', 'a', 'k')){
++                        // If one 'trak' box contains error, we can skip it to keep parsing,
++                        // which make sure we can parse out following valid 'trak' in the clip
++                        ALOGE("invalid track, skip it and keep parsing");
++                        mLastTrack->skipTrack = true;
++                        *offset = stop_offset;
++                    } else {
++                        return err;
++                    }
+                 }
+             }
+ 
+-- 
+2.7.4
+

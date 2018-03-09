@@ -1,0 +1,109 @@
+From 0a56e393a3650c820e3f26cc949e687dab44cd94 Mon Sep 17 00:00:00 2001
+From: Steve Kondik <steve@cyngn.com>
+Date: Mon, 28 Dec 2015 13:08:26 -0800
+Subject: [PATCH 40/56] stagefright: Those who cannot remember history are
+ doomed to repeat it
+
+ * A new sniffer might want to defer it's work based on the
+   knowledge already gained by those who have already sniffed.
+ * This is the case for our FFMPEG sniffer, which is pretty awesome
+   in that it is able to fill in all the gaps and detect almost
+   anything, however the cost is additional latency during scanning
+   and startup.
+ * As we cycle thru each sniffer, feed the current score to the next.
+   It is up to the extractor to use this knowledge wisely.
+ * Additionally, print some metrics on how long the sniff took.
+
+Change-Id: I5dc8de11ed4939a01eabb0cae0b4e1e71d991eea
+---
+ media/libstagefright/DataSource.cpp     | 27 +++++++++++++++++++++------
+ media/libstagefright/MediaExtractor.cpp |  6 ++++--
+ 2 files changed, 25 insertions(+), 8 deletions(-)
+
+diff --git a/media/libstagefright/DataSource.cpp b/media/libstagefright/DataSource.cpp
+index d822756..dfeab22 100755
+--- a/media/libstagefright/DataSource.cpp
++++ b/media/libstagefright/DataSource.cpp
+@@ -162,11 +162,19 @@ bool Sniffer::sniff(
+     meta->clear();
+ 
+     Mutex::Autolock autoLock(mSnifferMutex);
++
++    String8 newMimeType;
++    if (mimeType != NULL) {
++        newMimeType.setTo(*mimeType);
++    }
++    float newConfidence = *confidence;
++
+     for (List<SnifferFunc>::iterator it = mSniffers.begin();
+          it != mSniffers.end(); ++it) {
+-        String8 newMimeType;
+-        float newConfidence;
+-        sp<AMessage> newMeta;
++        int64_t sniffStart = ALooper::GetNowUs();
++        String8 newMimeType = *mimeType;
++        float newConfidence = *confidence;
++        sp<AMessage> newMeta = *meta;
+         if ((*it)(source, &newMimeType, &newConfidence, &newMeta)) {
+             if (newConfidence > *confidence) {
+                 *mimeType = newMimeType;
+@@ -174,15 +182,19 @@ bool Sniffer::sniff(
+                 *meta = newMeta;
+             }
+         }
++        ALOGV("Sniffer (%p) completed in %.2f ms (mime=%s confidence=%.2f",
++                this, ((float)(ALooper::GetNowUs() - sniffStart) / 1000.0f),
++                mimeType == NULL ? NULL : (*mimeType).string(), *confidence);
+     }
+ 
+     /* Only do the deeper sniffers if the results are null or in doubt */
+     if (mimeType->length() == 0 || *confidence < 0.2f || forceExtraSniffers) {
+         for (List<SnifferFunc>::iterator it = mExtraSniffers.begin();
+                 it != mExtraSniffers.end(); ++it) {
+-            String8 newMimeType;
+-            float newConfidence;
+-            sp<AMessage> newMeta;
++            int64_t sniffStart = ALooper::GetNowUs();
++            String8 newMimeType = *mimeType;
++            float newConfidence = *confidence;
++            sp<AMessage> newMeta = *meta;
+             if ((*it)(source, &newMimeType, &newConfidence, &newMeta)) {
+                 if (newConfidence > *confidence) {
+                     *mimeType = newMimeType;
+@@ -190,6 +202,9 @@ bool Sniffer::sniff(
+                     *meta = newMeta;
+                 }
+             }
++            ALOGV("DeepSniffer (%p) completed in %.2f ms (mime=%s confidence=%.2f",
++                    this, ((float)(ALooper::GetNowUs() - sniffStart) / 1000.0f),
++                    mimeType == NULL ? NULL : (*mimeType).string(), *confidence);
+         }
+     }
+ 
+diff --git a/media/libstagefright/MediaExtractor.cpp b/media/libstagefright/MediaExtractor.cpp
+index c90937e..2c8aea0 100755
+--- a/media/libstagefright/MediaExtractor.cpp
++++ b/media/libstagefright/MediaExtractor.cpp
+@@ -65,6 +65,7 @@ sp<MediaExtractor> MediaExtractor::Create(
+     String8 tmp;
+ retry:
+     if (secondPass || mime == NULL) {
++        int64_t sniffStart = ALooper::GetNowUs();
+         float confidence;
+         if (secondPass) {
+             confidence = 3.14f;
+@@ -76,8 +77,9 @@ retry:
+         }
+ 
+         mime = tmp.string();
+-        ALOGV("Autodetected media content as '%s' with confidence %.2f",
+-             mime, confidence);
++        ALOGV("Autodetected media content as '%s' with confidence %.2f (%.2f ms)",
++                mime, confidence,
++                ((float)(ALooper::GetNowUs() - sniffStart) / 1000.0f));
+     }
+ 
+     bool isDrm = false;
+-- 
+2.7.4
+

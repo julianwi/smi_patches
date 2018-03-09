@@ -1,0 +1,38 @@
+From f4205e55a9efb15178d4b3c09ef962940d102ef2 Mon Sep 17 00:00:00 2001
+From: Sebastien MICHEL <sebastien.michel@intel.com>
+Date: Fri, 14 Jun 2013 09:53:32 +0200
+Subject: [PATCH 1/5] [PATCH] [PORT FROM MAIN JB-MR2] Optimization via CFLAG
+ options
+
+Add -fno-pic and -fno-pie to get faster execution needed to get RLBench
+target
+
+Change-Id: Id9f7898463221febbb26f593bdecff9e6e4855d8
+Category: device enablement
+Domain: AOSP.Optimization-Bionic
+Origin: internal
+Signed-off-by: Sebastien MICHEL <sebastien.michel@intel.com>
+---
+ libc/Android.mk | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/libc/Android.mk b/libc/Android.mk
+index 33d03c4..e839227 100644
+--- a/libc/Android.mk
++++ b/libc/Android.mk
+@@ -516,8 +516,10 @@ ifeq ($(TARGET_ARCH),arm)
+ endif # !arm
+ 
+ ifeq ($(TARGET_ARCH),x86)
+-  libc_common_cflags += -DSOFTFLOAT
+-  libc_crt_target_cflags :=
++  libc_common_cflags += -DSOFTFLOAT \
++                        -fno-pic \
++                        -fno-pie
++  libc_crt_target_cflags := -m32
+   ifeq ($(ARCH_X86_HAVE_SSE2),true)
+       libc_crt_target_cflags += -DUSE_SSE2=1
+   endif
+-- 
+2.7.4
+

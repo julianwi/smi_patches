@@ -1,0 +1,70 @@
+From ca31ce4a940189dac3ec715121d90484e80694a1 Mon Sep 17 00:00:00 2001
+From: "SUN,Jing" <jing.a.sun@intel.com>
+Date: Tue, 7 Jan 2014 14:49:12 +0800
+Subject: [PATCH 10/17] Used libjpeg-turbo to optimize CC before JPEG ENC.
+
+BZ: 162863
+
+libjpeg-turbo supported a faster CC function
+than libskia's default one for source type
+SkBitmap::kARGB_8888_Config, so used it.
+
+Change-Id: If6216abb82799405f9a3b43aefdf9f7d1c19cd12
+Category: aosp improvement
+Domain: Video.Media-jpeg
+Origin: internal
+Upstream-Candidate: no, not-aosp
+Signed-off-by: SUN,Jing <jing.a.sun@intel.com>
+---
+ Android.mk                            |  4 ++++
+ src/images/SkImageDecoder_libjpeg.cpp | 12 +++++++++++-
+ 2 files changed, 15 insertions(+), 1 deletion(-)
+
+diff --git a/Android.mk b/Android.mk
+index a4a64ba..68e9687 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -52,6 +52,10 @@ endif
+ # S32A_Blend_Blitrow32. Overrides the intrinsic blitter below.
+ LOCAL_CFLAGS += -DENABLE_OPTIMIZED_S32A_BLITTERS
+ 
++ifeq ($(USE_LIBJPEG_TURBO),true)
++	LOCAL_CFLAGS += -DHAS_LIBJPEG_TURBO
++endif
++
+ LOCAL_CFLAGS += -DDCT_IFAST_SUPPORTED
+ 
+ # using freetype's embolden allows us to adjust fake bold settings at
+diff --git a/src/images/SkImageDecoder_libjpeg.cpp b/src/images/SkImageDecoder_libjpeg.cpp
+index 39397d4..b68ab8e 100644
+--- a/src/images/SkImageDecoder_libjpeg.cpp
++++ b/src/images/SkImageDecoder_libjpeg.cpp
+@@ -1210,6 +1210,12 @@ protected:
+ #else
+         cinfo.in_color_space = JCS_RGB;
+ #endif
++#ifdef HAS_LIBJPEG_TURBO
++        if (bm.config() == SkBitmap::kARGB_8888_Config) {
++            cinfo.in_color_space = JCS_EXT_RGBA;
++            cinfo.input_components = 4;
++	}
++#endif
+         cinfo.input_gamma = 1;
+ 
+         jpeg_set_defaults(&cinfo);
+@@ -1228,7 +1234,11 @@ protected:
+ 
+         while (cinfo.next_scanline < cinfo.image_height) {
+             JSAMPROW row_pointer[1];    /* pointer to JSAMPLE row[s] */
+-
++#ifdef HAS_LIBJPEG_TURBO
++            if (bm.config() == SkBitmap::kARGB_8888_Config)
++                oneRowP = (uint8_t *)srcRow;
++            else
++#endif
+             writer(oneRowP, srcRow, width, colors);
+             row_pointer[0] = oneRowP;
+             (void) jpeg_write_scanlines(&cinfo, row_pointer, 1);
+-- 
+2.7.4
+

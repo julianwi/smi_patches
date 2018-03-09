@@ -1,0 +1,136 @@
+From 111d5a8b03312a8533e872a44f4325f4332eec02 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Fri, 13 Jan 2017 19:23:30 +0100
+Subject: [PATCH 21/56] Enable some CIP codecs
+
+Improvement in performance
+
+Change-Id: I3fd50d08e2e30c1b081cf7bca882d9c58dbc1947
+---
+ media/libstagefright/Android.mk   | 23 +++++++++++++++++++++++
+ media/libstagefright/OMXCodec.cpp | 38 ++++++++++++++++++++++++++++++++++++--
+ 2 files changed, 59 insertions(+), 2 deletions(-)
+
+diff --git a/media/libstagefright/Android.mk b/media/libstagefright/Android.mk
+index 7e45ec4..f104d31 100644
+--- a/media/libstagefright/Android.mk
++++ b/media/libstagefright/Android.mk
+@@ -171,6 +171,29 @@ LOCAL_STATIC_LIBRARIES := \
+         libFLAC \
+         libmedia_helper
+ 
++ifeq ($(USE_INTEL_MDP),true)
++LOCAL_C_INCLUDES += $(TARGET_OUT_HEADERS)/media_codecs
++
++LOCAL_STATIC_LIBRARIES += \
++        lib_stagefright_mdp_mp3dec \
++        libmc_mp3_dec \
++        lib_stagefright_mdp_aacdec \
++        libmc_aac_dec \
++        lib_stagefright_mdp_aacenc \
++        libmc_aac_enc \
++        lib_stagefright_mdp_amrnbdec \
++        libmc_gsmamr \
++        lib_stagefright_mdp_amrnbenc \
++        lib_stagefright_mdp_amrwbdec \
++        lib_stagefright_mdp_amrwbenc \
++        libmc_amrwb \
++        libmc_amrcommon \
++        lib_stagefright_mdp_vorbisdec \
++        libmc_vorbis_dec \
++        libmc_codec_common \
++        libmc_core
++LOCAL_CPPFLAGS += -DUSE_INTEL_MDP
++endif
+ 
+ LOCAL_SRC_FILES += ExtendedCodec.cpp ExtendedExtractor.cpp ExtendedUtils.cpp
+ 
+diff --git a/media/libstagefright/OMXCodec.cpp b/media/libstagefright/OMXCodec.cpp
+index bb9a8cf..6dc81bc 100644
+--- a/media/libstagefright/OMXCodec.cpp
++++ b/media/libstagefright/OMXCodec.cpp
+@@ -59,6 +59,10 @@
+ 
+ #include "include/avc_utils.h"
+ 
++#ifdef USE_INTEL_MDP
++#include "UMCMacro.h"
++#endif
++
+ #ifdef ENABLE_AV_ENHANCEMENTS
+ #include <QCMediaDefs.h>
+ #include <QCMetaData.h>
+@@ -126,6 +130,17 @@ static sp<MediaSource> Make##name(const sp<MediaSource> &source, const sp<MetaDa
+     return new name(source, meta); \
+ }
+ 
++#ifdef USE_INTEL_MDP
++FACTORY_CREATE_DECL(CIPMP3Decoder)
++FACTORY_CREATE_DECL(CIPAACDecoder)
++FACTORY_CREATE_ENCODER_DECL(CIPAACEncoder)
++FACTORY_CREATE_DECL(CIPAMRNBDecoder)
++FACTORY_CREATE_ENCODER_DECL(CIPAMRNBEncoder)
++FACTORY_CREATE_DECL(CIPAMRWBDecoder)
++FACTORY_CREATE_ENCODER_DECL(CIPAMRWBEncoder)
++FACTORY_CREATE_DECL(CIPVorbisDecoder)
++#endif
++
+ #define FACTORY_REF(name) { #name, Make##name },
+ 
+ #ifdef QTI_FLAC_DECODER
+@@ -145,8 +160,20 @@ static sp<MediaSource> InstantiateSoftwareEncoder(
+         const char *name;
+         sp<MediaSource> (*CreateFunc)(const sp<MediaSource> &, const sp<MetaData> &);
+     };
++    if (!strncmp(name, "CIPAACEncoder", 13)) {
++        int32_t aacProfile;
++        meta->findInt32(kKeyAACProfile, &aacProfile);
++        if(aacProfile != OMX_AUDIO_AACObjectLC) {
++           return NULL; //Use Google AAC encoder for all AAC profiles except AAC_LC.
++        }
++    }
+ 
+     static const FactoryInfo kFactoryInfo[] = {
++#ifdef USE_INTEL_MDP
++        FACTORY_REF(CIPAMRNBEncoder)
++        FACTORY_REF(CIPAMRWBEncoder)
++        FACTORY_REF(CIPAACEncoder)
++#endif // #ifdef USE_INTEL_MDP
+         FACTORY_REF(AACEncoder)
+     };
+     for (size_t i = 0;
+@@ -159,7 +186,7 @@ static sp<MediaSource> InstantiateSoftwareEncoder(
+     return NULL;
+ }
+ 
+-#if defined(QCOM_DIRECTTRACK) || defined (QTI_FLAC_DECODER)
++#if defined(QCOM_DIRECTTRACK) || defined (QTI_FLAC_DECODER) || defined (USE_INTEL_MDP)
+ static sp<MediaSource> InstantiateSoftwareDecoder(
+         const char *name, const sp<MediaSource> &source) {
+     struct FactoryInfo {
+@@ -173,6 +200,13 @@ static sp<MediaSource> InstantiateSoftwareDecoder(
+ #ifdef QTI_FLAC_DECODER
+         FACTORY_REF(FLACDecoder)
+ #endif
++#ifdef USE_INTEL_MDP
++        FACTORY_REF(CIPMP3Decoder)
++        FACTORY_REF(CIPAACDecoder)
++        FACTORY_REF(CIPAMRNBDecoder)
++        FACTORY_REF(CIPAMRWBDecoder)
++        FACTORY_REF(CIPVorbisDecoder)
++#endif
+     };
+     for (size_t i = 0;
+          i < sizeof(kFactoryInfo) / sizeof(kFactoryInfo[0]); ++i) {
+@@ -556,7 +590,7 @@ sp<MediaSource> OMXCodec::Create(
+         if (createEncoder) {
+             softwareCodec = InstantiateSoftwareEncoder(componentName, source, meta);
+         }
+-#ifdef QTI_FLAC_DECODER
++#if defined (QTI_FLAC_DECODER) || defined (USE_INTEL_MDP)
+         else {
+             softwareCodec = InstantiateSoftwareDecoder(componentName, source);
+         }
+-- 
+2.7.4
+

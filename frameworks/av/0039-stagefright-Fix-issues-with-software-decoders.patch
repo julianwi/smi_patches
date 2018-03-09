@@ -1,0 +1,299 @@
+From 76e4772e9c2c9e6f34e8c1f9cc3faa12b0ace7ce Mon Sep 17 00:00:00 2001
+From: Steve Kondik <steve@cyngn.com>
+Date: Thu, 21 May 2015 16:58:06 -0700
+Subject: [PATCH 39/56] stagefright: Fix issues with software decoders
+
+ * Fix MKV thumbnails
+ * Fix VC1 thumbnails
+ * Fix FFMPEG thumbnails
+ * Fix trial decoder
+ * Fix edge cases with WMV3/VC1 playback
+ * Fix a state issue which caused some codecs to get wrong configuration
+
+Change-Id: I09599166aa24bcff53f91e43de096c4fad8ca7ad
+---
+ include/media/stagefright/MetaData.h    |  2 +
+ include/media/stagefright/OMXCodec.h    |  3 ++
+ media/libstagefright/MPEG4Extractor.cpp | 49 +++++++++++++++++++++++-
+ media/libstagefright/OMXCodec.cpp       | 66 ++++++++++++++++++++++++++++++++-
+ 4 files changed, 117 insertions(+), 3 deletions(-)
+
+diff --git a/include/media/stagefright/MetaData.h b/include/media/stagefright/MetaData.h
+index d4f423e..81401e2 100644
+--- a/include/media/stagefright/MetaData.h
++++ b/include/media/stagefright/MetaData.h
+@@ -59,6 +59,7 @@ enum {
+     kKeyESDS              = 'esds',  // raw data
+     kKeyAACProfile        = 'aacp',  // int32_t
+     kKeyAVCC              = 'avcc',  // raw data
++    kKeyHVCC              = 'hvcc',  // raw data
+     kKeyD263              = 'd263',  // raw data
+     kKeyVorbisInfo        = 'vinf',  // raw data
+     kKeyVorbisBooks       = 'vboo',  // raw data
+@@ -194,6 +195,7 @@ enum {
+ enum {
+     kTypeESDS        = 'esds',
+     kTypeAVCC        = 'avcc',
++    kTypeHVCC        = 'hvcc',
+     kTypeD263        = 'd263',
+ };
+ 
+diff --git a/include/media/stagefright/OMXCodec.h b/include/media/stagefright/OMXCodec.h
+index c6dbaf7..8b4ada6 100644
+--- a/include/media/stagefright/OMXCodec.h
++++ b/include/media/stagefright/OMXCodec.h
+@@ -414,6 +414,9 @@ private:
+             const void *data, size_t size,
+             unsigned *profile, unsigned *level);
+ 
++    status_t parseHEVCCodecSpecificData(
++            const void *data, size_t size);
++
+     status_t stopOmxComponent_l();
+     status_t flushBuffersOnError();
+     status_t releaseMediaBuffersOn(OMX_U32 portIndex);
+diff --git a/media/libstagefright/MPEG4Extractor.cpp b/media/libstagefright/MPEG4Extractor.cpp
+index 6c1887c..1ddf3a2 100644
+--- a/media/libstagefright/MPEG4Extractor.cpp
++++ b/media/libstagefright/MPEG4Extractor.cpp
+@@ -114,6 +114,7 @@ private:
+     uint64_t* mCurrentSampleInfoOffsets;
+ 
+     bool mIsAVC;
++    bool mIsHEVC;
+     size_t mNALLengthSize;
+ 
+     bool mStarted;
+@@ -362,6 +363,9 @@ static const char *FourCC2MIME(uint32_t fourcc) {
+         case FOURCC('a', 'v', 'c', '1'):
+             return MEDIA_MIMETYPE_VIDEO_AVC;
+ 
++        case FOURCC('h', 'v', 'c', '1'):
++            return MEDIA_MIMETYPE_VIDEO_HEVC;
++
+ #ifdef ENABLE_AV_ENHANCEMENTS
+         case FOURCC('s', 'q', 'c', 'p'):
+             return MEDIA_MIMETYPE_AUDIO_QCELP;
+@@ -1438,6 +1442,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
+         case FOURCC('H', '2', '6', '3'):
+         case FOURCC('h', '2', '6', '3'):
+         case FOURCC('a', 'v', 'c', '1'):
++        case FOURCC('h', 'v', 'c', '1'):
+         {
+             if (mLastTrack == NULL) {
+                 return ERROR_MALFORMED;
+@@ -1784,6 +1789,29 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
+             break;
+         }
+ 
++        case FOURCC('h', 'v', 'c', 'C'):
++        {
++            char buffer[512]; // hvcc data is bigger than avcc one
++            if (chunk_data_size > (off64_t)sizeof(buffer)) {
++                return ERROR_BUFFER_TOO_SMALL;
++            }
++
++            if (mDataSource->readAt(
++                        data_offset, buffer, chunk_data_size) < chunk_data_size) {
++                return ERROR_IO;
++            }
++
++            // configurationVersion should be 1
++            if (buffer[0] != 1)
++                return ERROR_MALFORMED;
++
++            mLastTrack->meta->setData(
++                    kKeyHVCC, kTypeHVCC, buffer, chunk_data_size);
++
++            *offset += chunk_size;
++            break;
++        }
++
+         case FOURCC('d', '2', '6', '3'):
+         {
+             if (mLastTrack == NULL) {
+@@ -2712,6 +2740,7 @@ MPEG4Source::MPEG4Source(
+       mCurrentSampleInfoOffsetsAllocSize(0),
+       mCurrentSampleInfoOffsets(NULL),
+       mIsAVC(false),
++      mIsHEVC(false),
+       mNALLengthSize(0),
+       mStarted(false),
+       mGroup(NULL),
+@@ -2741,6 +2770,7 @@ MPEG4Source::MPEG4Source(
+     CHECK(success);
+ 
+     mIsAVC = !strcasecmp(mime, MEDIA_MIMETYPE_VIDEO_AVC);
++    mIsHEVC = !strcasecmp(mime, MEDIA_MIMETYPE_VIDEO_HEVC);
+ 
+     if (mIsAVC) {
+         uint32_t type;
+@@ -2756,6 +2786,20 @@ MPEG4Source::MPEG4Source(
+         // The number of bytes used to encode the length of a NAL unit.
+         mNALLengthSize = 1 + (ptr[4] & 3);
+     }
++    if (mIsHEVC) {
++        uint32_t type;
++        const void *data;
++        size_t size;
++        CHECK(format->findData(kKeyHVCC, &type, &data, &size));
++
++        const uint8_t *ptr = (const uint8_t *)data;
++
++        CHECK(size >= 23);
++        CHECK_EQ((unsigned)ptr[0], 1u);  // configurationVersion == 1
++
++        // The number of bytes used to encode the length of a NAL unit.
++        mNALLengthSize = 1 + (ptr[21] & 3);
++    }
+ 
+     CHECK(format->findInt32(kKeyTrackID, &mTrackId));
+ 
+@@ -3537,7 +3581,7 @@ status_t MPEG4Source::read(
+         }
+     }
+ 
+-    if (!mIsAVC || mWantsNALFragments) {
++    if (!mIsAVC && !mIsHEVC || mWantsNALFragments) {
+         if (newBuffer) {
+             if (!isInRange((size_t)0u, mBuffer->size(), size)) {
+                 mBuffer->release();
+@@ -3578,7 +3622,7 @@ status_t MPEG4Source::read(
+             ++mCurrentSampleIndex;
+         }
+ 
+-        if (!mIsAVC) {
++        if (!mIsAVC && !mIsHEVC) {
+             *out = mBuffer;
+             mBuffer = NULL;
+ 
+@@ -4084,6 +4128,7 @@ static bool isCompatibleBrand(uint32_t fourcc) {
+     static const uint32_t kCompatibleBrands[] = {
+         FOURCC('i', 's', 'o', 'm'),
+         FOURCC('i', 's', 'o', '2'),
++        FOURCC('i', 's', 'o', '4'),
+         FOURCC('a', 'v', 'c', '1'),
+         FOURCC('3', 'g', 'p', '4'),
+         FOURCC('m', 'p', '4', '1'),
+diff --git a/media/libstagefright/OMXCodec.cpp b/media/libstagefright/OMXCodec.cpp
+index d7aedda..4a2f05d 100644
+--- a/media/libstagefright/OMXCodec.cpp
++++ b/media/libstagefright/OMXCodec.cpp
+@@ -732,6 +732,53 @@ status_t OMXCodec::parseAVCCodecSpecificData(
+     return OK;
+ }
+ 
++status_t OMXCodec::parseHEVCCodecSpecificData(
++    const void *data, size_t size) {
++    const uint8_t *ptr = (const uint8_t *)data;
++
++    // verify minimum size and configurationVersion == 1.
++    if (size < 23 || ptr[0] != 1) {
++        return ERROR_MALFORMED;
++    }
++
++    size_t numOfParameterSets = ptr[22];
++
++    ptr += 23;
++    size -= 23;
++
++    for (size_t i = 0; i < numOfParameterSets; ++i) {
++        if (size < 3) {
++            return ERROR_MALFORMED;
++        }
++
++        ptr += 1;
++        size -= 1;
++
++        size_t numNALs = U16_AT(ptr);
++
++        ptr += 2;
++        size -= 2;
++
++        for (size_t j = 0; j < numNALs; ++j) {
++            size_t length = U16_AT(ptr);
++
++            ptr += 2;
++            size -= 2;
++
++            if (size < length) {
++                return ERROR_MALFORMED;
++            }
++
++            addCodecSpecificData(ptr, length);
++
++            ptr += length;
++            size -= length;
++        }
++    }
++
++    return OK;
++}
++
+ status_t OMXCodec::configureCodec(const sp<MetaData> &meta) {
+     ALOGV("configureCodec protected=%d",
+          (mFlags & kEnableGrallocUsageProtected) ? 1 : 0);
+@@ -818,6 +865,13 @@ status_t OMXCodec::configureCodec(const sp<MetaData> &meta) {
+                 return ERROR_UNSUPPORTED;
+             }
+ #endif
++        } else if (meta->findData(kKeyHVCC, &type, &data, &size)) {
++            // Parse the HEVCDecoderConfigurationRecord
++            status_t err;
++            if ((err = parseHEVCCodecSpecificData(data, size)) != OK) {
++                ALOGE("Malformed HEVC codec specific data.");
++                return err;
++            }
+         } else if (meta->findData(kKeyVorbisInfo, &type, &data, &size)) {
+             addCodecSpecificData(data, size);
+ 
+@@ -1322,6 +1376,8 @@ status_t OMXCodec::setVideoInputFormat(
+     OMX_VIDEO_CODINGTYPE compressionFormat = OMX_VIDEO_CodingUnused;
+     if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_AVC, mime)) {
+         compressionFormat = OMX_VIDEO_CodingAVC;
++    } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_HEVC, mime)) {
++        compressionFormat = OMX_VIDEO_CodingHEVC;
+     } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_MPEG4, mime)) {
+         compressionFormat = OMX_VIDEO_CodingMPEG4;
+     } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_H263, mime)) {
+@@ -1766,6 +1822,8 @@ status_t OMXCodec::setVideoOutputFormat(
+     OMX_VIDEO_CODINGTYPE compressionFormat = OMX_VIDEO_CodingUnused;
+     if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_AVC, mime)) {
+         compressionFormat = OMX_VIDEO_CodingAVC;
++    } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_HEVC, mime)) {
++        compressionFormat = OMX_VIDEO_CodingHEVC;
+     } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_MPEG4, mime)) {
+         compressionFormat = OMX_VIDEO_CodingMPEG4;
+     } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_H263, mime)) {
+@@ -2103,6 +2161,8 @@ void OMXCodec::setComponentRole(
+ #endif
+         { MEDIA_MIMETYPE_VIDEO_AVC,
+             "video_decoder.avc", "video_encoder.avc" },
++        { MEDIA_MIMETYPE_VIDEO_HEVC,
++            "video_decoder.hevc", "video_encoder.hevc" },
+         { MEDIA_MIMETYPE_VIDEO_MPEG4,
+             "video_decoder.mpeg4", "video_encoder.mpeg4" },
+         { MEDIA_MIMETYPE_VIDEO_H263,
+@@ -3917,7 +3977,8 @@ bool OMXCodec::drainInputBuffer(BufferInfo *info) {
+ 
+         size_t size = specific->mSize;
+ 
+-        if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_AVC, mMIME)
++        if ((!strcasecmp(MEDIA_MIMETYPE_VIDEO_AVC, mMIME) ||
++             !strcasecmp(MEDIA_MIMETYPE_VIDEO_HEVC, mMIME))
+                 && !(mQuirks & kWantsNALFragments)) {
+             static const uint8_t kNALStartCode[4] =
+                     { 0x00, 0x00, 0x00, 0x01 };
+@@ -6242,6 +6303,9 @@ void OMXCodec::initOutputFormat(const sp<MetaData> &inputFormat) {
+             } else if (video_def->eCompressionFormat == OMX_VIDEO_CodingAVC) {
+                 mOutputFormat->setCString(
+                         kKeyMIMEType, MEDIA_MIMETYPE_VIDEO_AVC);
++            } else if (video_def->eCompressionFormat == OMX_VIDEO_CodingHEVC) {
++                mOutputFormat->setCString(
++                        kKeyMIMEType, MEDIA_MIMETYPE_VIDEO_HEVC);
+             } else {
+                 CHECK(!"Unknown compression format.");
+             }
+-- 
+2.7.4
+
