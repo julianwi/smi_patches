@@ -1,0 +1,51 @@
+From 4517fe9094f66506d8bc9ec20ea82178978608b2 Mon Sep 17 00:00:00 2001
+From: laufersteppenwolf <laufersteppenwolf@gmail.com>
+Date: Sun, 29 Jun 2014 23:26:23 +0200
+Subject: [PATCH] build: updater-script: Fix mount and format commands on F2FS
+
+Change-Id: I3211fdf059eec5e95519faabb2b4a0968b2f69ee
+---
+ tools/releasetools/edify_generator.py | 20 ++++++++++++++------
+ 1 file changed, 14 insertions(+), 6 deletions(-)
+
+diff --git a/tools/releasetools/edify_generator.py b/tools/releasetools/edify_generator.py
+index 344bd68..8d97322 100644
+--- a/tools/releasetools/edify_generator.py
++++ b/tools/releasetools/edify_generator.py
+@@ -186,9 +186,13 @@ class EdifyGenerator(object):
+     fstab = self.info.get("fstab", None)
+     if fstab:
+       p = fstab[mount_point]
+-      self.script.append('mount("%s", "%s", "%s", "%s");' %
+-                         (p.fs_type, common.PARTITION_TYPES[p.fs_type],
+-                          p.device, p.mount_point))
++      if p.fs_type == 'f2fs':
++        self.script.append('run_program("/sbin/mount", "-t", "auto", "%s", "%s");' %
++                           (p.device, p.mount_point))
++      else:
++        self.script.append('mount("%s", "%s", "%s", "%s");' %
++                           (p.fs_type, common.PARTITION_TYPES[p.fs_type],
++                            p.device, p.mount_point))
+       self.mounts.add(p.mount_point)
+ 
+   def Unmount(self, mount_point):
+@@ -221,9 +225,13 @@ class EdifyGenerator(object):
+     fstab = self.info.get("fstab", None)
+     if fstab:
+       p = fstab[partition]
+-      self.script.append('format("%s", "%s", "%s", "%s", "%s");' %
+-                         (p.fs_type, common.PARTITION_TYPES[p.fs_type],
+-                          p.device, p.length, p.mount_point))
++      if p.fs_type == 'f2fs':
++        self.script.append('run_program("/sbin/mkfs.f2fs", "%s");' %
++                           (p.device))
++      else:
++        self.script.append('format("%s", "%s", "%s", "%s", "%s");' %
++                           (p.fs_type, common.PARTITION_TYPES[p.fs_type],
++                            p.device, p.length, p.mount_point))
+ 
+   def DeleteFiles(self, file_list):
+     """Delete all files in file_list."""
+-- 
+2.7.4
+
