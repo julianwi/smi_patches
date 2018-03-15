@@ -1,0 +1,25 @@
+From f493df0e5906437f1eac562ec6219af4fc197ce5 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Thu, 15 Mar 2018 23:58:17 +0100
+Subject: [PATCH] sepolicy: Add module_load permissions for system
+
+Change-Id: I8b56a42993321dfabaf0fda401c6aab1357e89c9
+---
+ access_vectors | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/access_vectors b/access_vectors
+index b039b0b..19334df 100644
+--- a/access_vectors
++++ b/access_vectors
+@@ -393,6 +393,7 @@ class system
+ 	syslog_mod
+ 	syslog_console
+ 	module_request
++	module_load
+ }
+ 
+ #
+-- 
+2.7.4
+
