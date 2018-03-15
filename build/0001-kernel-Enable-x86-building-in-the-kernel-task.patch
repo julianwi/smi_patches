@@ -1,22 +1,21 @@
-From 7fd84d05f0f0c4b56aa3a5c21dcce0f988dc564b Mon Sep 17 00:00:00 2001
-From: Trevor Drake <trevd1234@gmail.com>
-Date: Sat, 28 Sep 2013 12:00:15 +0100
-Subject: [PATCH 1/5] [PATCH] Enable x86 building in the kernel task and also
- patch the main.mk to list included makefiles
+From 92e72999947e87198e3c225c2dd74c38cb62fb4b Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Thu, 15 Mar 2018 19:24:40 +0100
+Subject: [PATCH] kernel: Enable x86 building in the kernel task
 
-[HazpuPH] Edited the patch slightly
+- Also enables redefining toolchain
 
-Change-Id: I204ba2adccf0e1d8ae619a0485c58e4d08bf1e88
+Change-Id: I66f40128511aaa826ca39177cd5921510a7f9446
 ---
  core/combo/TARGET_linux-x86.mk |  1 +
- core/tasks/kernel.mk           | 64 +++++++++++++++++++++++++++++++++---------
- 2 files changed, 52 insertions(+), 13 deletions(-)
+ core/tasks/kernel.mk           | 62 +++++++++++++++++++++++++++++++++---------
+ 2 files changed, 50 insertions(+), 13 deletions(-)
 
 diff --git a/core/combo/TARGET_linux-x86.mk b/core/combo/TARGET_linux-x86.mk
-index d5772b1..5a06f98 100644
+index 18747bd..7493432 100644
 --- a/core/combo/TARGET_linux-x86.mk
 +++ b/core/combo/TARGET_linux-x86.mk
-@@ -91,6 +91,7 @@ TARGET_GLOBAL_CFLAGS += \
+@@ -92,6 +92,7 @@ TARGET_GLOBAL_CFLAGS += \
  			-O2 \
  			-Ulinux \
  			-Wa,--noexecstack \
@@ -25,10 +24,10 @@ index d5772b1..5a06f98 100644
  			-D_FORTIFY_SOURCE=2 \
  			-Wstrict-aliasing=2 \
 diff --git a/core/tasks/kernel.mk b/core/tasks/kernel.mk
-index 64fdadf..a044d0c 100644
+index 64fdadf..41644c1 100644
 --- a/core/tasks/kernel.mk
 +++ b/core/tasks/kernel.mk
-@@ -126,24 +126,60 @@ KERNEL_HEADERS_INSTALL := $(KERNEL_OUT)/usr
+@@ -126,24 +126,58 @@ KERNEL_HEADERS_INSTALL := $(KERNEL_OUT)/usr
  KERNEL_MODULES_INSTALL := system
  KERNEL_MODULES_OUT := $(TARGET_OUT)/lib/modules
  
@@ -40,6 +39,7 @@ index 64fdadf..a044d0c 100644
 +endef
 +
 +ifeq ($(TARGET_ARCH),x86)
++KERNEL_TOOLCHAIN_PREFIX ?= i686-linux-android-
 +
  define mv-modules
      mdpath=`find $(KERNEL_MODULES_OUT) -type f -name modules.order`;\
@@ -47,7 +47,7 @@ index 64fdadf..a044d0c 100644
          mpath=`dirname $$mdpath`;\
          ko=`find $$mpath/kernel -type f -name *.ko`;\
 -        for i in $$ko; do $(ARM_EABI_TOOLCHAIN)/arm-eabi-strip --strip-unneeded $$i;\
-+        for i in $$ko; do $(ANDROID_EABI_TOOLCHAIN)/i686-linux-android-strip --strip-unneeded $$i;\
++        for i in $$ko; do $(KERNEL_TOOLCHAIN_PATH)strip --strip-unneeded $$i;\
          mv $$i $(KERNEL_MODULES_OUT)/; done;\
      fi
  endef
@@ -65,14 +65,11 @@ index 64fdadf..a044d0c 100644
 +      endif
 +    endif
 +    ifneq ($(TARGET_KERNEL_CUSTOM_TOOLCHAIN),)
-+        ifeq ($(HOST_OS),darwin)
-+            KERNEL_CROSS_COMPILE:=CROSS_COMPILE="$(ccache) $(ANDROID_BUILD_TOP)/prebuilt/darwin-x86/toolchain/$(TARGET_KERNEL_CUSTOM_TOOLCHAIN)/bin/i686-linux-android-"
-+        else
-+            KERNEL_CROSS_COMPILE:=CROSS_COMPILE="$(ccache) $(ANDROID_BUILD_TOP)/prebuilt/linux-x86/toolchain/$(TARGET_KERNEL_CUSTOM_TOOLCHAIN)/bin/i686-linux-android-"
-+        endif
++        KERNEL_TOOLCHAIN_PATH := $(TARGET_KERNEL_CUSTOM_TOOLCHAIN)/$(KERNEL_TOOLCHAIN_PREFIX)
 +    else
-+        KERNEL_CROSS_COMPILE:=CROSS_COMPILE="$(ccache) $(ANDROID_EABI_TOOLCHAIN)/i686-linux-android-"
++        KERNEL_TOOLCHAIN_PATH := $(ANDROID_EABI_TOOLCHAIN)/i686-linux-android-
 +    endif
++    KERNEL_CROSS_COMPILE := CROSS_COMPILE="$(ccache) $(KERNEL_TOOLCHAIN_PATH)"
 +    ccache = 
 +endif
 +
@@ -93,7 +90,7 @@ index 64fdadf..a044d0c 100644
      ifneq ($(USE_CCACHE),)
       # search executable
        ccache =
-@@ -157,12 +193,12 @@ ifeq ($(TARGET_ARCH),arm)
+@@ -157,12 +191,12 @@ ifeq ($(TARGET_ARCH),arm)
      endif
      ifneq ($(TARGET_KERNEL_CUSTOM_TOOLCHAIN),)
          ifeq ($(HOST_OS),darwin)
@@ -109,7 +106,7 @@ index 64fdadf..a044d0c 100644
      endif
      ccache = 
  endif
-@@ -180,16 +216,18 @@ $(KERNEL_OUT):
+@@ -180,16 +214,18 @@ $(KERNEL_OUT):
  	mkdir -p $(KERNEL_MODULES_OUT)
  
  $(KERNEL_CONFIG): $(KERNEL_OUT)
@@ -133,7 +130,7 @@ index 64fdadf..a044d0c 100644
  	$(mv-modules)
  	$(clean-module-folder)
  
-@@ -200,7 +238,7 @@ $(TARGET_PREBUILT_INT_KERNEL): $(TARGET_KERNEL_MODULES)
+@@ -200,7 +236,7 @@ $(TARGET_PREBUILT_INT_KERNEL): $(TARGET_KERNEL_MODULES)
  	$(clean-module-folder)
  
  $(KERNEL_HEADERS_INSTALL): $(KERNEL_OUT) $(KERNEL_CONFIG)

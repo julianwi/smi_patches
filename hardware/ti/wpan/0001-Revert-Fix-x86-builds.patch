@@ -1,0 +1,30 @@
+From a40076c535a074d30d20117214513e89e03ca4ec Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Sat, 30 Dec 2017 23:08:51 +0100
+Subject: [PATCH] Revert "Fix x86 builds"
+
+This reverts commit 5de6b6feb098ab959d6ecaa0f21b6c38ebb5da99.
+
+Change-Id: I57a21e7cb977982fd6a0f0aa1e4e3ecb2b01d8d8
+---
+ ti_st/uim-sysfs/Android.mk | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/ti_st/uim-sysfs/Android.mk b/ti_st/uim-sysfs/Android.mk
+index c57dd11..171fe68 100644
+--- a/ti_st/uim-sysfs/Android.mk
++++ b/ti_st/uim-sysfs/Android.mk
+@@ -1,5 +1,3 @@
+-ifeq ($(TARGET_ARCH),arm)
+-
+ LOCAL_PATH:= $(call my-dir)
+ include $(CLEAR_VARS)
+ 
+@@ -17,4 +15,3 @@ LOCAL_MODULE:=uim-sysfs
+ LOCAL_MODULE_TAGS:= eng
+ include $(BUILD_EXECUTABLE)
+ 
+-endif
+-- 
+2.7.4
+
