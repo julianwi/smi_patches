@@ -1,0 +1,33 @@
+From 74b1b17e67221f9ae02f3406dd5caf1c9e7549c4 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Thu, 15 Mar 2018 23:44:28 +0100
+Subject: [PATCH] uim: x86 does have support for trimios2
+
+Change-Id: I9da83971be63ea9906f7859cd4ff23d4eb1a4b99
+---
+ ti_st/uim-sysfs/uim.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/ti_st/uim-sysfs/uim.h b/ti_st/uim-sysfs/uim.h
+index 1777a3c..544f607 100644
+--- a/ti_st/uim-sysfs/uim.h
++++ b/ti_st/uim-sysfs/uim.h
+@@ -69,6 +69,7 @@
+ #endif
+ #endif  /* ANDROID */
+ 
++#ifdef __arm__
+ /*Termios2 structure for setting the Custom baud rate*/
+ struct termios2 {
+ 	tcflag_t c_iflag;       /* input mode flags */
+@@ -80,6 +81,7 @@ struct termios2 {
+ 	speed_t c_ispeed;       /* input speed */
+ 	speed_t c_ospeed;       /* output speed */
+ };
++#endif
+ 
+ /* HCI command header*/
+ typedef struct {
+-- 
+2.7.4
+
