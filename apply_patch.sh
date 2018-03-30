@@ -48,8 +48,8 @@ projects () {
 
         patch=${PATCH_DIR}/${proj}/${patch_name}
         change_id=`grep -w "^Change-Id:" ${patch} | awk '{print $2}'`
-        ret=`git log | grep -w "^    Change-Id: ${change_id}" 2>/dev/null`
-        if [ "${ret}" == "" ]
+        ret=`git --no-pager log --format=format:%H -1 --grep "Change-Id: ${change_id}"`
+        if [ -z $ret ]
         then
             echo "Applying ${proj}:${patch_name}"
             git am -k -3 --ignore-space-change --ignore-whitespace ${patch}
@@ -62,8 +62,7 @@ projects () {
                 exit
             fi
         else
-            echo "Applying ${proj}:${patch_name}"
-            echo "Applied ${patch_name}, ignore and continue..."
+            echo "Applied ${proj}:${patch_name}, ignore and continue..."
         fi
     done
     cd ${PATCH_DIR}
