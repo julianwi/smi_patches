@@ -1,0 +1,36 @@
+From 52da8225acacdca7dc3a9fbc71fa903b493264f1 Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Wed, 27 Jul 2016 16:28:05 -0700
+Subject: [PATCH 1/2] Fix build
+
+In make, appending to a non-existant variable using += results in
+delayed evalution of the RHS.  If another Android.mk file assigns to GEN
+between this one and when ALL_COPIED_HEADERS is evaluated, it will see
+the new value of GEN.
+
+Replace += with :=.
+
+Change-Id: I77400bf7eed788cae89dcd9fd690717db4780f39
+(cherry picked from commit d07e32b114801d8631696fd7e88649b5e36ccae5)
+---
+ va/Android.mk | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/va/Android.mk b/va/Android.mk
+index 8012005..0ea46c7 100755
+--- a/va/Android.mk
++++ b/va/Android.mk
+@@ -91,8 +91,8 @@ LOCAL_GENERATED_SOURCES := $(GEN)
+ include $(BUILD_SHARED_LIBRARY)
+ 
+ my_header := $(TARGET_OUT_HEADERS)/libva/va/va_version.h
+-ALL_COPIED_HEADERS.$(my_header).MAKEFILE += $(my_header)
+-ALL_COPIED_HEADERS.$(my_header).SRC += $(GEN)
++ALL_COPIED_HEADERS.$(my_header).MAKEFILE := $(ALL_COPIED_HEADERS.$(my_header).MAKEFILE) $(my_header)
++ALL_COPIED_HEADERS.$(my_header).SRC := $(ALL_COPIED_HEADERS.$(my_header).SRC) $(GEN)
+ ALL_COPIED_HEADERS += $(my_header)
+ 
+ # For libva-android
+-- 
+2.20.1
+

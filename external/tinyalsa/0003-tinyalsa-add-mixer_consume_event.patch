@@ -1,0 +1,61 @@
+From 96a9dedbd707b62516608b041b2da1d6d996ebc6 Mon Sep 17 00:00:00 2001
+From: Andrew Chant <achant@google.com>
+Date: Mon, 5 Feb 2018 15:16:41 -0800
+Subject: [PATCH 3/3] tinyalsa: add mixer_consume_event
+
+mixer_consume_event consumes subscribed events from the mixer
+in order to allow monitoring of mixer control value changed.
+
+Test: Implemented UAC2 jack detection, and the jack control
+value changes were successfully reported.
+
+Change-Id: I02d09e8c0cb2bb903378ab5dc55dd743448fb5cf
+---
+ include/tinyalsa/asoundlib.h |  1 +
+ mixer.c                      | 21 +++++++++++++++++++++
+ 2 files changed, 22 insertions(+)
+
+diff --git a/include/tinyalsa/asoundlib.h b/include/tinyalsa/asoundlib.h
+index 50dc98f..1e6d363 100644
+--- a/include/tinyalsa/asoundlib.h
++++ b/include/tinyalsa/asoundlib.h
+@@ -307,6 +307,7 @@ int mixer_ctl_get_range_max(struct mixer_ctl *ctl);
+ 
+ int mixer_subscribe_events(struct mixer *mixer, int subscribe);
+ int mixer_wait_event(struct mixer *mixer, int timeout);
++int mixer_consume_event(struct mixer *mixer);
+ 
+ #if defined(__cplusplus)
+ }  /* extern "C" */
+diff --git a/mixer.c b/mixer.c
+index 20a4b29..9f2b40d 100644
+--- a/mixer.c
++++ b/mixer.c
+@@ -603,3 +603,24 @@ int mixer_wait_event(struct mixer *mixer, int timeout)
+             return 1;
+     }
+ }
++
++/** Consume a mixer event.
++ * If mixer_subscribe_events has been called,
++ * mixer_wait_event will identify when a control value has changed.
++ * This function will clear a single event from the mixer so that
++ * further events can be alerted.
++ *
++ * @param mixer A mixer handle.
++ * @returns 0 on success.  -errno on failure.
++ * @ingroup libtinyalsa-mixer
++ */
++int mixer_consume_event(struct mixer *mixer) {
++    struct snd_ctl_event ev;
++    ssize_t count = read(mixer->fd, &ev, sizeof(ev));
++    // Exporting the actual event would require exposing snd_ctl_event
++    // via the header file, and all associated structs.
++    // The events generally tell you exactly which value changed,
++    // but reading values you're interested isn't hard and simplifies
++    // the interface greatly.
++    return (count >= 0) ? 0 : -errno;
++}
+-- 
+2.20.1
+

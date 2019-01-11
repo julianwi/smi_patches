@@ -1,0 +1,102 @@
+From df21ab702cf6f01ee7f437f0ca9ba165f63572aa Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Fri, 11 Jan 2019 10:57:19 +0100
+Subject: [PATCH] ignore modifyIpRule errors
+
+Change-Id: I2f041d2558a407afdbef57035b1cf554877288c9
+---
+ server/RouteController.cpp | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
+diff --git a/server/RouteController.cpp b/server/RouteController.cpp
+index d74999b..e3b383e 100644
+--- a/server/RouteController.cpp
++++ b/server/RouteController.cpp
+@@ -248,9 +248,11 @@ WARN_UNUSED_RESULT int modifyIpRule(uint16_t action, uint32_t priority, uint8_t
+     size_t iifLength, oifLength;
+     uint16_t iifPadding, oifPadding;
+     if (int ret = padInterfaceName(iif, iifName, &iifLength, &iifPadding)) {
++        ALOGE("failed padInterfaceName");
+         return ret;
+     }
+     if (int ret = padInterfaceName(oif, oifName, &oifLength, &oifPadding)) {
++        ALOGE("failed padInterfaceName2");
+         return ret;
+     }
+ 
+@@ -312,6 +314,7 @@ WARN_UNUSED_RESULT int modifyIpRule(uint16_t action, uint32_t priority, uint8_t
+                 ALOGE("Error %s %s rule: %s", actionName(action), familyName(rule.family),
+                       strerror(-ret));
+             }
++            ALOGE("failed sendNetlinkRequest");
+             return ret;
+         }
+     }
+@@ -563,10 +566,12 @@ WARN_UNUSED_RESULT int modifyOutputInterfaceRules(const char* interface, uint32_
+         if (int ret = modifyIpRule(add ? RTM_NEWRULE : RTM_DELRULE, RULE_PRIORITY_VPN_OVERRIDE_OIF,
+                                    table, FWMARK_NONE, MASK_NONE, IIF_LOOPBACK, interface,
+                                    UID_ROOT, UID_ROOT)) {
+-            return ret;
++            ALOGE("failed modifyIpRule first");
++            //return ret;
+         }
+     }
+ 
++    ALOGE("failed modifyIpRule seccond");
+     return modifyIpRule(add ? RTM_NEWRULE : RTM_DELRULE, RULE_PRIORITY_OUTPUT_INTERFACE, table,
+                         fwmark.intValue, mask.intValue, IIF_LOOPBACK, interface, uidStart, uidEnd);
+ }
+@@ -588,6 +593,8 @@ WARN_UNUSED_RESULT int modifyImplicitNetworkRule(unsigned netId, uint32_t table,
+ 
+     fwmark.permission = PERMISSION_NONE;
+     mask.permission = PERMISSION_NONE;
++    
++    ALOGE("failed to add interface %s to netId %u modifyImplicitNetworkRule", __FUNCTION__, 0);
+ 
+     return modifyIpRule(add ? RTM_NEWRULE : RTM_DELRULE, RULE_PRIORITY_IMPLICIT_NETWORK, table,
+                         fwmark.intValue, mask.intValue, IIF_LOOPBACK, OIF_NONE, INVALID_UID,
+@@ -740,18 +747,22 @@ WARN_UNUSED_RESULT int RouteController::modifyPhysicalNetwork(unsigned netId, co
+                                                               Permission permission, bool add) {
+     uint32_t table = getRouteTableForInterface(interface);
+     if (table == RT_TABLE_UNSPEC) {
++        ALOGE("failed to add interface %s to netId %u getRouteTableForInterface", __FUNCTION__, 0);
+         return -ESRCH;
+     }
+ 
+     if (int ret = modifyIncomingPacketMark(netId, interface, permission, add)) {
++        ALOGE("failed to add interface %s to netId %u modifyIncomingPacketMark", __FUNCTION__, 0);
+         return ret;
+     }
+     if (int ret = modifyExplicitNetworkRule(netId, table, permission, INVALID_UID, INVALID_UID,
+                                             add)) {
++        ALOGE("failed to add interface %s to netId %u modifyExplicitNetworkRule", __FUNCTION__, 0);
+         return ret;
+     }
+     if (int ret = modifyOutputInterfaceRules(interface, table, permission, INVALID_UID, INVALID_UID,
+                                             add)) {
++        ALOGE("failed to add interface %s to netId %u modifyOutputInterfaceRules", __FUNCTION__, 0);
+         return ret;
+     }
+ 
+@@ -843,8 +854,10 @@ WARN_UNUSED_RESULT int RouteController::modifyDefaultNetwork(uint16_t action, co
+                                                              Permission permission) {
+     uint32_t table = getRouteTableForInterface(interface);
+     if (table == RT_TABLE_UNSPEC) {
++        ALOGE("failed to getRouteTableForInterface");
+         return -ESRCH;
+     }
++    ALOGE("success getRouteTableForInterface");
+ 
+     Fwmark fwmark;
+     Fwmark mask;
+@@ -1002,6 +1015,7 @@ int RouteController::removeInterfaceFromLocalNetwork(unsigned netId, const char*
+ int RouteController::addInterfaceToPhysicalNetwork(unsigned netId, const char* interface,
+                                                    Permission permission) {
+     if (int ret = modifyPhysicalNetwork(netId, interface, permission, ACTION_ADD)) {
++        ALOGE("failed to add interface %s to netId %u modifyPhysicalNetwork", __FUNCTION__, 0);
+         return ret;
+     }
+     updateTableNamesFile();
+-- 
+2.20.1
+

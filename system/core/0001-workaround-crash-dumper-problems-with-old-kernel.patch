@@ -1,0 +1,26 @@
+From 11e5174fdc24fc7ed9e8c8b290ca921ed676e62a Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Fri, 11 Jan 2019 10:54:32 +0100
+Subject: [PATCH] workaround crash dumper problems with old kernel
+
+Change-Id: Iea4b30f0bcfc3e8ddff8c96fa6c68cce7ec09c6e
+---
+ debuggerd/crash_dump.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debuggerd/crash_dump.cpp b/debuggerd/crash_dump.cpp
+index 40cf6c340..9c83f6150 100644
+--- a/debuggerd/crash_dump.cpp
++++ b/debuggerd/crash_dump.cpp
+@@ -300,7 +300,7 @@ static pid_t wait_for_clone(pid_t pid, bool resume_child) {
+     PLOG(FATAL) << "failed to waitpid on child";
+   }
+ 
+-  CHECK_EQ(0, stop_signal);
++  //CHECK_EQ(0, stop_signal);
+ 
+   if (resume_child) {
+     if (ptrace(PTRACE_CONT, child, 0, 0) != 0) {
+-- 
+2.20.1
+

@@ -1,0 +1,32 @@
+From 849c15620012029b035c9bf067bd9f0dd1345b1b Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Fri, 11 Jan 2019 10:52:16 +0100
+Subject: [PATCH] use NL80211_RATE_INFO_BITRATE instead of
+ NL80211_RATE_INFO_BITRATE32
+
+Change-Id: I93feb4d18fa3d6a5e82a2911cac7213e9c6242a2
+---
+ net/netlink_utils.cpp | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/net/netlink_utils.cpp b/net/netlink_utils.cpp
+index adaa37e..cbb8f2d 100644
+--- a/net/netlink_utils.cpp
++++ b/net/netlink_utils.cpp
+@@ -505,10 +505,10 @@ bool NetlinkUtils::GetStationInfo(uint32_t interface_index,
+     LOG(ERROR) << "Failed to get NL80211_STA_INFO_TX_BITRATE";
+     return false;
+   }
+-  uint32_t tx_bitrate;
+-  if (!tx_bitrate_attr.GetAttributeValue(NL80211_RATE_INFO_BITRATE32,
++  uint16_t tx_bitrate;
++  if (!tx_bitrate_attr.GetAttributeValue(NL80211_RATE_INFO_BITRATE,
+                                          &tx_bitrate)) {
+-    LOG(ERROR) << "Failed to get NL80211_RATE_INFO_BITRATE32";
++    LOG(ERROR) << "Failed to get NL80211_RATE_INFO_BITRATE";
+     return false;
+   }
+ 
+-- 
+2.20.1
+

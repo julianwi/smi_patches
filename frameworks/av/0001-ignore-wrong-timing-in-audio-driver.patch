@@ -1,0 +1,26 @@
+From 56da7ed759bc2c11c9c0f046b4967c25acc2ef12 Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Thu, 10 Jan 2019 22:08:31 +0100
+Subject: [PATCH 1/2] ignore wrong timing in audio driver
+
+Change-Id: I6a9fc0122ea7c9257d5db5dc5332fe4844761e00
+---
+ media/libmedia/TimeCheck.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/media/libmedia/TimeCheck.cpp b/media/libmedia/TimeCheck.cpp
+index dab5d4f33..5e9447ab7 100644
+--- a/media/libmedia/TimeCheck.cpp
++++ b/media/libmedia/TimeCheck.cpp
+@@ -81,7 +81,7 @@ bool TimeCheck::TimeCheckThread::threadLoop()
+             status = mCond.waitRelative(mMutex, waitTimeNs);
+         }
+     }
+-    LOG_ALWAYS_FATAL_IF(status != NO_ERROR, "TimeCheck timeout for %s", tag);
++    //LOG_ALWAYS_FATAL_IF(status != NO_ERROR, "TimeCheck timeout for %s", tag);
+     return true;
+ }
+ 
+-- 
+2.20.1
+

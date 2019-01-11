@@ -1,0 +1,58 @@
+From fe4e6b9a2185f55cb6a9a742af78027baf546b72 Mon Sep 17 00:00:00 2001
+From: Mathias Agopian <mathias@google.com>
+Date: Tue, 9 May 2017 23:00:59 -0700
+Subject: [PATCH 2/2] fix circular dependency libnativewindow <-> libui
+
+Bug: 37647680
+Bug: 37648355
+Test: compile, manual
+Change-Id: Ie31bf81426435146a51e89e170fbb56ab9bb0b60
+---
+ va/Android.mk             | 2 +-
+ va/android/va_android.cpp | 1 +
+ va/va_android.h           | 2 +-
+ 3 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/va/Android.mk b/va/Android.mk
+index 0ea46c7..92443ac 100755
+--- a/va/Android.mk
++++ b/va/Android.mk
+@@ -121,7 +121,7 @@ LOCAL_CFLAGS += -Werror
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := libva-android
+ 
+-LOCAL_SHARED_LIBRARIES := libva libdrm
++LOCAL_SHARED_LIBRARIES := libva libdrm libnativewindow
+ 
+ include $(BUILD_SHARED_LIBRARY)
+ 
+diff --git a/va/android/va_android.cpp b/va/android/va_android.cpp
+index 3e220a6..efbc35a 100644
+--- a/va/android/va_android.cpp
++++ b/va/android/va_android.cpp
+@@ -39,6 +39,7 @@
+ #include <dlfcn.h>
+ #include <errno.h>
+ 
++#include <system/window.h>
+ 
+ #define CHECK_SYMBOL(func) { if (!func) printf("func %s not found\n", #func); return VA_STATUS_ERROR_UNKNOWN; }
+ #define DEVICE_NAME "/dev/dri/card0"
+diff --git a/va/va_android.h b/va/va_android.h
+index 978becd..1268955 100644
+--- a/va/va_android.h
++++ b/va/va_android.h
+@@ -48,9 +48,9 @@ VADisplay vaGetDisplay (
+ 
+ #ifdef __cplusplus
+ #ifdef ANDROID
+-#include <system/window.h>
+ #include <utils/StrongPointer.h>
+ using namespace android;
++struct ANativeWindow;
+ 
+ /*
+  * Output rendering
+-- 
+2.20.1
+

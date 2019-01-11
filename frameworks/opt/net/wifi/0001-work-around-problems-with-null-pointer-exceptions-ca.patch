@@ -1,0 +1,29 @@
+From 02ec5b581ec5382d1bd1bf86dbe2bbca6a329d20 Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Thu, 10 Jan 2019 22:18:42 +0100
+Subject: [PATCH] work around problems with null pointer exceptions causing
+ segfaults
+
+Change-Id: I58c75cbe635f6605172b5908810c3f3152ecbf9f
+---
+ service/java/com/android/server/wifi/WifiStateMachine.java | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/service/java/com/android/server/wifi/WifiStateMachine.java b/service/java/com/android/server/wifi/WifiStateMachine.java
+index ef5eb027f..3feda614e 100644
+--- a/service/java/com/android/server/wifi/WifiStateMachine.java
++++ b/service/java/com/android/server/wifi/WifiStateMachine.java
+@@ -1048,7 +1048,9 @@ public class WifiStateMachine extends StateMachine {
+     private void stopIpClient() {
+         /* Restore power save and suspend optimizations */
+         handlePostDhcpSetup();
+-        mIpClient.stop();
++        if (mIpClient != null) {
++            mIpClient.stop();
++        }
+     }
+ 
+     PendingIntent getPrivateBroadcast(String action, int requestCode) {
+-- 
+2.20.1
+

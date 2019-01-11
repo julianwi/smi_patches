@@ -1,0 +1,166 @@
+From 99a94117e8c80e1cf35971a6b344cd84d74fc800 Mon Sep 17 00:00:00 2001
+From: Chih-Hung Hsieh <chh@google.com>
+Date: Tue, 7 Nov 2017 13:48:29 -0800
+Subject: [PATCH 3/3] Use -Werror in hardware/intel/img/psb_video/fw
+
+* Remove unused variables and function.
+
+Bug: 66996870
+Test: build with WITH_TIDY=1
+Change-Id: I7394e35bfdc24e85434775fd5b063ee2aea605e4
+---
+ fw/msvdx/Android.mk      |  1 +
+ fw/msvdx/msvdx_bin.c     |  1 -
+ fw/topazhp/Android.mk    |  1 +
+ fw/topazhp/topazhp_bin.c | 30 ------------------------------
+ fw/topazsc/Android.mk    |  3 +++
+ fw/topazsc/fwinfo.c      |  2 +-
+ fw/topazsc/topaz_bin.c   |  1 -
+ fw/topazsc/topazsc_bin.c |  1 -
+ 8 files changed, 6 insertions(+), 34 deletions(-)
+
+diff --git a/fw/msvdx/Android.mk b/fw/msvdx/Android.mk
+index 525ec39..c552331 100644
+--- a/fw/msvdx/Android.mk
++++ b/fw/msvdx/Android.mk
+@@ -29,6 +29,7 @@ LOCAL_PATH := $(call my-dir)
+ include $(CLEAR_VARS)
+ LOCAL_SRC_FILES := msvdx_bin.c thread1_bin.c
+ LOCAL_CFLAGS += -DFRAME_SWITCHING_VARIANT=1 -DSLICE_SWITCHING_VARIANT=1
++LOCAL_CFLAGS += -Wall -Werror
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := msvdx_bin
+ 
+diff --git a/fw/msvdx/msvdx_bin.c b/fw/msvdx/msvdx_bin.c
+index d58e4a3..841dfe1 100644
+--- a/fw/msvdx/msvdx_bin.c
++++ b/fw/msvdx/msvdx_bin.c
+@@ -52,7 +52,6 @@ struct msvdx_fw {
+ int main()
+ {
+     unsigned long i = 0;
+-    unsigned long lseek;
+     FILE *ptr = NULL;
+     FILE *fp_ll_dma = NULL;
+     struct msvdx_fw fw;
+diff --git a/fw/topazhp/Android.mk b/fw/topazhp/Android.mk
+index 1d19c6e..1f6f6c2 100644
+--- a/fw/topazhp/Android.mk
++++ b/fw/topazhp/Android.mk
+@@ -51,6 +51,7 @@ LOCAL_SRC_FILES := \
+     H264MVCMasterFirmwareVBR_bin.c \
+     H264MVCMasterFirmwareLLRC_bin.c
+ 
++LOCAL_CFLAGS := -Wall -Werror
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := topazhp_bin
+ 
+diff --git a/fw/topazhp/topazhp_bin.c b/fw/topazhp/topazhp_bin.c
+index adc9cc8..1aac6df 100644
+--- a/fw/topazhp/topazhp_bin.c
++++ b/fw/topazhp/topazhp_bin.c
+@@ -302,36 +302,6 @@ static void create_firmware_B0(fw_table_t *tng_fw_table, FILE *fp)
+     return ;
+ }
+ 
+-static void normal_firmware(fw_table_t *topaz_fw_table, FILE *fp)
+-{
+-    unsigned int i = 0;
+-    topaz_fw_codec_t iter = 0;
+-    int size = 0;
+-
+-    printf("fm num is %d\n", FW_NUM);
+-
+-    /* write fw table into the file */
+-    while (iter < FW_NUM) {
+-        /* record the size use bytes */
+-        topaz_fw_table[iter].header.data_size *= 4;
+-        topaz_fw_table[iter].header.text_size *= 4;
+-
+-        /* write header */
+-        fwrite(&(topaz_fw_table[iter].header), sizeof(topaz_fw_table[iter].header), 1, fp);
+-
+-        /* write text */
+-        size = topaz_fw_table[iter].header.text_size;
+-        fwrite(topaz_fw_table[iter].fw_text, 1, size, fp);
+-
+-        /* write data */
+-        size = topaz_fw_table[iter].header.data_size;
+-        fwrite(topaz_fw_table[iter].fw_data, 1, size, fp);
+-
+-        ++iter;
+-    }
+-}
+-
+-
+ 
+ int main()
+ {
+diff --git a/fw/topazsc/Android.mk b/fw/topazsc/Android.mk
+index 87d130d..d24d8fa 100644
+--- a/fw/topazsc/Android.mk
++++ b/fw/topazsc/Android.mk
+@@ -40,6 +40,7 @@ LOCAL_SRC_FILES := \
+     MPG4FirmwareVBR_bin.c \
+     H264FirmwareVCM_bin.c
+ 
++LOCAL_CFLAGS := -Wall -Werror
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := topaz_bin
+ 
+@@ -50,6 +51,7 @@ include $(BUILD_EXECUTABLE)
+ include $(CLEAR_VARS)
+ 
+ LOCAL_SRC_FILES := fwinfo.c
++LOCAL_CFLAGS := -Wall -Werror
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := imginfo
+ 
+@@ -83,6 +85,7 @@ LOCAL_SRC_FILES := topazsc_bin.c \
+     MPG4SlaveFirmwareCBR_bin.c \
+     MPG4SlaveFirmwareVBR_bin.c
+ 
++LOCAL_CFLAGS := -Wall -Werror
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE := topazsc_bin
+ 
+diff --git a/fw/topazsc/fwinfo.c b/fw/topazsc/fwinfo.c
+index f5bfb3f..12486af 100644
+--- a/fw/topazsc/fwinfo.c
++++ b/fw/topazsc/fwinfo.c
+@@ -117,7 +117,7 @@ int main()
+     FILE *fp = NULL;
+     topaz_fw_codec_t iter = FW_H264_NO_RC;
+     //  unsigned int read_data;
+-    unsigned int i, lseek;
++    unsigned int lseek;
+     unsigned char system_id = 0;
+     fw_table_t topaz_fw_table[FW_NUM + 1];
+     struct msvdx_fw fw;
+diff --git a/fw/topazsc/topaz_bin.c b/fw/topazsc/topaz_bin.c
+index 80d98be..b5608f3 100644
+--- a/fw/topazsc/topaz_bin.c
++++ b/fw/topazsc/topaz_bin.c
+@@ -82,7 +82,6 @@ int main()
+     FILE *fp = NULL;
+     topaz_fw_codec_t iter = FW_H264_NO_RC;
+     unsigned int size = 0;
+-    unsigned int i;
+ 
+     fw_table_t topaz_fw_table[] = {
+         /* index   header
+diff --git a/fw/topazsc/topazsc_bin.c b/fw/topazsc/topazsc_bin.c
+index f95b59e..3cca026 100644
+--- a/fw/topazsc/topazsc_bin.c
++++ b/fw/topazsc/topazsc_bin.c
+@@ -132,7 +132,6 @@ int main()
+     FILE *fp = NULL;
+     topaz_fw_codec_t iter = FW_MASTER_JPEG;
+     unsigned int size = 0;
+-    unsigned int i;
+ 
+     fw_table_t topaz_fw_table[] = {
+         /* index   header
+-- 
+2.20.1
+

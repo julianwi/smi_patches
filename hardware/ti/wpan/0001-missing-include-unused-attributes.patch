@@ -1,0 +1,58 @@
+From 9c86bf8c5354032493b8d37960baf11e2b392445 Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Thu, 10 Jan 2019 22:50:30 +0100
+Subject: [PATCH] missing include, unused attributes
+
+Change-Id: I266634e763bdad7fafc873b4a629162275638802
+---
+ bluedroid_wilink/libbt-vendor-ti.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/bluedroid_wilink/libbt-vendor-ti.c b/bluedroid_wilink/libbt-vendor-ti.c
+index 4a9fdad..68cd974 100644
+--- a/bluedroid_wilink/libbt-vendor-ti.c
++++ b/bluedroid_wilink/libbt-vendor-ti.c
+@@ -26,6 +26,7 @@
+ #include <errno.h>
+ #include <bt_vendor_lib.h>
+ #include <bt_hci_bdroid.h>
++#include <string.h>
+ 
+ /**
+  * TODO: check/fix this value
+@@ -48,12 +49,12 @@ void hw_config_cback(HC_BT_HDR *p_evt_buf);
+  * Returns          None
+  *
+  * *******************************************************************************/
+-void hw_config_cback(HC_BT_HDR *p_evt_buf)
++void hw_config_cback(__attribute__((unused)) HC_BT_HDR *p_evt_buf)
+ {
+     ALOGI("hw_config_cback");
+ }
+ 
+-int ti_init(const bt_vendor_callbacks_t* p_cb, unsigned char *local_bdaddr) {
++int ti_init(const bt_vendor_callbacks_t* p_cb, __attribute__((unused)) unsigned char *local_bdaddr) {
+     ALOGI("vendor Init");
+ 
+     if (p_cb == NULL)
+@@ -76,7 +77,7 @@ int ti_hcitty_open(int *fd_array) {
+     int fd;
+     fd = open(BT_HCI_TTY_DEVICE_NAME, O_RDWR);
+     if (fd < 0) {
+-        ALOGE(" Can't open hci_tty");
++        ALOGE(" Can't open hci_tty: %s", strerror(errno));
+         return -1;
+     }
+     fd_array[CH_CMD] = fd;
+@@ -90,7 +91,7 @@ int ti_hcitty_close() {
+     return close(hci_tty_fd);
+ }
+ 
+-int ti_op(bt_vendor_opcode_t opcode, void **param) {
++int ti_op(bt_vendor_opcode_t opcode, void *param) {
+     int ret = 0;
+ 
+     switch(opcode)
+-- 
+2.20.1
+

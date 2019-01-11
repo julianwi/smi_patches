@@ -1,0 +1,98 @@
+From 05aa317e216beb13db173c5cc4c2e5e408ec3697 Mon Sep 17 00:00:00 2001
+From: Pankaj Bharadiya <pankaj.laxminarayan.bharadiya@intel.com>
+Date: Wed, 11 Jan 2017 08:57:06 +0530
+Subject: [PATCH 2/3] Tinyalsa: Add support to poll on alsa control
+
+ALSA controls support polling on the kcontrols, this is used in HD-A for
+jack notifcation. In tinyalsa we can use this for notfication from sound
+card for any events detected by DSP
+
+Upstream:
+https://github.com/tinyalsa/tinyalsa/pull/93
+https://github.com/tinyalsa/tinyalsa/pull/94
+
+Change-Id: I4193809bfcdb60f4dc11e1c2ad6a07b29cfa80e9
+Signed-off-by: Hardik T Shah <hardik.t.shah@intel.com>
+Signed-off-by: Vinod Koul <vinod.koul@intel.com>
+Signed-off-by: Pankaj Bharadiya <pankaj.laxminarayan.bharadiya@intel.com>
+---
+ include/tinyalsa/asoundlib.h |  3 +++
+ mixer.c                      | 44 ++++++++++++++++++++++++++++++++++++
+ 2 files changed, 47 insertions(+)
+
+diff --git a/include/tinyalsa/asoundlib.h b/include/tinyalsa/asoundlib.h
+index b789573..50dc98f 100644
+--- a/include/tinyalsa/asoundlib.h
++++ b/include/tinyalsa/asoundlib.h
+@@ -305,6 +305,9 @@ int mixer_ctl_set_enum_by_string(struct mixer_ctl *ctl, const char *string);
+ int mixer_ctl_get_range_min(struct mixer_ctl *ctl);
+ int mixer_ctl_get_range_max(struct mixer_ctl *ctl);
+ 
++int mixer_subscribe_events(struct mixer *mixer, int subscribe);
++int mixer_wait_event(struct mixer *mixer, int timeout);
++
+ #if defined(__cplusplus)
+ }  /* extern "C" */
+ #endif
+diff --git a/mixer.c b/mixer.c
+index dd7ed16..20a4b29 100644
+--- a/mixer.c
++++ b/mixer.c
+@@ -34,6 +34,7 @@
+ #include <fcntl.h>
+ #include <errno.h>
+ #include <ctype.h>
++#include <poll.h>
+ 
+ #include <sys/ioctl.h>
+ 
+@@ -559,3 +560,46 @@ int mixer_ctl_set_enum_by_string(struct mixer_ctl *ctl, const char *string)
+     return -EINVAL;
+ }
+ 
++/** Subscribes for the mixer events.
++ * @param mixer A mixer handle.
++ * @param subscribe value indicating subscribe or unsubscribe for events
++ * @returns On success, zero.
++ *  On failure, non-zero.
++ * @ingroup libtinyalsa-mixer
++ */
++int mixer_subscribe_events(struct mixer *mixer, int subscribe)
++{
++    if (ioctl(mixer->fd, SNDRV_CTL_IOCTL_SUBSCRIBE_EVENTS, &subscribe) < 0) {
++        return -1;
++    }
++    return 0;
++}
++
++/** Wait for mixer events.
++ * @param mixer A mixer handle.
++ * @param timeout timout value
++ * @returns On success, 1.
++ *  On failure, -errno.
++ *  On timeout, 0
++ * @ingroup libtinyalsa-mixer
++ */
++int mixer_wait_event(struct mixer *mixer, int timeout)
++{
++    struct pollfd pfd;
++
++    pfd.fd = mixer->fd;
++    pfd.events = POLLIN | POLLOUT | POLLERR | POLLNVAL;
++
++    for (;;) {
++        int err;
++        err = poll(&pfd, 1, timeout);
++        if (err < 0)
++            return -errno;
++        if (!err)
++            return 0;
++        if (pfd.revents & (POLLERR | POLLNVAL))
++            return -EIO;
++        if (pfd.revents & (POLLIN | POLLOUT))
++            return 1;
++    }
++}
+-- 
+2.20.1
+

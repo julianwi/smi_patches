@@ -1,0 +1,39 @@
+From aeea6604ee630abd89a8d527e43695ebd6594949 Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Thu, 10 Jan 2019 22:09:07 +0100
+Subject: [PATCH 2/2] camera: disable user id checking
+
+Change-Id: Ia871ae935739fb9a7bdde008a76f7bea15913469
+---
+ services/camera/libcameraservice/CameraService.cpp | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/services/camera/libcameraservice/CameraService.cpp b/services/camera/libcameraservice/CameraService.cpp
+index c272f31c3..63be1145e 100644
+--- a/services/camera/libcameraservice/CameraService.cpp
++++ b/services/camera/libcameraservice/CameraService.cpp
+@@ -928,18 +928,18 @@ Status CameraService::validateClientPermissionsLocked(const String8& cameraId,
+     originalClientPid = clientPid;
+     clientPid = callingPid;
+ 
+-    userid_t clientUserId = multiuser_get_user_id(clientUid);
++    //userid_t clientUserId = multiuser_get_user_id(clientUid);
+ 
+     // Only allow clients who are being used by the current foreground device user, unless calling
+     // from our own process.
+-    if (callingPid != getpid() && (mAllowedUsers.find(clientUserId) == mAllowedUsers.end())) {
++    /*if (callingPid != getpid() && (mAllowedUsers.find(clientUserId) == mAllowedUsers.end())) {
+         ALOGE("CameraService::connect X (PID %d) rejected (cannot connect from "
+                 "device user %d, currently allowed device users: %s)", callingPid, clientUserId,
+                 toString(mAllowedUsers).string());
+         return STATUS_ERROR_FMT(ERROR_PERMISSION_DENIED,
+                 "Callers from device user %d are not currently allowed to connect to camera \"%s\"",
+                 clientUserId, cameraId.string());
+-    }
++    }*/
+ 
+     return Status::ok();
+ }
+-- 
+2.20.1
+

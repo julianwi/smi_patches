@@ -1,0 +1,60 @@
+From 584f87dfa827317959f7507400592e1ca3d50a11 Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Thu, 10 Jan 2019 22:48:22 +0100
+Subject: [PATCH] ingore warnings
+
+Change-Id: I9ec86b7ef07b833c0a7f5065bc22ac7985d0ffc8
+---
+ mac80211/wpa_supplicant_lib/Android.mk | 30 +++++++++++++++++++++++++-
+ 1 file changed, 29 insertions(+), 1 deletion(-)
+
+diff --git a/mac80211/wpa_supplicant_lib/Android.mk b/mac80211/wpa_supplicant_lib/Android.mk
+index cd9eae1..2b86e3c 100644
+--- a/mac80211/wpa_supplicant_lib/Android.mk
++++ b/mac80211/wpa_supplicant_lib/Android.mk
+@@ -1,5 +1,33 @@
+ LOCAL_PATH := $(call my-dir)
+ 
++# Keep sometimes uninitialized warnings
++L_CFLAGS += -Wno-error-sometimes-uninitialized
++
++# Disable incompatible pointer type warnings
++L_CFLAGS += -Wno-incompatible-pointer-types
++L_CFLAGS += -Wno-incompatible-pointer-types-discards-qualifiers
++
++# Disable extraneous parentheses warnings
++L_CFLAGS += -Wno-parentheses-equality
++
++# Disable sign compare warnings
++L_CFLAGS += -Wno-sign-compare
++
++# TODO: move off readdir_r upstream, pull fix back (http://b/72326431).
++L_CFLAGS += -Wno-error-deprecated-declarations
++
++# Disable unused function warnings
++L_CFLAGS += -Wno-unused-function
++
++# Disable unused variable warnings
++L_CFLAGS += -Wno-unused-variable
++
++# Disable unused parameter warnings
++L_CFLAGS += -Wno-unused-parameter
++
++# Disable redefined macro warnings
++L_CFLAGS += -Wno-macro-redefined
++
+ ifeq ($(TARGET_SIMULATOR),true)
+   $(error This makefile must not be included when building the simulator)
+ endif
+@@ -22,7 +50,7 @@ ifneq ($(BOARD_WPA_SUPPLICANT_DRIVER),)
+   CONFIG_DRIVER_$(BOARD_WPA_SUPPLICANT_DRIVER) := y
+ endif
+ 
+-L_CFLAGS = -DCONFIG_DRIVER_CUSTOM -DWPA_SUPPLICANT_$(WPA_SUPPLICANT_VERSION)
++L_CFLAGS += -DCONFIG_DRIVER_CUSTOM -DWPA_SUPPLICANT_$(WPA_SUPPLICANT_VERSION)
+ L_SRC :=
+ 
+ ifdef CONFIG_NO_STDOUT_DEBUG
+-- 
+2.20.1
+

@@ -1,0 +1,29 @@
+From 0bce2b0beef79110d47ead5029f6387d0571309f Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Thu, 10 Jan 2019 21:59:47 +0100
+Subject: [PATCH] global CFLAGS for building for razr i
+
+Change-Id: I27819334f746b0e2652ee73f664a21717f946dee
+---
+ cc/config/global.go | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/cc/config/global.go b/cc/config/global.go
+index 7a2aa80f..b058c484 100644
+--- a/cc/config/global.go
++++ b/cc/config/global.go
+@@ -48,6 +48,11 @@ var (
+ 		"-g",
+ 
+ 		"-fno-strict-aliasing",
++
++		"-DUSES_TI_MAC80211",
++		"-DASUS_ZENFONE2_LP_BLOBS",
++		"-DCAMERA_VENDOR_L_COMPAT",
++		"-DNO_SECURE_DISCARD",
+ 	}
+ 
+ 	commonGlobalConlyflags = []string{}
+-- 
+2.20.1
+

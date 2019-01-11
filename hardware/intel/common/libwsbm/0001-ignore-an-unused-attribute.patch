@@ -1,0 +1,26 @@
+From 5ada673ec70ec6c05b361f0c3a58ddb690641b25 Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Thu, 10 Jan 2019 22:44:31 +0100
+Subject: [PATCH] ignore an unused attribute
+
+Change-Id: I4b6a9d331748f06ba22f681ebc5c24ece54976c6
+---
+ src/wsbm_ttmpool.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/wsbm_ttmpool.c b/src/wsbm_ttmpool.c
+index f3e385c..336f04d 100644
+--- a/src/wsbm_ttmpool.c
++++ b/src/wsbm_ttmpool.c
+@@ -529,7 +529,7 @@ wsbmTTMPoolInit(int fd, unsigned int devOffset)
+ }
+ 
+ struct _WsbmBufStorage *
+-ttm_pool_ub_create(struct _WsbmBufferPool *pool, unsigned long size, uint32_t placement, unsigned alignment, const unsigned long *user_ptr, int fd)
++ttm_pool_ub_create(struct _WsbmBufferPool *pool, unsigned long size, uint32_t placement, unsigned alignment, const unsigned long *user_ptr, __attribute__ ((unused)) int fd)
+ {
+     struct _TTMBuffer *dBuf = (struct _TTMBuffer *)
+ 	    calloc(1, sizeof(*dBuf));
+-- 
+2.20.1
+

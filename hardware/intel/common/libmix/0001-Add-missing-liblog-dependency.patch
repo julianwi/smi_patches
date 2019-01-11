@@ -1,0 +1,41 @@
+From 9c3283534b4f181012a4a6b408960ab453299550 Mon Sep 17 00:00:00 2001
+From: Dimitry Ivanov <dimitry@google.com>
+Date: Mon, 3 Oct 2016 15:08:43 -0700
+Subject: [PATCH 1/2] Add missing liblog dependency
+
+Bug: http://b/31289077
+Bug: http://b/27171986
+Test: mm -j48 checkbuild
+Change-Id: I9644a677926c972d15c876af42c81ca648f49e3b
+---
+ videodecoder/Android.mk | 1 +
+ videoencoder/Android.mk | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/videodecoder/Android.mk b/videodecoder/Android.mk
+index 4811df9..599ef44 100644
+--- a/videodecoder/Android.mk
++++ b/videodecoder/Android.mk
+@@ -60,6 +60,7 @@ ifneq ($(filter $(TARGET_BOARD_PLATFORM),$(PLATFORM_SUPPORT_SLICE_HEADER_PARSER)
+ endif
+ 
+ LOCAL_SHARED_LIBRARIES := \
++    liblog \
+     libcutils \
+     libva \
+     libva-android \
+diff --git a/videoencoder/Android.mk b/videoencoder/Android.mk
+index 3d9198e..3170daf 100644
+--- a/videoencoder/Android.mk
++++ b/videoencoder/Android.mk
+@@ -47,6 +47,7 @@ LOCAL_C_INCLUDES += \
+ endif
+ 
+ LOCAL_SHARED_LIBRARIES := \
++    liblog \
+     libcutils \
+     libutils \
+     libva \
+-- 
+2.20.1
+

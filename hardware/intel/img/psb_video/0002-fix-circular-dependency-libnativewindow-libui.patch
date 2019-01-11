@@ -1,0 +1,58 @@
+From d6123852ecb29569ad078842fe89ba441b9f03ea Mon Sep 17 00:00:00 2001
+From: Mathias Agopian <mathias@google.com>
+Date: Wed, 10 May 2017 17:58:24 -0700
+Subject: [PATCH 2/3] fix circular dependency libnativewindow <-> libui
+
+Bug: 37647680
+Bug: 37648355
+Test: compile, manual
+Change-Id: I5e7e599245c388f15a33615ca99f75ce0e462517
+---
+ src/Android.mk      | 5 ++++-
+ src/pnw_rotate.h    | 1 +
+ src/psb_drv_video.h | 1 -
+ 3 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/src/Android.mk b/src/Android.mk
+index 3dc6fb5..e3f762f 100644
+--- a/src/Android.mk
++++ b/src/Android.mk
+@@ -52,7 +52,10 @@ LOCAL_C_INCLUDES := \
+     $(LOCAL_PATH)/hwdefs
+ 
+ LOCAL_SHARED_LIBRARIES += libdl libdrm libwsbm libcutils \
+-    libutils libbinder libhardware liblog libva
++    libutils libbinder libhardware liblog libva libnativewindow
++
++LOCAL_HEADER_LIBRARIES := \
++    libsystem_headers
+ 
+ LOCAL_SRC_FILES := \
+     object_heap.c \
+diff --git a/src/pnw_rotate.h b/src/pnw_rotate.h
+index 1cfd527..746d098 100644
+--- a/src/pnw_rotate.h
++++ b/src/pnw_rotate.h
+@@ -28,6 +28,7 @@
+  */
+ #include "psb_surface.h"
+ #ifdef ANDROID
++#include <system/graphics-base.h>
+ static uint32_t VAROTATION2HAL(int va_rotate) {
+         switch (va_rotate) {
+         case VA_ROTATION_90:
+diff --git a/src/psb_drv_video.h b/src/psb_drv_video.h
+index 6df3424..73bfcda 100755
+--- a/src/psb_drv_video.h
++++ b/src/psb_drv_video.h
+@@ -62,7 +62,6 @@
+ #define XID unsigned int
+ #define INT16 unsigned int
+ #include <cutils/log.h>
+-#include <system/window.h>
+ #undef  LOG_TAG
+ #define LOG_TAG "pvr_drv_video"
+ #endif
+-- 
+2.20.1
+

@@ -1,0 +1,40 @@
+From 274755c487368b36ef6140c106738d63bbda03a2 Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Thu, 10 Jan 2019 22:41:23 +0100
+Subject: [PATCH 2/2] add missing includes
+
+Change-Id: I796a1f3c2d81a66cf15c93e3f899b4c8781c8044
+---
+ videodecoder/VideoDecoderBase.cpp | 2 ++
+ videoencoder/VideoEncoderUtils.h  | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/videodecoder/VideoDecoderBase.cpp b/videodecoder/VideoDecoderBase.cpp
+index 49f8648..32b4040 100644
+--- a/videodecoder/VideoDecoderBase.cpp
++++ b/videodecoder/VideoDecoderBase.cpp
+@@ -14,6 +14,8 @@
+ * limitations under the License.
+ */
+ 
++#include <stdlib.h>
++
+ #include "VideoDecoderBase.h"
+ #include "VideoDecoderTrace.h"
+ #include <string.h>
+diff --git a/videoencoder/VideoEncoderUtils.h b/videoencoder/VideoEncoderUtils.h
+index 05911cd..838bae5 100644
+--- a/videoencoder/VideoEncoderUtils.h
++++ b/videoencoder/VideoEncoderUtils.h
+@@ -16,6 +16,8 @@
+ 
+ #ifndef __VIDEO_ENCODER_UTILS_H__
+ #define __VIDEO_ENCODER_UTILS_H__
++#include <string.h>
++
+ #include <va/va.h>
+ #include <va/va_tpi.h>
+ #include "VideoEncoderDef.h"
+-- 
+2.20.1
+
