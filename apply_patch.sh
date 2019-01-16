@@ -34,7 +34,7 @@ projects () {
     ls ${proj}/*.patch 1>/dev/null 2>/dev/null
     if [ $? -ne 0 ]
     then
-        continue
+        return
     fi
     #echo "Applying patches under ${proj}..."
     for patch_name in `ls ${PATCH_DIR}/${proj} --ignore-backups --ignore="*.bk"`
