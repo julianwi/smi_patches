@@ -1,0 +1,30 @@
+From 3813eecf3baf7f9248716f5dbcf6dd2fb2b46831 Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Wed, 16 Jan 2019 11:27:45 +0100
+Subject: [PATCH] safe_copy: fallback to memcpy when process_vm_readv is not
+ available pre 3.2 kernels don't have process_vm_readv and it could also be
+ disabled in kernel config
+
+Change-Id: Ic7ed67395a862e469c10a44332e0a40c46181b19
+---
+ libartbase/base/safe_copy.cc | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/libartbase/base/safe_copy.cc b/libartbase/base/safe_copy.cc
+index 7ba5cbd3e6..bbeab70793 100644
+--- a/libartbase/base/safe_copy.cc
++++ b/libartbase/base/safe_copy.cc
+@@ -69,6 +69,10 @@ ssize_t SafeCopy(void *dst, const void *src, size_t len) {
+ 
+   ssize_t rc = process_vm_readv(getpid(), &dst_iov, 1, src_iovs, iovecs_used, 0);
+   if (rc == -1) {
++    if(errno == ENOSYS) {
++      memcpy(dst, src, dst_iov.iov_len);
++      return dst_iov.iov_len;
++    }
+     return 0;
+   }
+   return rc;
+-- 
+2.20.1
+
