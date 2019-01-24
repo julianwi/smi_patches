@@ -1,0 +1,58 @@
+From 08bdd81f3e573fb36e614dfa809f4fac14259b31 Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Thu, 24 Jan 2019 15:35:33 +0100
+Subject: [PATCH] ignore silence_size
+
+Change-Id: Ia5de491c52e421a3033153d3e7251f9ea90b91c2
+---
+ Android.bp                   | 2 +-
+ include/tinyalsa/asoundlib.h | 2 ++
+ pcm.c                        | 4 ++++
+ 3 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/Android.bp b/Android.bp
+index 090d91c..ee7afad 100644
+--- a/Android.bp
++++ b/Android.bp
+@@ -9,7 +9,7 @@ cc_library {
+         "mixer.c",
+         "pcm.c",
+     ],
+-    cflags: ["-Werror", "-Wno-macro-redefined"],
++    cflags: ["-Werror", "-Wno-macro-redefined", "-DIGNORE_SILENCE_SIZE"],
+     export_include_dirs: ["include"],
+     local_include_dirs: ["include"],
+ 
+diff --git a/include/tinyalsa/asoundlib.h b/include/tinyalsa/asoundlib.h
+index 935c8d0..f40e9ee 100644
+--- a/include/tinyalsa/asoundlib.h
++++ b/include/tinyalsa/asoundlib.h
+@@ -109,7 +109,9 @@ struct pcm_config {
+     unsigned int start_threshold;
+     unsigned int stop_threshold;
+     unsigned int silence_threshold;
++#ifndef IGNORE_SILENCE_SIZE
+     unsigned int silence_size;
++#endif
+ 
+     /* Minimum number of frames available before pcm_mmap_write() will actually
+      * write into the kernel buffer. Only used if the stream is opened in mmap mode
+diff --git a/pcm.c b/pcm.c
+index 4ae321b..322db51 100644
+--- a/pcm.c
++++ b/pcm.c
+@@ -1000,7 +1000,11 @@ struct pcm *pcm_open(unsigned int card, unsigned int device,
+ 
+     sparams.xfer_align = config->period_size / 2; /* needed for old kernels */
+     sparams.silence_threshold = config->silence_threshold;
++#ifdef IGNORE_SILENCE_SIZE
++    sparams.silence_size = 0;
++#else
+     sparams.silence_size = config->silence_size;
++#endif
+     pcm->boundary = sparams.boundary = pcm->buffer_size;
+ 
+     while (pcm->boundary * 2 <= INT_MAX - pcm->buffer_size)
+-- 
+2.20.1
+
