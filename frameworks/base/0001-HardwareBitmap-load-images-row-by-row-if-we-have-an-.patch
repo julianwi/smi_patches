@@ -1,0 +1,62 @@
+From a5885b3711bbbf7680d9aae4d0f88fefd7ffea14 Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Thu, 31 Jan 2019 22:23:10 +0100
+Subject: [PATCH] HardwareBitmap: load images row by row if we have an buffer
+ stride Some OpenGL implementations seem to have problems with buffer strides.
+ So prevent these problems by loading only single pixel rows
+
+Change-Id: Iec0e5196e92517c104acb5b92db8593b707e52e5
+---
+ libs/hwui/pipeline/skia/SkiaOpenGLPipeline.cpp | 12 ++++++++++--
+ libs/hwui/renderthread/OpenGLPipeline.cpp      | 12 ++++++++++--
+ 2 files changed, 20 insertions(+), 4 deletions(-)
+
+diff --git a/libs/hwui/pipeline/skia/SkiaOpenGLPipeline.cpp b/libs/hwui/pipeline/skia/SkiaOpenGLPipeline.cpp
+index 270527d551a..5504fbb676b 100644
+--- a/libs/hwui/pipeline/skia/SkiaOpenGLPipeline.cpp
++++ b/libs/hwui/pipeline/skia/SkiaOpenGLPipeline.cpp
+@@ -415,8 +415,16 @@ sk_sp<Bitmap> SkiaOpenGLPipeline::allocateHardwareBitmap(renderthread::RenderThr
+     // glTexSubImage2D is synchronous in sense that it memcpy() from pointer that we provide.
+     // But asynchronous in sense that driver may upload texture onto hardware buffer when we first
+     // use it in drawing
+-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.width(), info.height(), format, type,
+-                    bitmap.getPixels());
++    if (buffer->getStride() != buffer->getWidth()) {
++        for (int i=0; i<bitmap.height(); i++) {
++            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, i, info.width(), 1, format, type,
++                            (char *)bitmap.getPixels()+i*bitmap.rowBytes());
++        }
++    }
++    else {
++        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.width(), info.height(), format, type,
++                        bitmap.getPixels());
++    }
+     GL_CHECKPOINT(MODERATE);
+ 
+     // The fence is used to wait for the texture upload to finish
+diff --git a/libs/hwui/renderthread/OpenGLPipeline.cpp b/libs/hwui/renderthread/OpenGLPipeline.cpp
+index f96001ebdd5..5e01485c170 100644
+--- a/libs/hwui/renderthread/OpenGLPipeline.cpp
++++ b/libs/hwui/renderthread/OpenGLPipeline.cpp
+@@ -358,8 +358,16 @@ static bool uploadBitmapToGraphicBuffer(uirenderer::Caches& caches, SkBitmap& bi
+ 
+     GL_CHECKPOINT(MODERATE);
+ 
+-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, bitmap.width(), bitmap.height(), format, type,
+-                    bitmap.getPixels());
++    if (buffer.getStride() != buffer.getWidth()) {
++        for (int i=0; i<bitmap.height(); i++) {
++            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, i, bitmap.width(), 1, format, type,
++                            (char *)bitmap.getPixels()+i*bitmap.rowBytes());
++        }
++    }
++    else {
++        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, bitmap.width(), bitmap.height(), format, type,
++                        bitmap.getPixels());
++    }
+ 
+     GL_CHECKPOINT(MODERATE);
+ 
+-- 
+2.20.1
+
