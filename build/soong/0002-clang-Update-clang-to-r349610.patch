@@ -1,0 +1,29 @@
+From 8a724acf31e217a17cd9687eaf5f1504cf19e2e3 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Sat, 9 Feb 2019 19:28:19 +0100
+Subject: [PATCH] [clang] Update clang to r349610
+
+Older clang doesn't work well with x86
+Crash when building libart
+
+Change-Id: Ieffe764b15c044d928aa7e30cead52a3a90f0dd9
+---
+ cc/config/global.go | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cc/config/global.go b/cc/config/global.go
+index b058c484..2f81adde 100644
+--- a/cc/config/global.go
++++ b/cc/config/global.go
+@@ -121,7 +121,7 @@ var (
+ 
+ 	// prebuilts/clang default settings.
+ 	ClangDefaultBase         = "prebuilts/clang/host"
+-	ClangDefaultVersion      = "clang-4691093"
++	ClangDefaultVersion      = "clang-r349610"
+ 	ClangDefaultShortVersion = "6.0.2"
+ 
+ 	// Directories with warnings from Android.bp files.
+-- 
+2.17.1
+
