@@ -12,7 +12,7 @@ then
 fi
 if [ "$ROOT_DIR" = "" ]
 then
-    ret=`cat Makefile 2>/dev/null | grep "include build/core/main.mk"`
+    ret=`cat Makefile 2>/dev/null | grep "include build/make/core/main.mk"`
     if [ "$ret" != "" ]
     then
         ROOT_DIR=`pwd`
@@ -24,9 +24,8 @@ fi
 
 PATCH_DIR=${ROOT_DIR}/device/motorola/smi-patches
 
-# Enable the temporary Makefile to abort the build in case of failure
-cp ${PATCH_DIR}/Show-stopper.mk ${PATCH_DIR}/Android.mk
-FAILED=false
+# Remove leftover Makefile to abort the build in case of failure
+rm -f ${PATCH_DIR}/Android.mk
 
 cd ${PATCH_DIR}
 
@@ -58,7 +57,8 @@ projects () {
                 echo "Failed at ${proj}"
                 echo "Abort..."
                 git am --abort
-                FAILED=true
+		# Write Makefile to abort the build in case of failure
+                cp ${PATCH_DIR}/Show-stopper.mk ${PATCH_DIR}/Android.mk
                 exit
             fi
         else
@@ -71,10 +71,3 @@ projects () {
 for proj in `find . -type d -name "*"`
 do projects "$proj" &
 done
-
-wait
-
-# All went well, disable the show-stopper Makefile
-if [ "$FAILED" = false ]; then
-(\rm -f ${PATCH_DIR}/Android.mk)
-fi;
