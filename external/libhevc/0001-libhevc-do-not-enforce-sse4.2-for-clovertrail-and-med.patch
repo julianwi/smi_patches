@@ -13,7 +13,7 @@ Change-Id: I1aae00588d2f821124e8571262188debc8db7a49
  common/x86/ihevc_intra_pred_filters_sse42_intr.c        | 8 ++++++++
  common/x86/ihevc_itrans_recon_sse42_intr.c              | 2 ++
  common/x86/ihevc_weighted_pred_sse42_intr.c             | 4 ++++
- decoder.x86.mk                                          | 4 ++++
+ Android.bp                                              | 2 --
  6 files changed, 22 insertions(+)
 
 diff --git a/common/x86/ihevc_chroma_intra_pred_filters_sse42_intr.c b/common/x86/ihevc_chroma_intra_pred_filters_sse42_intr.c
@@ -180,19 +180,20 @@ index 94a3f6d..c08d940 100644
  void ihevc_weighted_pred_chroma_bi_sse42(WORD16 *pi2_src1,
                                           WORD16 *pi2_src2,
                                           UWORD8 *pu1_dst,
-diff --git a/decoder.x86.mk b/decoder.x86.mk
-index 3f86923..5ce439e 100644
---- a/decoder.x86.mk
-+++ b/decoder.x86.mk
-@@ -1,4 +1,8 @@
-+ifneq ($(filter $(TARGET_BOARD_PLATFORM),clovertrail medfield sc1),)
-+libhevcd_cflags_x86 += -DX86 -DDISABLE_AVX2 -m32 -mno-avx -DDEFAULT_ARCH=D_ARCH_X86_SSE3
-+else
- libhevcd_cflags_x86 += -DX86 -DDISABLE_AVX2 -m32 -msse4.2 -mno-avx -DDEFAULT_ARCH=D_ARCH_X86_SSE42
-+endif
+diff --git a/Android.bp b/Android.bp
+index d74fb76..e8a0329 100644
+--- a/Android.bp
++++ b/Android.bp
+@@ -348,9 +348,7 @@ cc_library_static {
+             cflags: [
+                 "-DX86",
+                 "-DDISABLE_AVX2",
+-                "-msse4.2",
+                 "-mno-avx",
+-                "-DDEFAULT_ARCH=D_ARCH_X86_SSE42",
+             ],
  
- libhevcd_inc_dir_x86   +=  $(LOCAL_PATH)/decoder/x86
- libhevcd_inc_dir_x86   +=  $(LOCAL_PATH)/common/x86
+             local_include_dirs: [
 -- 
 2.7.4
 

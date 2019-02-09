@@ -12,8 +12,7 @@ Change-Id: If953bb19dd6168e72fa17a05cef4f9d241514807
  common/x86/ih264_iquant_itrans_recon_sse42.c | 2 ++
  common/x86/ih264_resi_trans_quant_sse42.c    | 4 ++++
  common/x86/ih264_weighted_pred_sse42.c       | 4 ++++
- decoder.x86.mk                               | 4 ++++
- encoder.x86.mk                               | 4 ++++
+ Android.bp                                   | 4 --+-
  encoder/x86/ih264e_function_selector.c       | 4 ++++
  encoder/x86/ime_distortion_metrics_sse42.c   | 1 +
  8 files changed, 25 insertions(+)
@@ -130,32 +129,28 @@ index 48f1f54..0a9482d 100644
  void ih264_weighted_bi_pred_chroma_sse42(UWORD8 *pu1_src1,
                                           UWORD8 *pu1_src2,
                                           UWORD8 *pu1_dst,
-diff --git a/decoder.x86.mk b/decoder.x86.mk
-index 100a501..e30bc02 100644
---- a/decoder.x86.mk
-+++ b/decoder.x86.mk
-@@ -1,4 +1,8 @@
-+ifneq ($(filter $(TARGET_BOARD_PLATFORM),clovertrail medfield sc1),)
-+libavcd_cflags_x86 += -DX86 -DDEFAULT_ARCH=D_ARCH_X86_SSE3
-+else
- libavcd_cflags_x86 += -DX86 -msse4.2 -DDEFAULT_ARCH=D_ARCH_X86_SSE42
-+endif
+diff --git a/Android.bp b/Android.bp
+index 4abfa16..e15660f 100644
+--- a/Android.bp
++++ b/Android.bp
+@@ -172,8 +172,7 @@ cc_library_static {
+         x86: {
+             cflags: [
+                 "-DX86",
+-                "-msse4.2",
+-                "-DDEFAULT_ARCH=D_ARCH_X86_SSE42",
++                "-DDEFAULT_ARCH=D_ARCH_X86_SSE3",
+             ],
  
- libavcd_inc_dir_x86     +=  $(LOCAL_PATH)/decoder/x86
- libavcd_inc_dir_x86     +=  $(LOCAL_PATH)/common/x86
-diff --git a/encoder.x86.mk b/encoder.x86.mk
-index 91f20d9..487507b 100644
---- a/encoder.x86.mk
-+++ b/encoder.x86.mk
-@@ -1,4 +1,8 @@
-+ifneq ($(filter $(TARGET_BOARD_PLATFORM),clovertrail medfield sc1),)
-+libavce_cflags_x86 += -DX86 -DDEFAULT_ARCH=ARCH_X86_SSSE3
-+else
- libavce_cflags_x86 += -DX86 -msse4.2
-+endif
+             local_include_dirs: [
+@@ -433,7 +432,6 @@ cc_library_static {
+         x86: {
+             cflags: [
+                 "-DX86",
+-                "-msse4.2",
+             ],
  
- libavce_inc_dir_x86     +=  $(LOCAL_PATH)/encoder/x86
- libavce_inc_dir_x86     +=  $(LOCAL_PATH)/common/x86
+             local_include_dirs: [
 diff --git a/encoder/x86/ih264e_function_selector.c b/encoder/x86/ih264e_function_selector.c
 index b0acb19..cdc1c24 100644
 --- a/encoder/x86/ih264e_function_selector.c
