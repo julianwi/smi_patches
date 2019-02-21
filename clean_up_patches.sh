@@ -17,7 +17,7 @@ PATCHED_PROJECTS=$(
     done
 )
 
-repo forall $PATCHED_PROJECTS -c git reset --hard github/cm-14.1
+repo forall $PATCHED_PROJECTS -c git reset --hard github/lineage-16.0
 repo forall $PATCHED_PROJECTS -c git clean -d -f -x
 
 echo
