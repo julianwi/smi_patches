@@ -1,44 +1,24 @@
-From 052cedac63103198190263b5e8d260777acc8dd3 Mon Sep 17 00:00:00 2001
+From b96c240ef326de372d85199e8d8bc5a3dd3660b2 Mon Sep 17 00:00:00 2001
 From: Julian Winkler <julian.winkler1@web.de>
-Date: Thu, 10 Jan 2019 21:57:34 +0100
+Date: Thu, 21 Feb 2019 10:10:08 +0100
 Subject: [PATCH] ignore text relocations
 
-Change-Id: Ic66dddb6f65d055e4203cb74322035f9df1259d4
+Change-Id: I8e30983f007908d3dd607cd42ff49224a9923fd4
 ---
- linker/Android.bp | 3 ---
- linker/linker.cpp | 9 ++-------
- 2 files changed, 2 insertions(+), 10 deletions(-)
+ linker/linker.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/linker/Android.bp b/linker/Android.bp
-index a039b10a9..50fcf07fd 100644
---- a/linker/Android.bp
-+++ b/linker/Android.bp
-@@ -167,9 +167,6 @@ cc_binary {
-             cppflags: ["-DUSE_LD_CONFIG_FILE"],
-         },
-         lineage: {
--            needs_text_relocations: {
--                cppflags: ["-DTARGET_NEEDS_PLATFORM_TEXT_RELOCATIONS"],
--            },
-             target_process_sdk_version_override: {
-                 cppflags: ["-DSDK_VERSION_OVERRIDES=\"%s\""],
-             },
 diff --git a/linker/linker.cpp b/linker/linker.cpp
-index 0427e3f04..3194825f6 100644
+index 951351c32..3194825f6 100644
 --- a/linker/linker.cpp
 +++ b/linker/linker.cpp
-@@ -3620,18 +3620,13 @@ bool soinfo::link_image(const soinfo_list_t& global_group, const soinfo_list_t&
+@@ -3620,13 +3620,13 @@ bool soinfo::link_image(const soinfo_list_t& global_group, const soinfo_list_t&
  #if !defined(__LP64__)
    if (has_text_relocations) {
      // Fail if app is targeting M or above.
 -    int app_target_api_level = get_application_target_sdk_version();
--#if defined(TARGET_NEEDS_PLATFORM_TEXT_RELOCATIONS)
--    if (app_target_api_level != __ANDROID_API__
--        && app_target_api_level >= __ANDROID_API_M__) {
--#else
 +    /*int app_target_api_level = get_application_target_sdk_version();
      if (app_target_api_level >= __ANDROID_API_M__) {
--#endif
        DL_ERR_AND_LOG("\"%s\" has text relocations (https://android.googlesource.com/platform/"
                       "bionic/+/master/android-changes-for-ndk-developers.md#Text-Relocations-"
                       "Enforced-for-API-level-23)", get_realpath());
