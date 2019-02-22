@@ -1,0 +1,54 @@
+From e2e85f856dbe528818cbe3dcf989fa8e177118d3 Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Sun, 10 Feb 2019 21:47:52 +0100
+Subject: [PATCH 1/2] [twrp] Fix some compile errors ans use x86 clang files
+
+Change-Id: I35adf0d49f647d14deac3d523257c3c9a8bc95fa
+---
+ dosfstools/src/check.c | 2 +-
+ prebuilt/Android.mk    | 2 +-
+ twinstall.cpp          | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/dosfstools/src/check.c b/dosfstools/src/check.c
+index bbb97e4f..a2f11a4d 100644
+--- a/dosfstools/src/check.c
++++ b/dosfstools/src/check.c
+@@ -585,7 +585,7 @@ static int check_file(DOS_FS * fs, DOS_FILE * file)
+ 	if (!(file->dir_ent.attr & ATTR_DIR) && le32toh(file->dir_ent.size) <=
+ 	    (uint64_t)clusters * fs->cluster_size) {
+ 	    printf
+-		("%s\n  File size is %u bytes, cluster chain length is > %lu "
++		("%s\n  File size is %u bytes, cluster chain length is > %llu "
+ 		 "bytes.\n  Truncating file to %u bytes.\n", path_name(file),
+ 		 le32toh(file->dir_ent.size),
+ 		 (uint64_t)clusters * fs->cluster_size,
+diff --git a/prebuilt/Android.mk b/prebuilt/Android.mk
+index 235b77c8..7c00aecd 100644
+--- a/prebuilt/Android.mk
++++ b/prebuilt/Android.mk
+@@ -346,7 +346,7 @@ ifeq ($(shell test $(PLATFORM_SDK_VERSION) -gt 25; echo $$?),0)
+     endif
+ endif
+ ifeq ($(shell test $(PLATFORM_SDK_VERSION) -gt 27; echo $$?),0)
+-    RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libclang_rt.ubsan_standalone-aarch64-android.so
++    RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libclang_rt.ubsan_standalone-i686-android.so
+     RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/liblogwrap.so
+     RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libext2_misc.so
+ endif
+diff --git a/twinstall.cpp b/twinstall.cpp
+index a2f54c94..d63088cb 100644
+--- a/twinstall.cpp
++++ b/twinstall.cpp
+@@ -193,7 +193,7 @@ static bool update_binary_has_legacy_properties(const char *binary) {
+ 
+ 	void *data = mmap(NULL, finfo.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+ 	if (data == MAP_FAILED) {
+-		LOGINFO("has_legacy_properties: mmap (size=%zu) failed: %s!\n", finfo.st_size, strerror(errno));
++		LOGINFO("has_legacy_properties: mmap (size=%lld) failed: %s!\n", finfo.st_size, strerror(errno));
+ 	} else {
+ 		if (memmem(data, finfo.st_size, str_to_match, len_to_match)) {
+ 			LOGINFO("has_legacy_properties: Found legacy property match!\n");
+-- 
+2.17.1
+

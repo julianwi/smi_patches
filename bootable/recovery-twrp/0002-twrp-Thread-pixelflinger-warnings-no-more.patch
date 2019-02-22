@@ -1,0 +1,25 @@
+From c49d50c6ecc6fe2507d16c0694427091b92af5fc Mon Sep 17 00:00:00 2001
+From: Patrick Harbers <jgrharbers@gmail.com>
+Date: Mon, 11 Feb 2019 12:36:18 +0100
+Subject: [PATCH 2/2] [twrp] Thread pixelflinger warnings no more
+
+Change-Id: Ib9c869626d62376ebef7624fabab4c6d66caec99
+---
+ libpixelflinger/Android.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/libpixelflinger/Android.mk b/libpixelflinger/Android.mk
+index 026e8ad0..93fdcad9 100644
+--- a/libpixelflinger/Android.mk
++++ b/libpixelflinger/Android.mk
+@@ -104,6 +104,7 @@ endif
+ LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)/include
+ LOCAL_C_INCLUDES += $(LOCAL_EXPORT_C_INCLUDE_DIRS)
+ LOCAL_CFLAGS := $(PIXELFLINGER_CFLAGS)
++LOCAL_CFLAGS_x86 := -Wno-unused-parameter -Wno-unused-variable
+ LOCAL_CPPFLAGS := -Wno-unused-function
+ LOCAL_C_INCLUDES_x86 := $(PIXELFLINGER_C_INCLUDES_x86)
+ ifeq ($(TW_HAVE_X86_ACCELERATED_PIXELFLINGER),true)
+-- 
+2.17.1
+
