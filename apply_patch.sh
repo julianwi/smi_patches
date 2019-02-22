@@ -70,4 +70,6 @@ projects () {
 
 for proj in `find . -type d -name "*"`
 do projects "$proj" &
+# Wait for script to finish before exiting
+wait
 done
