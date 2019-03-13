@@ -12,10 +12,10 @@ Change-Id: If953bb19dd6168e72fa17a05cef4f9d241514807
  common/x86/ih264_iquant_itrans_recon_sse42.c | 2 ++
  common/x86/ih264_resi_trans_quant_sse42.c    | 4 ++++
  common/x86/ih264_weighted_pred_sse42.c       | 4 ++++
- Android.bp                                   | 4 --+-
+ Android.bp                                   | 5 ++---
  encoder/x86/ih264e_function_selector.c       | 4 ++++
  encoder/x86/ime_distortion_metrics_sse42.c   | 1 +
- 8 files changed, 25 insertions(+)
+ 7 files changed, 19 insertions(+), 3 deletions(-)
 
 diff --git a/common/x86/ih264_ihadamard_scaling_sse42.c b/common/x86/ih264_ihadamard_scaling_sse42.c
 index d68d105..d1e1b88 100644
@@ -130,7 +130,7 @@ index 48f1f54..0a9482d 100644
                                           UWORD8 *pu1_src2,
                                           UWORD8 *pu1_dst,
 diff --git a/Android.bp b/Android.bp
-index 4abfa16..e15660f 100644
+index 4abfa16..e0c39f2 100644
 --- a/Android.bp
 +++ b/Android.bp
 @@ -172,8 +172,7 @@ cc_library_static {
@@ -143,11 +143,12 @@ index 4abfa16..e15660f 100644
              ],
  
              local_include_dirs: [
-@@ -433,7 +432,6 @@ cc_library_static {
+@@ -433,7 +432,7 @@ cc_library_static {
          x86: {
              cflags: [
                  "-DX86",
 -                "-msse4.2",
++                "-DDEFAULT_ARCH=ARCH_X86_SSSE3",
              ],
  
              local_include_dirs: [
