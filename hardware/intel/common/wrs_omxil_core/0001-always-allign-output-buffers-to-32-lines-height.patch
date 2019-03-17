@@ -1,0 +1,30 @@
+From 1ef86326611e49b94b09b22641e6f8e0294a5f1a Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Sun, 17 Mar 2019 15:38:36 +0100
+Subject: [PATCH] always allign output buffers to 32 lines height fixes green
+ bars during video recording
+
+Change-Id: I19143bfdd366e466b09fa9a60618cf17e2821413
+---
+ base/src/portbase.cpp | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/base/src/portbase.cpp b/base/src/portbase.cpp
+index a707876..a0d08ef 100644
+--- a/base/src/portbase.cpp
++++ b/base/src/portbase.cpp
+@@ -254,7 +254,10 @@ OMX_ERRORTYPE PortBase::SetPortDefinition(
+         format->cMIMEType[mimetype_len+1] = '\0';
+         format->pNativeRender = pformat->pNativeRender;
+         format->nFrameWidth = pformat->nFrameWidth;
+-        format->nFrameHeight = pformat->nFrameHeight;
++        if(p->eDir == OMX_DirOutput)
++            format->nFrameHeight = (pformat->nFrameHeight + 0x1f) & ~0x1f;
++        else
++            format->nFrameHeight = pformat->nFrameHeight;
+         format->nBitrate = pformat->nBitrate;
+         format->xFramerate = pformat->xFramerate;
+         format->bFlagErrorConcealment = pformat->bFlagErrorConcealment;
+-- 
+2.20.1
+
