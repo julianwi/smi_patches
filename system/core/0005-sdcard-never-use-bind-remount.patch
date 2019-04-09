@@ -1,0 +1,26 @@
+From 617a49de6e675e10a34e7e4eace978c20a7c36eb Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Tue, 9 Apr 2019 13:47:25 +0200
+Subject: [PATCH] sdcard: never use bind remount
+
+Change-Id: I457ff8c5ad671e903a1a77b63b5c3d17ce8f0df5
+---
+ sdcard/sdcard.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sdcard/sdcard.cpp b/sdcard/sdcard.cpp
+index f8f1cbb45..f2cb4bc94 100644
+--- a/sdcard/sdcard.cpp
++++ b/sdcard/sdcard.cpp
+@@ -146,7 +146,7 @@ static bool sdcardfs_setup_secondary(const std::string& default_path, const std:
+                                      const std::string& dest_path, uid_t fsuid, gid_t fsgid,
+                                      bool multi_user, userid_t userid, gid_t gid, mode_t mask,
+                                      bool derive_gid, bool default_normal, bool use_esdfs) {
+-    if (use_esdfs) {
++    if (1/*use_esdfs*/) {
+         return sdcardfs_setup(source_path, dest_path, fsuid, fsgid, multi_user, userid, gid, mask,
+                               derive_gid, default_normal, use_esdfs);
+     } else {
+-- 
+2.20.1
+
