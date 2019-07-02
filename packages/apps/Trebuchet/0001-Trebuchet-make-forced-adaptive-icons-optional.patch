@@ -1,0 +1,119 @@
+From 56a24c3c8a469c2abd4cebaa04865f94221d9274 Mon Sep 17 00:00:00 2001
+From: Joey <joey@lineageos.org>
+Date: Thu, 12 Apr 2018 21:31:25 +0200
+Subject: [PATCH] Trebuchet: make forced adaptive icons optional
+
+Change-Id: Ie84af7114118f54b2d267a35ce24dd5e58c0be22
+Signed-off-by: Joey <joey@lineageos.org>
+---
+ res/values/lineage_strings.xml                       |  5 +++++
+ res/xml/launcher_preferences.xml                     |  8 ++++++++
+ src/com/android/launcher3/SettingsActivity.java      | 12 ++++++++++++
+ src/com/android/launcher3/Utilities.java             |  5 +++++
+ .../android/launcher3/graphics/LauncherIcons.java    |  4 ++--
+ 5 files changed, 32 insertions(+), 2 deletions(-)
+
+diff --git a/res/values/lineage_strings.xml b/res/values/lineage_strings.xml
+index 031c83946..755866973 100644
+--- a/res/values/lineage_strings.xml
++++ b/res/values/lineage_strings.xml
+@@ -37,6 +37,11 @@
+     <string name="icon_shape_squircle_name">Squircle</string>
+     <string name="icon_shape_teardrop_name">Teardrop</string>
+ 
++    <!-- force adaptive icons -->
++    <string name="settings_icon_force_adaptive_title">Force adaptive icons</string>
++    <string name="settings_icon_force_adaptive_desc_on">Icons with a custom shape will be boxed</string>
++    <string name="settings_icon_force_adaptive_desc_off">Icons with a custom shape will not be boxed</string>
++
+     <!-- Grid size -->
+     <string name="grid_size_text">Grid size</string>
+     <string name="grid_size_rows">Rows</string>
+diff --git a/res/xml/launcher_preferences.xml b/res/xml/launcher_preferences.xml
+index b6f0a85ef..d4d986e03 100644
+--- a/res/xml/launcher_preferences.xml
++++ b/res/xml/launcher_preferences.xml
+@@ -93,6 +93,14 @@
+             android:defaultValue="@string/icon_shape_default"
+             android:persistent="false" />
+ 
++        <SwitchPreference
++            android:defaultValue="true"
++            android:key="pref_icon_force_adaptive"
++            android:persistent="true"
++            android:summaryOn="@string/settings_icon_force_adaptive_desc_on"
++            android:summaryOff="@string/settings_icon_force_adaptive_desc_off"
++            android:title="@string/settings_icon_force_adaptive_title" />
++
+         <com.android.launcher3.views.ButtonPreference
+             android:key="pref_icon_badging"
+             android:title="@string/icon_badging_title"
+diff --git a/src/com/android/launcher3/SettingsActivity.java b/src/com/android/launcher3/SettingsActivity.java
+index 2ea7aa49b..b72cad174 100644
+--- a/src/com/android/launcher3/SettingsActivity.java
++++ b/src/com/android/launcher3/SettingsActivity.java
+@@ -84,6 +84,7 @@ public class SettingsActivity extends Activity {
+     private static final String KEY_SHOW_DRAWER_LABELS = "pref_drawer_show_labels";
+ 
+     public static final String KEY_WORKSPACE_EDIT = "pref_workspace_edit";
++    public static final String KEY_FORCE_ADAPTIVE_ICONS = "pref_icon_force_adaptive";
+ 
+     @Override
+     protected void onCreate(Bundle savedInstanceState) {
+@@ -154,6 +155,16 @@ public class SettingsActivity extends Activity {
+                 mIconBadgingObserver.register(NOTIFICATION_BADGING, NOTIFICATION_ENABLED_LISTENERS);
+             }
+ 
++            SwitchPreference iconAdaptiveOverride = (SwitchPreference)
++                    findPreference(KEY_FORCE_ADAPTIVE_ICONS);
++            if (iconAdaptiveOverride != null) {
++                iconAdaptiveOverride.setOnPreferenceChangeListener((preference, newValue) -> {
++                    // Clear the icon cache.
++                    LauncherAppState.getInstance(getContext()).getIconCache().clear();
++                    return true;
++                });
++            }
++
+             Preference iconShapeOverride = iconGroup.findPreference(
+                     IconShapeOverride.KEY_PREFERENCE);
+             if (iconShapeOverride != null) {
+@@ -273,6 +284,7 @@ public class SettingsActivity extends Activity {
+                     break;
+                 case KEY_SHOW_DESKTOP_LABELS:
+                 case KEY_SHOW_DRAWER_LABELS:
++                case KEY_FORCE_ADAPTIVE_ICONS:
+                     mShouldRestart = true;
+                     break;
+             }
+diff --git a/src/com/android/launcher3/Utilities.java b/src/com/android/launcher3/Utilities.java
+index 67d70537a..e13a3b267 100644
+--- a/src/com/android/launcher3/Utilities.java
++++ b/src/com/android/launcher3/Utilities.java
+@@ -628,4 +628,9 @@ public final class Utilities {
+         SharedPreferences prefs = getPrefs(context.getApplicationContext());
+         return prefs.getBoolean(SettingsActivity.KEY_WORKSPACE_EDIT, true);
+     }
++
++    public static boolean isAdaptiveIconForced(Context context) {
++        SharedPreferences prefs = getPrefs(context.getApplicationContext());
++        return prefs.getBoolean(SettingsActivity.KEY_FORCE_ADAPTIVE_ICONS, false);
++    }
+ }
+diff --git a/src/com/android/launcher3/graphics/LauncherIcons.java b/src/com/android/launcher3/graphics/LauncherIcons.java
+index 333fe5907..d1c8e7837 100644
+--- a/src/com/android/launcher3/graphics/LauncherIcons.java
++++ b/src/com/android/launcher3/graphics/LauncherIcons.java
+@@ -248,8 +248,8 @@ public class LauncherIcons implements AutoCloseable {
+     private Drawable normalizeAndWrapToAdaptiveIcon(Drawable icon, int iconAppTargetSdk,
+             RectF outIconBounds, float[] outScale) {
+         float scale = 1f;
+-        if ((Utilities.ATLEAST_OREO && iconAppTargetSdk >= Build.VERSION_CODES.O) ||
+-                Utilities.ATLEAST_P) {
++        if (((Utilities.ATLEAST_OREO && iconAppTargetSdk >= Build.VERSION_CODES.O) ||
++                Utilities.ATLEAST_P) && Utilities.isAdaptiveIconForced(mContext) ) {
+             boolean[] outShape = new boolean[1];
+             if (mWrapperIcon == null) {
+                 mWrapperIcon = mContext.getDrawable(R.drawable.adaptive_icon_drawable_wrapper)
+-- 
+2.20.1
+
