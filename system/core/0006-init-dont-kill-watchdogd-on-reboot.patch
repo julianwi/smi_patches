@@ -1,0 +1,26 @@
+From 51e65fc280a694739dc46c49de1ea307b51d959e Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Tue, 2 Jul 2019 22:48:49 +0200
+Subject: [PATCH] init: dont kill watchdogd on reboot
+
+Change-Id: I06c3f4f416ac0adc7c35b15b92a6c9cd730b9908
+---
+ init/reboot.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/init/reboot.cpp b/init/reboot.cpp
+index c538ce08a..4c0cb4d59 100644
+--- a/init/reboot.cpp
++++ b/init/reboot.cpp
+@@ -293,7 +293,7 @@ static UmountStat UmountPartitions(std::chrono::milliseconds timeout) {
+     }
+ }
+ 
+-static void KillAllProcesses() { android::base::WriteStringToFile("i", "/proc/sysrq-trigger"); }
++static void KillAllProcesses() { /*dont kill watchdogd!  android::base::WriteStringToFile("i", "/proc/sysrq-trigger");*/ }
+ 
+ /* Try umounting all emulated file systems R/W block device cfile systems.
+  * This will just try umount and give it up if it fails.
+-- 
+2.20.1
+
