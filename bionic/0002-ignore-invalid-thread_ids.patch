@@ -1,0 +1,27 @@
+From 0842d65ad3d80fc471dc71ef9912e476e75acd86 Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Mon, 12 Aug 2019 12:59:44 +0200
+Subject: [PATCH] ignore invalid thread_ids This old behavior is still required
+ by houdini emulator
+
+Change-Id: I847aa682b6a3bd2df5a5c01b460d0122c0bef750
+---
+ libc/bionic/pthread_internal.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libc/bionic/pthread_internal.cpp b/libc/bionic/pthread_internal.cpp
+index 829194cc7..7fe269a4c 100644
+--- a/libc/bionic/pthread_internal.cpp
++++ b/libc/bionic/pthread_internal.cpp
+@@ -123,7 +123,7 @@ pthread_internal_t* __pthread_internal_find(pthread_t thread_id) {
+       // TODO: try getting rid of this when Treble lets us keep vendor blobs on an old API level.
+       async_safe_format_log(ANDROID_LOG_WARN, "libc", "invalid pthread_t (0) passed to libc");
+     } else {
+-      async_safe_fatal("invalid pthread_t %p passed to libc", thread);
++      async_safe_format_log(ANDROID_LOG_WARN, "libc", "invalid pthread_t %p passed to libc", thread);
+     }
+   }
+   return nullptr;
+-- 
+2.20.1
+
