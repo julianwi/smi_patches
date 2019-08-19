@@ -1,0 +1,48 @@
+From 523708502389152423ad40e80d1cae4a4f833c16 Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Mon, 19 Aug 2019 22:21:07 +0200
+Subject: [PATCH] allow notification access on low ram device
+
+Change-Id: Ic647eeb582324c284c2f670dc2f32a0d6991dbc3
+---
+ .../settings/applications/SpecialAccessSettings.java      | 2 +-
+ .../android/settings/utils/ManagedServiceSettings.java    | 8 ++++----
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/src/com/android/settings/applications/SpecialAccessSettings.java b/src/com/android/settings/applications/SpecialAccessSettings.java
+index 6387ec7053..81c45c80c5 100644
+--- a/src/com/android/settings/applications/SpecialAccessSettings.java
++++ b/src/com/android/settings/applications/SpecialAccessSettings.java
+@@ -33,7 +33,7 @@ public class SpecialAccessSettings extends DashboardFragment {
+ 
+     private static final String TAG = "SpecialAccessSettings";
+     private static final String[] DISABLED_FEATURES_LOW_RAM =
+-            new String[]{"notification_access", "zen_access", "enabled_vr_listeners",
++            new String[]{"zen_access", "enabled_vr_listeners",
+                     "picture_in_picture"};
+ 
+     @Override
+diff --git a/src/com/android/settings/utils/ManagedServiceSettings.java b/src/com/android/settings/utils/ManagedServiceSettings.java
+index e89757cb2e..c4385dfadf 100644
+--- a/src/com/android/settings/utils/ManagedServiceSettings.java
++++ b/src/com/android/settings/utils/ManagedServiceSettings.java
+@@ -90,12 +90,12 @@ public abstract class ManagedServiceSettings extends EmptyTextSettings {
+     @Override
+     public void onResume() {
+         super.onResume();
+-        if (!ActivityManager.isLowRamDeviceStatic()) {
++//        if (!ActivityManager.isLowRamDeviceStatic()) {
+             mServiceListing.reload();
+             mServiceListing.setListening(true);
+-        } else {
+-            setEmptyText(R.string.disabled_low_ram_device);
+-        }
++//        } else {
++//            setEmptyText(R.string.disabled_low_ram_device);
++//        }
+     }
+ 
+     @Override
+-- 
+2.20.1
+

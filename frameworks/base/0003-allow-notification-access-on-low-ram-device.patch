@@ -1,0 +1,36 @@
+From 9528c01cd33d0c84c501569e4f120513c29870fe Mon Sep 17 00:00:00 2001
+From: Julian Winkler <julian.winkler1@web.de>
+Date: Mon, 19 Aug 2019 10:59:48 +0200
+Subject: [PATCH] allow notification access on low ram device
+
+Change-Id: Ic747c27021d1f51949ceb1ff7f04e6627e72da45
+---
+ .../notification/NotificationManagerService.java     | 12 +-----------
+ 1 file changed, 1 insertion(+), 11 deletions(-)
+
+diff --git a/services/core/java/com/android/server/notification/NotificationManagerService.java b/services/core/java/com/android/server/notification/NotificationManagerService.java
+index cec7e81dfb1..85059d6f970 100644
+--- a/services/core/java/com/android/server/notification/NotificationManagerService.java
++++ b/services/core/java/com/android/server/notification/NotificationManagerService.java
+@@ -6478,17 +6478,7 @@ public class NotificationManagerService extends SystemService {
+ 
+     @VisibleForTesting
+     boolean canUseManagedServices(String pkg) {
+-        boolean canUseManagedServices = !mActivityManager.isLowRamDevice()
+-                || mPackageManagerClient.hasSystemFeature(PackageManager.FEATURE_WATCH);
+-
+-        for (String whitelisted : getContext().getResources().getStringArray(
+-                R.array.config_allowedManagedServicesOnLowRamDevices)) {
+-            if (whitelisted.equals(pkg)) {
+-                canUseManagedServices = true;
+-            }
+-        }
+-
+-        return canUseManagedServices;
++        return true;
+     }
+ 
+     private class TrimCache {
+-- 
+2.20.1
+
