@@ -1,0 +1,264 @@
+From 96854aef4b62ac525b02297f3764e2d1884c9d3f Mon Sep 17 00:00:00 2001
+From: Shalini Salomi Bodapati <shalini.salomi.bodapati@intel.com>
+Date: Wed, 21 Nov 2018 15:36:00 +0530
+Subject: [PATCH] Implement integer/long LowestOneBit intrinsic for x86
+
+Test: ./test.py --host, 568-checker-one-bit
+Change-Id: Ia7e13fa3b804c0c74ee1470b306c836fc1578c15
+Signed-off-by: Shalini Salomi Bodapati <shalini.salomi.bodapati@intel.com>
+---
+ compiler/optimizing/intrinsics_x86.cc    | 107 ++++++++++++++++++++++-
+ compiler/optimizing/intrinsics_x86_64.cc |  99 +++++++++++----------
+ 2 files changed, 157 insertions(+), 49 deletions(-)
+
+diff --git a/compiler/optimizing/intrinsics_x86.cc b/compiler/optimizing/intrinsics_x86.cc
+index 0763ef235..244e65b8c 100644
+--- a/compiler/optimizing/intrinsics_x86.cc
++++ b/compiler/optimizing/intrinsics_x86.cc
+@@ -976,6 +976,96 @@ static void GenFPToFPCall(HInvoke* invoke, CodeGeneratorX86* codegen, QuickEntry
+   __ cfi().AdjustCFAOffset(-16);
+ }
+ 
++static void CreateLowestOneBitLocations(ArenaAllocator* allocator, bool is_long, HInvoke* invoke) {
++  LocationSummary* locations =
++      new (allocator) LocationSummary(invoke, LocationSummary::kNoCall, kIntrinsified);
++  if (is_long) {
++    locations->SetInAt(0, Location::RequiresRegister());
++  } else {
++    locations->SetInAt(0, Location::Any());
++  }
++  locations->SetOut(Location::RequiresRegister(), Location::kOutputOverlap);
++}
++
++static void GenLowestOneBit(X86Assembler* assembler,
++                      CodeGeneratorX86* codegen,
++                      bool is_long,
++                      HInvoke* invoke) {
++  LocationSummary* locations = invoke->GetLocations();
++  Location src = locations->InAt(0);
++  Location out_loc = locations->Out();
++
++  if (invoke->InputAt(0)->IsConstant()) {
++    // Evaluate this at compile time.
++    int64_t value = Int64FromConstant(invoke->InputAt(0)->AsConstant());
++    if (value == 0) {
++      if (is_long) {
++        __ xorl(out_loc.AsRegisterPairLow<Register>(), out_loc.AsRegisterPairLow<Register>());
++        __ xorl(out_loc.AsRegisterPairHigh<Register>(), out_loc.AsRegisterPairHigh<Register>());
++      } else {
++        __ xorl(out_loc.AsRegister<Register>(), out_loc.AsRegister<Register>());
++      }
++      return;
++    }
++    // Nonzero value.
++    value = is_long ? CTZ(static_cast<uint64_t>(value))
++                    : CTZ(static_cast<uint32_t>(value));
++    if (is_long) {
++      if (value >= 32) {
++        int shift = value-32;
++        codegen->Load32BitValue(out_loc.AsRegisterPairLow<Register>(), 0);
++        codegen->Load32BitValue(out_loc.AsRegisterPairHigh<Register>(), 1 << shift);
++      } else {
++        codegen->Load32BitValue(out_loc.AsRegisterPairLow<Register>(), 1 << value);
++        codegen->Load32BitValue(out_loc.AsRegisterPairHigh<Register>(), 0);
++      }
++    } else {
++      codegen->Load32BitValue(out_loc.AsRegister<Register>(), 1 << value);
++    }
++    return;
++  }
++  // Handle non constant case
++  if (is_long) {
++    DCHECK(src.IsRegisterPair());
++    Register src_lo = src.AsRegisterPairLow<Register>();
++    Register src_hi = src.AsRegisterPairHigh<Register>();
++
++    Register out_lo = out_loc.AsRegisterPairLow<Register>();
++    Register out_hi = out_loc.AsRegisterPairHigh<Register>();
++
++    __ movl(out_lo, src_lo);
++    __ movl(out_hi, src_hi);
++
++    __ negl(out_lo);
++    __ adcl(out_hi, Immediate(0));
++    __ negl(out_hi);
++
++    __ andl(out_lo, src_lo);
++    __ andl(out_hi, src_hi);
++  } else {
++    if (codegen->GetInstructionSetFeatures().HasAVX2() && src.IsRegister()) {
++      Register out = out_loc.AsRegister<Register>();
++      __ blsi(out, src.AsRegister<Register>());
++    } else {
++      Register out = out_loc.AsRegister<Register>();
++      // Do tmp & -tmp
++      if (src.IsRegister()) {
++        __ movl(out, src.AsRegister<Register>());
++      } else {
++        DCHECK(src.IsStackSlot());
++        __ movl(out, Address(ESP, src.GetStackIndex()));
++      }
++      __ negl(out);
++
++      if (src.IsRegister()) {
++        __ andl(out, src.AsRegister<Register>());
++      } else {
++        __ andl(out, Address(ESP, src.GetStackIndex()));
++      }
++    }
++  }
++}
++
+ void IntrinsicLocationsBuilderX86::VisitMathCos(HInvoke* invoke) {
+   CreateFPToFPCallLocations(allocator_, invoke);
+ }
+@@ -1088,6 +1178,21 @@ void IntrinsicCodeGeneratorX86::VisitMathTanh(HInvoke* invoke) {
+   GenFPToFPCall(invoke, codegen_, kQuickTanh);
+ }
+ 
++void IntrinsicLocationsBuilderX86::VisitIntegerLowestOneBit(HInvoke* invoke) {
++  CreateLowestOneBitLocations(allocator_, /*is_long=*/ false, invoke);
++}
++void IntrinsicCodeGeneratorX86::VisitIntegerLowestOneBit(HInvoke* invoke) {
++  GenLowestOneBit(GetAssembler(), codegen_, /*is_long=*/ false, invoke);
++}
++
++void IntrinsicLocationsBuilderX86::VisitLongLowestOneBit(HInvoke* invoke) {
++  CreateLowestOneBitLocations(allocator_, /*is_long=*/ true, invoke);
++}
++
++void IntrinsicCodeGeneratorX86::VisitLongLowestOneBit(HInvoke* invoke) {
++  GenLowestOneBit(GetAssembler(), codegen_, /*is_long=*/ true, invoke);
++}
++
+ static void CreateFPFPToFPCallLocations(ArenaAllocator* allocator, HInvoke* invoke) {
+   LocationSummary* locations =
+       new (allocator) LocationSummary(invoke, LocationSummary::kCallOnMainOnly, kIntrinsified);
+@@ -3373,8 +3478,6 @@ UNIMPLEMENTED_INTRINSIC(X86, FloatIsInfinite)
+ UNIMPLEMENTED_INTRINSIC(X86, DoubleIsInfinite)
+ UNIMPLEMENTED_INTRINSIC(X86, IntegerHighestOneBit)
+ UNIMPLEMENTED_INTRINSIC(X86, LongHighestOneBit)
+-UNIMPLEMENTED_INTRINSIC(X86, IntegerLowestOneBit)
+-UNIMPLEMENTED_INTRINSIC(X86, LongLowestOneBit)
+ 
+ UNIMPLEMENTED_INTRINSIC(X86, StringStringIndexOf);
+ UNIMPLEMENTED_INTRINSIC(X86, StringStringIndexOfAfter);
+diff --git a/compiler/optimizing/intrinsics_x86_64.cc b/compiler/optimizing/intrinsics_x86_64.cc
+index 91a505ede..df89cbcaa 100644
+--- a/compiler/optimizing/intrinsics_x86_64.cc
++++ b/compiler/optimizing/intrinsics_x86_64.cc
+@@ -2718,59 +2718,64 @@ static void GenOneBit(X86_64Assembler* assembler,
+   }
+ 
+   // Handle the non-constant cases.
+-  CpuRegister tmp = locations->GetTemp(0).AsRegister<CpuRegister>();
+-  if (is_high) {
+-    // Use architectural support: basically 1 << bsr.
+-    if (src.IsRegister()) {
++  if (!is_high && codegen->GetInstructionSetFeatures().HasAVX2() &&
++      src.IsRegister()) {
++      __ blsi(out, src.AsRegister<CpuRegister>());
++  } else {
++    CpuRegister tmp = locations->GetTemp(0).AsRegister<CpuRegister>();
++    if (is_high) {
++      // Use architectural support: basically 1 << bsr.
++      if (src.IsRegister()) {
++        if (is_long) {
++          __ bsrq(tmp, src.AsRegister<CpuRegister>());
++        } else {
++          __ bsrl(tmp, src.AsRegister<CpuRegister>());
++        }
++      } else if (is_long) {
++        DCHECK(src.IsDoubleStackSlot());
++        __ bsrq(tmp, Address(CpuRegister(RSP), src.GetStackIndex()));
++      } else {
++        DCHECK(src.IsStackSlot());
++        __ bsrl(tmp, Address(CpuRegister(RSP), src.GetStackIndex()));
++      }
++      // BSR sets ZF if the input was zero.
++      NearLabel is_zero, done;
++      __ j(kEqual, &is_zero);
++      __ movl(out, Immediate(1));  // Clears upper bits too.
+       if (is_long) {
+-        __ bsrq(tmp, src.AsRegister<CpuRegister>());
++        __ shlq(out, tmp);
+       } else {
+-        __ bsrl(tmp, src.AsRegister<CpuRegister>());
++        __ shll(out, tmp);
+       }
+-    } else if (is_long) {
+-      DCHECK(src.IsDoubleStackSlot());
+-      __ bsrq(tmp, Address(CpuRegister(RSP), src.GetStackIndex()));
+-    } else {
+-      DCHECK(src.IsStackSlot());
+-      __ bsrl(tmp, Address(CpuRegister(RSP), src.GetStackIndex()));
+-    }
+-    // BSR sets ZF if the input was zero.
+-    NearLabel is_zero, done;
+-    __ j(kEqual, &is_zero);
+-    __ movl(out, Immediate(1));  // Clears upper bits too.
+-    if (is_long) {
+-      __ shlq(out, tmp);
+-    } else {
+-      __ shll(out, tmp);
+-    }
+-    __ jmp(&done);
+-    __ Bind(&is_zero);
+-    __ xorl(out, out);  // Clears upper bits too.
+-    __ Bind(&done);
+-  } else  {
+-    // Copy input into temporary.
+-    if (src.IsRegister()) {
++      __ jmp(&done);
++      __ Bind(&is_zero);
++      __ xorl(out, out);  // Clears upper bits too.
++      __ Bind(&done);
++    } else  {
++      // Copy input into temporary.
++      if (src.IsRegister()) {
++        if (is_long) {
++          __ movq(tmp, src.AsRegister<CpuRegister>());
++        } else {
++          __ movl(tmp, src.AsRegister<CpuRegister>());
++        }
++      } else if (is_long) {
++        DCHECK(src.IsDoubleStackSlot());
++        __ movq(tmp, Address(CpuRegister(RSP), src.GetStackIndex()));
++      } else {
++        DCHECK(src.IsStackSlot());
++        __ movl(tmp, Address(CpuRegister(RSP), src.GetStackIndex()));
++      }
++      // Do the bit twiddling: basically tmp & -tmp;
+       if (is_long) {
+-        __ movq(tmp, src.AsRegister<CpuRegister>());
++        __ movq(out, tmp);
++        __ negq(tmp);
++        __ andq(out, tmp);
+       } else {
+-        __ movl(tmp, src.AsRegister<CpuRegister>());
++        __ movl(out, tmp);
++        __ negl(tmp);
++        __ andl(out, tmp);
+       }
+-    } else if (is_long) {
+-      DCHECK(src.IsDoubleStackSlot());
+-      __ movq(tmp, Address(CpuRegister(RSP), src.GetStackIndex()));
+-    } else {
+-      DCHECK(src.IsStackSlot());
+-      __ movl(tmp, Address(CpuRegister(RSP), src.GetStackIndex()));
+-    }
+-    // Do the bit twiddling: basically tmp & -tmp;
+-    if (is_long) {
+-      __ movq(out, tmp);
+-      __ negq(tmp);
+-      __ andq(out, tmp);
+-    } else {
+-      __ movl(out, tmp);
+-      __ negl(tmp);
+-      __ andl(out, tmp);
+     }
+   }
+ }
+-- 
+2.17.1
+
