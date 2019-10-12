@@ -1,4 +1,4 @@
-From 715dc27eee3657e7ab971cf5d23bcd4da11508b4 Mon Sep 17 00:00:00 2001
+From 8aa392fdee167ca5320df72bcf5efd88a89ef021 Mon Sep 17 00:00:00 2001
 From: "Christopher R. Palmer" <crpalmer@gmail.com>
 Date: Sun, 7 Feb 2016 06:46:05 -0500
 Subject: [PATCH] linker: Allow text-relocs for x86 (only)
@@ -20,7 +20,7 @@ Change-Id: I68397f4d62f4f6acd8e0d41b7ecdc115969b890a
  1 file changed, 2 insertions(+)
 
 diff --git a/linker/linker.cpp b/linker/linker.cpp
-index 951351c32..3d7397a50 100644
+index 951351c32..af9460ee4 100644
 --- a/linker/linker.cpp
 +++ b/linker/linker.cpp
 @@ -3620,6 +3620,7 @@ bool soinfo::link_image(const soinfo_list_t& global_group, const soinfo_list_t&
@@ -31,14 +31,14 @@ index 951351c32..3d7397a50 100644
      int app_target_api_level = get_application_target_sdk_version();
      if (app_target_api_level >= __ANDROID_API_M__) {
        DL_ERR_AND_LOG("\"%s\" has text relocations (https://android.googlesource.com/platform/"
-@@ -3627,6 +3628,7 @@ bool soinfo::link_image(const soinfo_list_t& global_group, const soinfo_list_t&
-                      "Enforced-for-API-level-23)", get_realpath());
-       return false;
-     }
+@@ -3634,6 +3635,7 @@ bool soinfo::link_image(const soinfo_list_t& global_group, const soinfo_list_t&
+                               "\"%s\" has text relocations",
+                               get_realpath());
+     add_dlwarning(get_realpath(), "text relocations");
 +#endif
-     // Make segments writable to allow text relocations to work properly. We will later call
-     // phdr_table_protect_segments() after all of them are applied.
-     DL_WARN_documented_change(__ANDROID_API_M__,
+     if (phdr_table_unprotect_segments(phdr, phnum, load_bias) < 0) {
+       DL_ERR("can't unprotect loadable segments for \"%s\": %s", get_realpath(), strerror(errno));
+       return false;
 -- 
-2.17.1
+2.20.1
 
